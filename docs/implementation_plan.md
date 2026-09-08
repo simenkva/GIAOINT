@@ -1,0 +1,262 @@
+# Milestone implementation plan
+
+## Project rules
+
+Each milestone begins by naming its formulas and ends only after its independent
+checks pass. A later milestone may refine an earlier interface through a
+documented compatibility change, but it may not silently alter the GIAO phase,
+normalization, ordering, or complex-conjugation rules.
+
+`STATUS.md` is updated with completed scope, limitations, maximum tested
+angular momentum, numerical issues, benchmark state, and the next milestone.
+
+## Milestone 0: specification
+
+### Delivered
+
+- repository assessment and proposed layout;
+- frozen mathematical conventions and intermediate derivations;
+- recurrence and complex Boys strategy;
+- C++ and Python API proposal;
+- verification hierarchy and tolerances;
+- references, risks, open decisions, and this milestone plan.
+
+### Exit gate
+
+The maintainer reviews the frozen phase convention, contraction convention,
+Cartesian ordering, MD-first decision, public API shapes, and unresolved
+decisions below. No numerical source is included in this milestone.
+
+## Milestone 1: independent Python reference
+
+Status: completed on 2026-09-08.
+
+### Scope
+
+- immutable Python records for primitives and magnetic context;
+- primitive normalization and Cartesian enumeration;
+- London wave vectors and pair data;
+- arbitrary-angular-momentum primitive overlap by direct complex-center
+  polynomial moments;
+- simple segmented contraction and shell-pair assembly;
+- mpmath s-s and direct-quadrature checks.
+
+### Formulas
+
+Sections 2–6 of `mathematical_specification.md`, especially
+\(\mathbf q=\boldsymbol\kappa_B-\boldsymbol\kappa_A\),
+\(\mathbf P'=\mathbf P-i\mathbf q/(2p)\), and the even complex-centered
+Gaussian moments.
+
+### Tests and exit gate
+
+- analytic s-s values and normalized self-overlaps;
+- randomized double vs 80-digit calculations;
+- Hermiticity, zero-field, gauge-origin, translation, and continuity tests;
+- exhaustive Cartesian components through \(L=4\), randomized through
+  \(L=6\);
+- no C++ extension import in the reference package.
+
+## Milestone 2: C++ overlap engine and binding
+
+### Scope
+
+- CMake/scikit-build-core project and C++20 value types;
+- shell validation, component enumeration, primitive normalization, and
+  contraction normalization;
+- MD Hermite coefficients and Fourier-transformed London Hermites;
+- primitive contraction, caller-buffer shell-pair driver, basis overlap
+  matrix, reusable workspace;
+- pybind11 shell and basis APIs with `complex128`, `out=`, and GIL release.
+
+### Tests and exit gate
+
+- C++ building-block tests and all Milestone 1 comparisons;
+- zero-field checks against at least one external engine when available;
+- ASan/UBSan clean test runs;
+- wheel installation and Python API tests on supported platforms;
+- overlap benchmark baseline with no heap allocations in primitive inner
+  loops.
+
+## Milestone 3: kinetic and property machinery
+
+### Scope
+
+- shared multiplication and derivative raising/lowering operators;
+- canonical kinetic, coordinate moments through caller-selected low order,
+  gradient, and momentum;
+- physical magnetic one-electron kinetic combination, including paramagnetic
+  and diamagnetic terms, so gauge behavior can be tested as a whole.
+
+### Formulas
+
+Differentiate both the ordinary Gaussian and
+\(e^{-i\boldsymbol\kappa\cdot r}\). Express coordinate powers and derivatives
+as shifted angular-momentum combinations; avoid operator-specific shell cases.
+
+### Tests and exit gate
+
+- low-order analytic cases and Python reference comparisons;
+- Hermiticity for self-adjoint operators;
+- canonical-kinetic gauge dependence documented and full magnetic operator
+  gauge-origin behavior verified;
+- numerical differentiation of primitive functions at sampled points;
+- no duplicated s/p/d/f kernels.
+
+## Milestone 4: nuclear attraction and complex Boys
+
+### Scope
+
+- dual high-precision Boys references;
+- production `F_0..F_nmax` prototype with region dispatch, error diagnostics,
+  and scaled path;
+- MD complex Coulomb auxiliaries for nuclear attraction;
+- contracted shell-pair/nucleus driver.
+
+### Tests and exit gate
+
+- complex-plane error maps, boundary continuity, recurrence residuals, and
+  conjugation checks;
+- negative-real-part and cancellation stress tests;
+- analytic s-s nuclear attraction and zero-field external comparisons;
+- randomized reference comparisons through the stated angular momentum;
+- the production Boys algorithm and supported domain documented from measured
+  errors. If no prototype meets the target, the milestone remains open rather
+  than relaxing tolerances.
+
+## Milestone 5: four-center ERIs
+
+### Scope
+
+- unscreened primitive MD ERIs, contraction, and caller-buffer shell quartet;
+- basis quartet scheduler using only derived complex symmetries;
+- packed batch iterator and C++ consumer interface;
+- opt-in full NumPy tensor with allocation guard.
+
+### Tests and exit gate
+
+- ssss formula, high-precision small cases, and Python reference cases;
+- pair exchange, conjugate reversal, and finite-field negative symmetry tests;
+- zero-field comparisons with a conventional engine;
+- full-tensor and streamed-block equality for small bases;
+- arbitrary Cartesian recurrence structure, exhaustively tested through the
+  milestone's documented limit;
+- no screening until unscreened correctness passes.
+
+## Milestone 6: measured performance baseline
+
+### Scope
+
+- scratch reuse, shell-pair caches, contraction-loop tuning, and compact table
+  extents;
+- proved modulus screening bound and threshold-controlled implementation;
+- MD vs OS/HGP prototype comparison for representative shell classes;
+- optional OpenMP at shell-block level with thread-local workspaces;
+- stable benchmark schema and dedicated-runner regression reports.
+
+### Tests and exit gate
+
+- every optimization reproduces scalar reference blocks;
+- tightened-screening convergence to unscreened values;
+- deterministic serial output and documented parallel reproducibility;
+- zero-field and finite-field throughput for overlap, kinetic, attraction, and
+  ERIs across low and moderate angular momentum;
+- thread-scaling report and allocation profile.
+
+## Milestone 7: derivatives
+
+### Scope
+
+- first nuclear derivatives;
+- first magnetic-field derivatives;
+- derivative shell blocks and basis drivers;
+- mixed nuclear/magnetic derivatives only after the first-order paths pass.
+
+### Tests and exit gate
+
+- separate ordinary-Gaussian and London-phase term tests;
+- multi-step central finite differences with extrapolation;
+- translational and gauge covariance of derivative tensors;
+- derivative symmetry identities and zero-field limits;
+- maximum tested angular momentum and difficult numerical regions recorded.
+
+## Milestone 8: production hardening
+
+### Scope
+
+- stable documentation, examples, package metadata, license, CI, wheels, and
+  versioning;
+- API compatibility policy and deprecation mechanism;
+- fuzz/property expansion, sanitizer and static-analysis coverage;
+- benchmark history and release checklist;
+- optional spherical transformation design, without coupling it to Cartesian
+  kernels.
+
+### Exit gate
+
+- clean source and wheel builds from documented prerequisites;
+- all test levels pass on supported platforms;
+- public API docs contain shapes, units, ordering, ownership, and errors;
+- release notes state numerical domain, maximum tested angular momentum,
+  performance environment, and remaining limitations.
+
+## Highest-risk issues
+
+| Risk | Failure mode | Planned control |
+|---|---|---|
+| Phase, charge, or gauge sign mismatch | Plausible complex values with wrong imaginary signs or broken response properties | Freeze one Hamiltonian and phase convention; s-s analytic tests, conjugation, gauge shift, translation covariance, and zero-field checks start in Milestone 1. |
+| Dropped translational phase | Energies may appear correct in special geometries while AO tensors transform incorrectly | Keep \(e^{-i\mathbf q\cdot\mathbf P}\) in the pair prefactor and test non-axis-aligned translations. |
+| Complex Boys instability | Cancellation, branch discontinuity, overflow, or inaccurate high orders | Define Boys by an entire integral/hypergeometric form; use two high-precision references, region maps, recurrence residuals, and scaled auxiliaries. |
+| Pair-prefactor/Boys cancellation | Intermediate overflow despite a representable ERI | Design a combined scaled Coulomb seed and test extreme negative-real arguments before production acceptance. |
+| Invalid real-ERI symmetry reuse | Wrong finite-field quartets and Fock matrices | Encode only pair exchange and conjugate double reversal; include tests where one-pair swaps differ. |
+| Full finite-field MD auxiliary growth | Excess memory and low throughput at moderate angular momentum | Size tables before implementation, reuse workspace, benchmark shell classes, and retain OS/HGP as a backend option. |
+| Derivative omission of phase terms | Incorrect gradients and magnetic response | Treat phase derivatives as separate terms and validate each before combined finite differences. |
+| Screening without a valid complex bound | Silent loss of significant integrals | Ship unscreened first; prove bounds on the original modulus; test monotone threshold convergence. |
+| Reference correlation | Shared bug passes both implementations | Python overlap uses direct moments, C++ uses Hermites, Boys uses quadrature plus hypergeometric evaluation, and zero-field cases use external engines. |
+| Normalization/import ambiguity | Correct kernels disagree with common basis formats | Public coefficients multiply normalized primitives; importers convert explicitly and tests use hand-computed contractions. |
+| Unbounded full ERI allocation | Accidental \(O(N^4)\) memory exhaustion | Default to batches/direct consumers and require an explicit byte guard for full tensors. |
+
+## Unresolved decisions for review
+
+These decisions do not block the mathematical reference, but they affect later
+engineering:
+
+1. **License.** Choose a permissive license before accepting external
+   contributors or distributing wheels. MIT or BSD-3-Clause fits the intended
+   library use.
+2. **Supported strong-field domain.** Milestone 4 needs a documented field and
+   exponent/geometry envelope for guaranteed Boys accuracy. The algorithm
+   should still fail diagnostically outside it.
+3. **Production Boys kernel.** Beylkin-Sharma is the leading candidate, but the
+   final choice awaits independent implementation, complex-plane error maps,
+   licensing review of any constants or auxiliary code, and benchmarks.
+4. **First optimized ERI backend.** Decide between direct London OS and HGP only
+   after MD timing identifies the limiting shell classes.
+5. **External oracle in required CI.** PySCF/libcint is convenient for optional
+   zero-field validation. Decide whether a pinned external-engine job is
+   mandatory or periodic because it increases wheel and CI cost.
+6. **Initial general contractions.** The proposed API stores multiple
+   contraction rows. The smallest Milestone 2 kernel may enforce one row, or it
+   may implement general contractions immediately if the loop adds little risk.
+7. **Deterministic parallel default.** Choose whether reproducible summation or
+   maximum OpenMP throughput is the default in Milestone 6; expose the other as
+   an option either way.
+8. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
+   support should be accepted only with a maintained CI runner.
+
+## Decisions already resolved
+
+- Atomic units and electron charge \(-1\).
+- Symmetric-gauge vector potential and explicit gauge origin.
+- London phase \(e^{-i\boldsymbol\kappa_A\cdot r}\) with
+  \(\boldsymbol\kappa_A=\tfrac12\boldsymbol{\mathcal B}\times(\mathbf A-\mathbf O)\).
+- Cartesian primitives and the stated component order.
+- Input coefficients multiply normalized primitives; contraction
+  normalization is explicit.
+- `complex128` throughout the public integral API.
+- Shell blocks and batches as the computational boundary.
+- Caller-provided output buffers in C++; validated `out=` arrays in Python.
+- MD/Hermite as the first auditable C++ recurrence path.
+- Independent direct-moment Python overlap reference.
+- Unscreened ERIs before any complex screening optimization.
+- Streaming/direct ERI consumption as the default architecture.
