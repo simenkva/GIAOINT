@@ -1,7 +1,26 @@
+[build-system]
+requires = [
+    "scikit-build-core>=0.10",
+    "pybind11>=2.13",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "giao-integrals"
+version = "0.3.0"
+description = "Cartesian one-electron integrals for complex GIAO/London Gaussians"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26"]
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+wheel.packages = ["python/giao_integrals"]
+
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
-testpaths = ["tests/reference"]
-pythonpath = ["reference/python"]
+testpaths = ["tests/reference", "tests/python"]
+pythonpath = ["reference/python", "python"]
 
 [tool.black]
 line-length = 88
@@ -13,4 +32,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-

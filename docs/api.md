@@ -1,12 +1,18 @@
-# Proposed public API
+# Public API
 
 The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 
+The primitive, shell, basis, magnetic-field, overlap, moment, gradient,
+momentum, canonical-kinetic, and magnetic-kinetic portions documented below
+are implemented through Milestone 3. Coulomb, ERI, and batch-consumer
+interfaces remain planned for their stated later milestones.
+
 ## 1. C++ value types
 
-The following declarations describe the intended interface; they are not yet
-implementation code.
+The installed C++ declarations are in `giao_integrals/types.hpp` and
+`giao_integrals/overlap.hpp`. The following condensed declarations describe
+the value-type interface.
 
 ```cpp
 namespace giao {
@@ -155,7 +161,7 @@ inner, using the ordering in the mathematical specification.
 
 ### 2.1 Property-operator extension
 
-Milestone 3 adds typed shell-level functions over the same pair buffer:
+Milestone 3 provides typed shell-level functions over the same pair buffer:
 
 ```cpp
 enum class Axis : std::uint8_t { x, y, z };
@@ -183,12 +189,25 @@ void compute_momentum(
     const MagneticField& field,
     std::span<Complex> output,
     IntegralWorkspace& workspace);
+
+void compute_kinetic(
+    const Shell& a, const Shell& b,
+    const MagneticField& field,
+    std::span<Complex> output,
+    IntegralWorkspace& workspace);
+
+void compute_magnetic_kinetic(
+    const Shell& a, const Shell& b,
+    const MagneticField& field,
+    std::span<Complex> output,
+    IntegralWorkspace& workspace);
 ```
 
 Named descriptors keep origins and component choices explicit. Their kernels
-reuse multiplication and derivative recurrences. Angular momentum, electric
-field, and magnetic-Hamiltonian terms will compose these primitives inside C++
-rather than duplicate recurrence code.
+reuse multiplication and derivative recurrences. The compute_kinetic function
+is the canonical operator \(-\tfrac12\nabla^2\) over field-dependent GIAOs;
+compute_magnetic_kinetic is the physical
+\(\tfrac12(\mathbf p+\mathbf A_{\mathbf O})^2\) combination.
 
 ## 3. Basis drivers and ERI consumption
 
@@ -212,6 +231,26 @@ using QuartetConsumer = void (*)(
     const ShellQuartetBlockView&, void* user_data);
 
 void compute_overlap_matrix(
+    const Basis& basis, const MagneticField& field,
+    std::span<Complex> output);
+
+void compute_moment_matrix(
+    const Basis& basis, const CartesianMoment& moment,
+    const MagneticField& field, std::span<Complex> output);
+
+void compute_gradient_matrix(
+    const Basis& basis, Axis component,
+    const MagneticField& field, std::span<Complex> output);
+
+void compute_momentum_matrix(
+    const Basis& basis, Axis component,
+    const MagneticField& field, std::span<Complex> output);
+
+void compute_kinetic_matrix(
+    const Basis& basis, const MagneticField& field,
+    std::span<Complex> output);
+
+void compute_magnetic_kinetic_matrix(
     const Basis& basis, const MagneticField& field,
     std::span<Complex> output);
 
@@ -329,6 +368,21 @@ def moment(
 def momentum(
     basis: Basis,
     component: str,
+    *,
+    field: MagneticField | None = None,
+    out: npt.NDArray[np.complex128] | None = None,
+) -> npt.NDArray[np.complex128]: ...
+
+def gradient(
+    basis: Basis,
+    component: str,
+    *,
+    field: MagneticField | None = None,
+    out: npt.NDArray[np.complex128] | None = None,
+) -> npt.NDArray[np.complex128]: ...
+
+def magnetic_kinetic(
+    basis: Basis,
     *,
     field: MagneticField | None = None,
     out: npt.NDArray[np.complex128] | None = None,

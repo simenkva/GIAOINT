@@ -58,6 +58,33 @@ e^{-i\mathbf q\cdot\mathbf P-\mathbf q^2/(4p)}.
 At \(\mathbf q=0\), all terms with a nonzero Hermite index vanish. This gives
 a sharp zero-field regression check and avoids special formulas.
 
+### 3.1 Implemented one-dimensional recurrence
+
+Milestone 2 represents the unnormalized one-dimensional product as
+
+\[
+(x-A)^a(x-B)^b e^{-\alpha(x-A)^2-\beta(x-B)^2}
+=K_{AB}\sum_{t=0}^{a+b}E_t^{ab}\Lambda_t(x;p,P),
+\]
+
+with (E_0^{00}=1), (p=\alpha+\beta), and the ordinary real Gaussian
+prefactor (K_{AB}) kept outside the table. Angular momentum is raised by
+
+\[
+E_t^{a+1,b}=\frac{1}{2p}E_{t-1}^{ab}
+ +(P-A)E_t^{ab}+(t+1)E_{t+1}^{ab},
+\]
+
+\[
+E_t^{a,b+1}=\frac{1}{2p}E_{t-1}^{ab}
+ +(P-B)E_t^{ab}+(t+1)E_{t+1}^{ab}.
+\]
+
+Terms outside the current table extent are zero. The implementation contracts
+the finished real table directly with powers of (-iq). It allocates the two
+recurrence rows and component-normalization tables before entering primitive
+pair loops and reuses them for the complete shell block.
+
 ## 4. Complex Boys strategy
 
 ### 4.1 Contract
@@ -142,12 +169,20 @@ real parts, and is the leading production candidate.
 
 ## 5. One-electron operator reuse
 
-Overlap, Cartesian moments, and derivatives will share one-dimensional
-raising/lowering machinery. For example, multiplication by \(x-C_x\) raises a
-ket polynomial and adds \(B_x-C_x\); differentiation of a ket London primitive
-adds both ordinary Gaussian terms and \(-i\kappa_{B,x}\) times the primitive.
-Kinetic energy applies the derivative machinery twice and contracts the
-result. This avoids operator-specific s/p/d/f formulas.
+Milestone 3 implements overlap, Cartesian moments, gradients, momentum, and
+kinetic operators with shared angular-momentum shifts evaluated by the same MD
+overlap kernel. Multiplication by \(x-C_x\) raises a ket polynomial and adds
+\(B_x-C_x\); differentiation adds the ordinary lowering/raising terms and
+\(-i\kappa_{B,x}\) times the primitive. Shifted terms retain the original
+primitive normalization. This avoids operator-specific s/p/d/f formulas.
+
+Canonical kinetic energy applies the first- and second-derivative identities
+axis by axis. The physical magnetic kinetic kernel then composes canonical
+kinetic energy, the paramagnetic
+\(\tfrac12\boldsymbol{\mathcal B}\cdot\mathbf L_{\mathbf O}\) term from mixed
+coordinate-momentum integrals, and the diamagnetic quadratic moment. The
+production path uses MD overlaps for every shifted term; the Python reference
+instead expands all polynomial factors directly about the complex center.
 
 Nuclear attraction uses the same shell-pair and Hermite data as overlap, with
 complex Coulomb auxiliaries centered at each nucleus. The driver accumulates
@@ -198,4 +233,3 @@ Optimization begins after reference agreement:
 
 Each change keeps a scalar correctness path and records before/after benchmark
 data with compiler, CPU, field, basis, shell class, and checksum.
-

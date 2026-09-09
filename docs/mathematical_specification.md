@@ -467,7 +467,108 @@ These are covariance relations for AO tensors, not elementwise invariance.
 Observable contractions remain invariant when AO coefficients or density
 matrices receive the matching diagonal rephasing.
 
-## 10. Derivative convention
+## 10. One-electron moments and differential operators
+
+Milestone 3 uses operator recurrences that retain the normalization of the
+original ket primitive when its polynomial angular momentum is shifted. Write
+\(I(\mathbf b+\mathbf n)\) for an overlap in which only the ket polynomial
+powers have changed; it is not renormalized as a different primitive.
+
+For a Cartesian moment about the explicit origin \(\mathbf C\),
+
+\[
+(r_j-C_j)^m(r_j-B_j)^{b_j}
+=\sum_{s=0}^m {m\choose s}(B_j-C_j)^{m-s}
+ (r_j-B_j)^{b_j+s}.
+\]
+
+Products over the three axes give arbitrary non-negative Cartesian moment
+powers. In particular, the zero-order moment is exactly overlap.
+
+### 10.1 Gradient and canonical momentum
+
+Differentiating the ket London primitive gives both ordinary-Gaussian and
+phase terms:
+
+\[
+\boxed{
+\partial_j\omega_{\mathbf b,B}
+=b_j\omega_{\mathbf b-\mathbf e_j,B}^{[N_{\mathbf b}]}
+-2\beta\omega_{\mathbf b+\mathbf e_j,B}^{[N_{\mathbf b}]}
+-i\kappa_{B,j}\omega_{\mathbf b,B}
+}.
+\]
+
+The bracketed superscript emphasizes that every shifted term retains the
+original \(N_{\mathbf b}(\beta)\). A negative-power term is zero. Canonical
+momentum is \(p_j=-i\partial_j\), so its matrix is Hermitian while the gradient
+matrix is anti-Hermitian.
+
+### 10.2 Canonical kinetic energy
+
+For one axis, the phase-free polynomial derivative is
+
+\[
+\partial_j^2 g_{\mathbf b}
+=b_j(b_j-1)g_{\mathbf b-2\mathbf e_j}
+-2\beta(2b_j+1)g_{\mathbf b}
++4\beta^2g_{\mathbf b+2\mathbf e_j}.
+\]
+
+Including the London phase,
+
+\[
+\partial_j^2\omega_{\mathbf b,B}
+=e^{-i\boldsymbol\kappa_B\cdot\mathbf r}
+\left[\partial_j^2g_{\mathbf b}
+-2i\kappa_{B,j}\partial_jg_{\mathbf b}
+-\kappa_{B,j}^2g_{\mathbf b}\right].
+\]
+
+The canonical kinetic integral applies
+\(-\tfrac12\sum_j\partial_j^2\) to the ket. It is Hermitian but depends on the
+gauge origin because the basis changes while the canonical operator does not.
+
+### 10.3 Physical magnetic kinetic energy
+
+For the frozen electron convention, the physical one-electron kinetic
+operator is
+
+\[
+\boxed{
+h_{\mathrm{mag}}(\mathbf O)
+=\frac12(\mathbf p+\mathbf A_{\mathbf O})^2
+=\frac{\mathbf p^2}{2}
++\frac12\boldsymbol{\mathcal B}\cdot\mathbf L_{\mathbf O}
++\frac18\left[
+\mathcal B^2|\mathbf r-\mathbf O|^2
+-(\boldsymbol{\mathcal B}\cdot(\mathbf r-\mathbf O))^2
+\right]
+},
+\]
+
+where
+\(\mathbf L_{\mathbf O}=(\mathbf r-\mathbf O)\times\mathbf p\). The second
+and third terms are the paramagnetic and diamagnetic contributions. They are
+assembled from first coordinate-momentum products and second Cartesian
+moments; no low-angular-momentum cases are hard-coded.
+
+When \(\mathbf O'=\mathbf O+\mathbf d\), the common AO gauge transformation
+and the transformed vector potential obey
+
+\[
+(\mathbf p+\mathbf A_{\mathbf O'})U_{\mathbf d}
+=U_{\mathbf d}(\mathbf p+\mathbf A_{\mathbf O}),
+\qquad
+U_{\mathbf d}=e^{\frac i2(\boldsymbol{\mathcal B}\times\mathbf d)\cdot\mathbf r}.
+\]
+
+Consequently, the physical magnetic kinetic matrix over the matching GIAO
+basis is gauge-origin independent. This is tested separately from the expected
+gauge-origin dependence of the canonical kinetic matrix. At zero field,
+\(h_{\mathrm{mag}}\) reduces exactly to canonical kinetic energy.
+
+## 11. Nuclear and magnetic derivatives
 
 Future nuclear derivatives act on both the ordinary Gaussian and the phase.
 For a center \(\mathbf A\),

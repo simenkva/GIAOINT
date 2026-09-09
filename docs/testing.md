@@ -106,8 +106,11 @@ category. Initial targets are:
 | C++ primitive/shell overlap vs 80-digit reference | `5e-14` | `1e-12` | contraction error scales with primitive count |
 | Hermiticity and finite-field conjugation | `5e-14` | `5e-13` | compare full blocks |
 | zero-field external engine | `2e-12` | `2e-11` | after normalization/order conversion |
+| C++ moment/gradient/momentum/kinetic vs direct reference | `2e-13` | `2e-11` | randomized primitives through tested angular momentum |
+| contracted property shell blocks | `1e-12` | `2e-11` | includes derivative and magnetic combinations |
 | complex Boys, representable well-conditioned region | `2e-14` | `5e-13` | per order and region |
-| numerical quadrature diagnostics | convergence-based | convergence-based | no loose global fallback |
+| finite-difference real-space kinetic quadrature | `1e-8` | `1e-8` | three-step convergence diagnostic, not a production tolerance |
+| other numerical quadrature diagnostics | convergence-based | convergence-based | no loose global fallback |
 | finite-difference derivatives | step-study based | `1e-6` initially | tightened after analytic implementation |
 
 These are starting gates. A test may use a different tolerance only with a

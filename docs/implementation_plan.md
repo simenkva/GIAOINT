@@ -59,6 +59,8 @@ Gaussian moments.
 
 ## Milestone 2: C++ overlap engine and binding
 
+Status: completed on 2026-09-09.
+
 ### Scope
 
 - CMake/scikit-build-core project and C++20 value types;
@@ -78,7 +80,19 @@ Gaussian moments.
 - overlap benchmark baseline with no heap allocations in primitive inner
   loops.
 
+The exit gate passed on macOS arm64 with AppleClang 21 and Python 3.13. The
+release and ASan/UBSan C++ tests passed, all 83 Python/reference tests passed,
+and a built wheel installed and imported in a clean virtual environment. The
+test suite includes exhaustive component comparisons through (L=4),
+randomized production-vs-80-digit checks through (L=6), and shell blocks
+through (L=5). PySCF, libcint, and Libint were not installed, so the optional
+zero-field external-engine comparison was not run. The informational
+finite-field f-f 4x4-primitive baseline was about 8.2k shell blocks/s on the
+development machine.
+
 ## Milestone 3: kinetic and property machinery
+
+Status: completed on 2026-09-09.
 
 ### Scope
 
@@ -102,6 +116,19 @@ as shifted angular-momentum combinations; avoid operator-specific shell cases.
   gauge-origin behavior verified;
 - numerical differentiation of primitive functions at sampled points;
 - no duplicated s/p/d/f kernels.
+
+The exit gate passed with analytic normalized and displaced s-Gaussian cases,
+randomized primitive comparisons through \(L=6\), contracted shell comparisons
+through f-d, and general-contraction ordering checks. Matrix tests cover
+Hermiticity of moments, momentum, canonical kinetic energy, and physical
+magnetic kinetic energy; gradient anti-Hermiticity; the zero-field reduction;
+physical gauge-origin invariance; canonical gauge dependence; coordinate
+origin identities; and translation rephasing. Independent Gauss-Hermite
+real-space quadrature with finite-difference first and second derivatives
+checks both canonical and physical magnetic kinetic values. All 111 Python
+tests and the release and ASan/UBSan C++ tests pass on the development
+platform. The optional zero-field external-engine check remains unavailable
+because PySCF, libcint, and Libint are not installed.
 
 ## Milestone 4: nuclear attraction and complex Boys
 
@@ -235,13 +262,10 @@ engineering:
 5. **External oracle in required CI.** PySCF/libcint is convenient for optional
    zero-field validation. Decide whether a pinned external-engine job is
    mandatory or periodic because it increases wheel and CI cost.
-6. **Initial general contractions.** The proposed API stores multiple
-   contraction rows. The smallest Milestone 2 kernel may enforce one row, or it
-   may implement general contractions immediately if the loop adds little risk.
-7. **Deterministic parallel default.** Choose whether reproducible summation or
+6. **Deterministic parallel default.** Choose whether reproducible summation or
    maximum OpenMP throughput is the default in Milestone 6; expose the other as
    an option either way.
-8. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
+7. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
    support should be accepted only with a maintained CI runner.
 
 ## Decisions already resolved
@@ -255,6 +279,8 @@ engineering:
   normalization is explicit.
 - `complex128` throughout the public integral API.
 - Shell blocks and batches as the computational boundary.
+- General contraction rows in the production shell model from Milestone 2;
+  contraction index remains outermost in AO ordering.
 - Caller-provided output buffers in C++; validated `out=` arrays in Python.
 - MD/Hermite as the first auditable C++ recurrence path.
 - Independent direct-moment Python overlap reference.

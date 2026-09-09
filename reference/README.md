@@ -1,9 +1,9 @@
 # Pure-Python reference engine
 
-`giao_reference` implements Milestone 1 overlap integrals over Cartesian
-London orbitals. The code mirrors the complex-center derivation in the
-mathematical specification and favors direct formulas over recurrence speed.
-It does not import the future C++ extension.
+`giao_reference` implements overlap and Milestone 3 one-electron property
+integrals over Cartesian London orbitals. The code mirrors the complex-center
+derivation in the mathematical specification and favors direct formulas over
+recurrence speed. It does not import the C++ extension.
 
 The ordinary reference path uses only the Python standard library. The
 `high_precision` module uses mpmath for 80-digit formula and direct real-axis
@@ -16,7 +16,11 @@ quadrature checks.
 - London wave vectors and complex Gaussian pair data;
 - arbitrary-angular-momentum primitive overlap by polynomial moments;
 - normalized segmented contractions and complete shell-pair blocks;
-- high-precision direct-formula and independent quadrature oracles.
+- high-precision direct-formula and independent quadrature oracles;
+- arbitrary Cartesian moments, gradient, canonical momentum and kinetic
+  energy, and physical magnetic kinetic energy;
+- direct polynomial expansion for moments and real-space finite-difference
+  quadrature checks for differential operators.
 
 The reference package returns Python complex numbers and nested tuples. NumPy
 arrays belong to the production API introduced with the C++ binding.
@@ -44,6 +48,5 @@ python3 -m venv .venv
 ```
 
 `pyproject.toml` adds `reference/python` to pytest's import path. The reference
-package has no install metadata yet; Milestone 2 will introduce the unified
-scikit-build-core package.
-
+package deliberately remains outside the installed wheel; the unified
+scikit-build-core package installs only the production `giao_integrals` API.
