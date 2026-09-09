@@ -160,8 +160,12 @@ the London MD auxiliary recurrence and a cancellation-safe scaled seed; an
 independent Obara--Saika oracle validates randomized primitives through
 \(L=4\) per center and contracted p--d blocks. Analytic s-s, negative-real,
 Hermiticity, zero-field, gauge-origin, validation, output-buffer, and warmed
-allocation tests pass. PySCF, libcint, and Libint were not installed, so the
-optional external-engine zero-field comparison remains unavailable.
+allocation tests pass. A zero-field Cartesian s/p/d comparison against PySCF
+2.8.0 and its bundled libcint observed maximum overlap and attraction errors
+of \(4.44\times10^{-16}\) and \(3.95\times10^{-14}\), respectively, after
+explicitly converting PySCF's shared radial Cartesian normalization.
+The final gate contains 225 passing Python tests plus passing release and
+ASan/UBSan C++ test builds and a 0.4.0 wheel-install smoke test.
 
 ## Milestone 5: four-center ERIs
 
@@ -181,6 +185,16 @@ optional external-engine zero-field comparison remains unavailable.
 - arbitrary Cartesian recurrence structure, exhaustively tested through the
   milestone's documented limit;
 - no screening until unscreened correctness passes.
+
+The exit gate passed with the unscreened six-index London MD recurrence,
+segmented and general contraction, caller-buffer shell quartets, the exact
+four-member complex-symmetry scheduler, a C++ consumer, packed Python batches,
+and an explicitly byte-guarded full tensor. An independent 80-digit OS oracle
+covers every Cartesian distribution through combined degree two plus selected
+cases through degree ten. The PySCF 2.8.0/libcint s/p/d tensor comparison
+observed a maximum error of \(1.72\times10^{-14}\). The final gate contains 238
+passing Python tests plus passing release and ASan/UBSan C++ builds and a 0.5.0
+wheel-install smoke test.
 
 ## Milestone 6: measured performance baseline
 
@@ -260,24 +274,24 @@ optional external-engine zero-field comparison remains unavailable.
 These decisions do not block the mathematical reference, but they affect later
 engineering:
 
+Milestone 4 resolved the initial Boys questions: the guaranteed direct disk is
+\(|z|\le160\), the conservative positive asymptotic sector is stated in
+`docs/algorithms.md`, and the accepted kernel is an accuracy-first
+series/quadrature/asymptotic dispatcher. Beylkin--Sharma remains an optional
+performance replacement rather than an open correctness dependency.
+
 1. **License.** Choose a permissive license before accepting external
    contributors or distributing wheels. MIT or BSD-3-Clause fits the intended
    library use.
-2. **Supported strong-field domain.** Milestone 4 needs a documented field and
-   exponent/geometry envelope for guaranteed Boys accuracy. The algorithm
-   should still fail diagnostically outside it.
-3. **Production Boys kernel.** Beylkin-Sharma is the leading candidate, but the
-   final choice awaits independent implementation, complex-plane error maps,
-   licensing review of any constants or auxiliary code, and benchmarks.
-4. **First optimized ERI backend.** Decide between direct London OS and HGP only
+2. **First optimized ERI backend.** Decide between direct London OS and HGP only
    after MD timing identifies the limiting shell classes.
-5. **External oracle in required CI.** PySCF/libcint is convenient for optional
+3. **External oracle in required CI.** PySCF/libcint is convenient for optional
    zero-field validation. Decide whether a pinned external-engine job is
    mandatory or periodic because it increases wheel and CI cost.
-6. **Deterministic parallel default.** Choose whether reproducible summation or
+4. **Deterministic parallel default.** Choose whether reproducible summation or
    maximum OpenMP throughput is the default in Milestone 6; expose the other as
    an option either way.
-7. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
+5. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
    support should be accepted only with a maintained CI runner.
 
 ## Decisions already resolved

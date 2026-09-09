@@ -1,4 +1,5 @@
 #include "giao_integrals/boys.hpp"
+#include "giao_integrals/eri.hpp"
 #include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
 #include "giao_integrals/property.hpp"
@@ -223,11 +224,28 @@ py::array basis_array(const giao::Basis& basis, py::object output,
     return result;
 }
 
+struct PackedEriData {
+    std::vector<std::array<std::uint32_t, 4>> quartets;
+    std::vector<std::array<std::size_t, 4>> shapes;
+    std::vector<std::size_t> offsets{0U};
+    std::vector<giao::Complex> values;
+};
+
+void append_eri_block(const giao::ShellQuartetBlockView& block,
+                      void* user_data) {
+    auto& packed = *static_cast<PackedEriData*>(user_data);
+    packed.quartets.push_back(block.shells.as_array());
+    packed.shapes.push_back(block.shape);
+    packed.values.insert(packed.values.end(), block.values.begin(),
+                         block.values.end());
+    packed.offsets.push_back(packed.values.size());
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_giao_integrals, module) {
-    module.doc() = "C++20 one-electron integrals for Cartesian GIAO/London Gaussians";
-    module.attr("__version__") = "0.4.0";
+    module.doc() = "C++20 Cartesian GIAO/London Gaussian integrals";
+    module.attr("__version__") = "0.5.0";
 
     py::register_exception<giao::BoysNumericalError>(module,
                                                       "BoysNumericalError");
@@ -519,6 +537,132 @@ PYBIND11_MODULE(_giao_integrals, module) {
         },
         py::arg("basis"), py::arg("nuclei"), py::kw_only(),
         py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "primitive_eri",
+        [](const giao::PrimitiveGaussian& a,
+           const giao::PrimitiveGaussian& b,
+           const giao::PrimitiveGaussian& c,
+           const giao::PrimitiveGaussian& d, const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            py::gil_scoped_release release;
+            return giao::primitive_eri(a, b, c, d, field_value);
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"),
+        py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "eri_shell",
+        [](const giao::Shell& a, const giao::Shell& b,
+           const giao::Shell& c, const giao::Shell& d,
+           const py::object& field, py::object output) {
+            const std::vector<py::ssize_t> shape{
+                static_cast<py::ssize_t>(a.ao_count()),
+                static_cast<py::ssize_t>(b.ao_count()),
+                static_cast<py::ssize_t>(c.ao_count()),
+                static_cast<py::ssize_t>(d.ao_count())};
+            py::array result = validate_or_create_output(output, shape);
+            auto* data = static_cast<giao::Complex*>(result.mutable_data());
+            const auto field_value = field_or_zero(field);
+            {
+                py::gil_scoped_release release;
+                giao::EriWorkspace workspace;
+                giao::compute_eri(
+                    a, b, c, d, field_value,
+                    std::span<giao::Complex>(
+                        data, giao::shell_quartet_size(a, b, c, d)),
+                    workspace);
+            }
+            return result;
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"),
+        py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "_eri_full",
+        [](const giao::Basis& basis, const py::object& field) {
+            const auto count = basis.ao_count();
+            py::array_t<giao::Complex> result(
+                {static_cast<py::ssize_t>(count),
+                 static_cast<py::ssize_t>(count),
+                 static_cast<py::ssize_t>(count),
+                 static_cast<py::ssize_t>(count)});
+            const auto field_value = field_or_zero(field);
+            {
+                py::gil_scoped_release release;
+                giao::compute_eri_tensor(
+                    basis, field_value,
+                    std::span<giao::Complex>(result.mutable_data(),
+                                             result.size()));
+            }
+            return result;
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "_eri_batch",
+        [](const giao::Basis& basis,
+           const std::vector<std::array<std::uint32_t, 4>>& quartet_arrays,
+           const py::object& field) {
+            std::vector<giao::ShellQuartetIndex> quartets;
+            quartets.reserve(quartet_arrays.size());
+            for (const auto& value : quartet_arrays) {
+                quartets.push_back({value[0], value[1], value[2], value[3]});
+            }
+            PackedEriData packed;
+            const auto field_value = field_or_zero(field);
+            {
+                py::gil_scoped_release release;
+                giao::for_each_eri_shell_quartet(
+                    basis, quartets, field_value, append_eri_block, &packed);
+            }
+            py::array_t<std::uint32_t> quartet_result(
+                {static_cast<py::ssize_t>(packed.quartets.size()),
+                 py::ssize_t{4}});
+            py::array_t<std::int64_t> shape_result(
+                {static_cast<py::ssize_t>(packed.shapes.size()),
+                 py::ssize_t{4}});
+            py::array_t<std::int64_t> offset_result(packed.offsets.size());
+            py::array_t<giao::Complex> value_result(packed.values.size());
+            auto quartet_view = quartet_result.mutable_unchecked<2>();
+            auto shape_view = shape_result.mutable_unchecked<2>();
+            for (std::size_t row = 0; row < packed.quartets.size(); ++row) {
+                for (std::size_t axis = 0; axis < 4; ++axis) {
+                    quartet_view(static_cast<py::ssize_t>(row),
+                                  static_cast<py::ssize_t>(axis)) =
+                        packed.quartets[row][axis];
+                    shape_view(static_cast<py::ssize_t>(row),
+                               static_cast<py::ssize_t>(axis)) =
+                        static_cast<std::int64_t>(packed.shapes[row][axis]);
+                }
+            }
+            auto* offset_data = offset_result.mutable_data();
+            for (std::size_t index = 0; index < packed.offsets.size(); ++index) {
+                offset_data[index] =
+                    static_cast<std::int64_t>(packed.offsets[index]);
+            }
+            std::copy(packed.values.begin(), packed.values.end(),
+                      value_result.mutable_data());
+            return py::make_tuple(std::move(quartet_result),
+                                  std::move(shape_result),
+                                  std::move(offset_result),
+                                  std::move(value_result));
+        },
+        py::arg("basis"), py::arg("quartets"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
+        "_canonical_shell_quartet",
+        [](std::uint32_t a, std::uint32_t b, std::uint32_t c,
+           std::uint32_t d) {
+            const auto canonical = giao::canonicalize_shell_quartet({a, b, c, d});
+            const auto indices = canonical.shells.as_array();
+            return py::make_tuple(
+                py::make_tuple(indices[0], indices[1], indices[2], indices[3]),
+                canonical.conjugate);
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"));
 
     module.def(
         "primitive_moment",

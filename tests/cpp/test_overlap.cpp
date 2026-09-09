@@ -1,4 +1,5 @@
 #include "giao_integrals/boys.hpp"
+#include "giao_integrals/eri.hpp"
 #include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
 #include "giao_integrals/property.hpp"
@@ -309,6 +310,90 @@ void test_boys_and_nuclear_attraction() {
           "warmed nuclear-attraction shell kernel performs no heap allocations");
 }
 
+struct ConsumerState {
+    std::size_t count{};
+    giao::Complex value{};
+};
+
+void capture_quartet(const giao::ShellQuartetBlockView& block, void* data) {
+    auto& state = *static_cast<ConsumerState*>(data);
+    ++state.count;
+    state.value = block.values.front();
+}
+
+void test_electron_repulsion() {
+    const giao::PrimitiveGaussian a(0.7, {-0.4, 0.2, 0.8});
+    const giao::PrimitiveGaussian b(1.3, {0.8, -0.5, 0.1});
+    const giao::PrimitiveGaussian c(0.9, {-0.2, 0.6, -0.3});
+    const giao::PrimitiveGaussian d(1.1, {0.5, 0.1, -0.7});
+    const giao::MagneticField field({0.3, -0.2, 0.5}, {0.2, -0.1, 0.4});
+    const auto ab = giao::gaussian_product(a, b, field);
+    const auto cd = giao::gaussian_product(c, d, field);
+    const auto p = ab.exponent;
+    const auto q = cd.exponent;
+    const auto rho = p * q / (p + q);
+    const auto dx = ab.complex_center[0] - cd.complex_center[0];
+    const auto dy = ab.complex_center[1] - cd.complex_center[1];
+    const auto dz = ab.complex_center[2] - cd.complex_center[2];
+    const auto f0 = giao::boys_values(rho * (dx * dx + dy * dy + dz * dz), 0)[0];
+    const auto expected =
+        2.0 * std::pow(std::numbers::pi, 2.5) /
+        (p * q * std::sqrt(p + q)) * ab.prefactor() * cd.prefactor() *
+        giao::primitive_normalization(a.exponent, {}) *
+        giao::primitive_normalization(b.exponent, {}) *
+        giao::primitive_normalization(c.exponent, {}) *
+        giao::primitive_normalization(d.exponent, {}) * f0;
+    check_close(giao::primitive_eri(a, b, c, d, field), expected,
+                "analytic finite-field ssss ERI", 3.0e-13);
+
+    const giao::PrimitiveGaussian higher_a(0.8, {-0.3, 0.4, 0.1}, {2, 1, 0});
+    const giao::PrimitiveGaussian higher_b(1.2, {0.5, -0.2, 0.7}, {0, 1, 1});
+    const giao::PrimitiveGaussian higher_c(0.6, {0.2, 0.8, -0.4}, {1, 0, 1});
+    const giao::PrimitiveGaussian higher_d(1.4, {-0.7, 0.1, 0.3}, {1, 1, 0});
+    const auto value =
+        giao::primitive_eri(higher_a, higher_b, higher_c, higher_d, field);
+    check_close(value,
+                giao::primitive_eri(higher_c, higher_d, higher_a, higher_b,
+                                    field),
+                "ERI pair exchange", 8.0e-12);
+    check_close(value,
+                std::conj(giao::primitive_eri(higher_b, higher_a, higher_d,
+                                              higher_c, field)),
+                "ERI conjugate double reversal", 8.0e-12);
+    check(std::abs(value - giao::primitive_eri(higher_b, higher_a, higher_c,
+                                               higher_d, field)) > 1.0e-8,
+          "finite-field one-pair swap is not treated as a symmetry");
+
+    const giao::Shell shell_a({0.1, -0.3, 0.2}, 1, {1.8, 0.5}, {0.3, 0.8});
+    const giao::Shell shell_b({-0.4, 0.2, 0.6}, 0, {0.7}, {1.0});
+    std::vector<giao::Complex> block(
+        giao::shell_quartet_size(shell_a, shell_b, shell_a, shell_b));
+    giao::EriWorkspace workspace;
+    giao::compute_eri(shell_a, shell_b, shell_a, shell_b, field, block,
+                      workspace);
+    const auto allocations_before_reuse = allocation_count;
+    giao::compute_eri(shell_a, shell_b, shell_a, shell_b, field, block,
+                      workspace);
+    check(allocation_count == allocations_before_reuse,
+          "warmed ERI shell kernel performs no heap allocations");
+
+    const giao::Basis basis({shell_b});
+    const std::array<giao::ShellQuartetIndex, 1> quartets{{{0, 0, 0, 0}}};
+    ConsumerState state;
+    giao::for_each_eri_shell_quartet(basis, quartets, field, capture_quartet,
+                                     &state);
+    check(state.count == 1, "C++ ERI consumer receives requested quartet");
+    std::array<giao::Complex, 1> tensor{};
+    giao::compute_eri_tensor(basis, field, tensor);
+    check_close(tensor[0], state.value, "full ERI tensor matches consumer");
+
+    const auto canonical =
+        giao::canonicalize_shell_quartet({3, 2, 1, 0});
+    check(canonical.shells.as_array() == std::array<std::uint32_t, 4>{0, 1, 2, 3} &&
+              canonical.conjugate,
+          "shell-quartet canonicalization records conjugation");
+}
+
 }  // namespace
 
 int main() {
@@ -320,6 +405,7 @@ int main() {
     test_validation();
     test_one_electron_properties();
     test_boys_and_nuclear_attraction();
+    test_electron_repulsion();
     if (failures != 0) {
         std::cerr << failures << " test checks failed\n";
         return 1;

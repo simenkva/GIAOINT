@@ -22,7 +22,10 @@ def assert_mixed_close(actual, expected, *, atol=2.0e-14, rtol=5.0e-13):
         -1.0 + 2.0j,
         -30.0 - 12.0j,
         -100.0 + 20.0j,
+        123.999,
+        124.001,
         130.0 + 10.0j,
+        159.999j,
         1000.0 - 25.0j,
     ],
 )
@@ -72,5 +75,7 @@ def test_dispatch_diagnostics_cover_regions():
 def test_outside_verified_sector_fails_diagnostically():
     with pytest.raises(gi.BoysNumericalError, match="outside the verified"):
         gi.boys(10.0 + 500.0j, 4)
+    with pytest.raises(gi.BoysNumericalError, match="outside the verified"):
+        gi.boys(160.001j, 4)
     with pytest.raises(ValueError, match="through 32"):
         gi.boys(1.0, 33)

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libgiao_integrals_core.a CMakeFiles/giao_integrals_core.dir/src/boys.cpp.o CMakeFiles/giao_integrals_core.dir/src/hermite.cpp.o CMakeFiles/giao_integrals_core.dir/src/nuclear.cpp.o CMakeFiles/giao_integrals_core.dir/src/overlap.cpp.o CMakeFiles/giao_integrals_core.dir/src/property.cpp.o CMakeFiles/giao_integrals_core.dir/src/types.cpp.o
-/usr/bin/ranlib libgiao_integrals_core.a

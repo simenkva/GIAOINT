@@ -1,7 +1,7 @@
 # Pure-Python reference engine
 
-`giao_reference` implements overlap and Milestone 3/4 one-electron property
-integrals over Cartesian London orbitals. The code mirrors the complex-center
+`giao_reference` implements overlap, Milestone 3/4 one-electron property, and
+Milestone 5 electron-repulsion integrals over Cartesian London orbitals. The code mirrors the complex-center
 derivation in the mathematical specification and favors direct formulas over
 recurrence speed. It does not import the C++ extension.
 
@@ -25,6 +25,8 @@ quadrature checks.
   entire confluent-hypergeometric form;
 - nuclear attraction through an independent high-precision Obara--Saika
   recurrence, distinct from the production McMurchie--Davidson path.
+- four-center primitive ERIs through an independent 80+-digit Cartesian
+  Obara--Saika vertical recurrence.
 
 The reference package returns Python complex numbers and nested tuples. NumPy
 arrays belong to the production API introduced with the C++ binding.
@@ -50,6 +52,9 @@ python3 -m venv .venv
 .venv/bin/ruff check reference/python tests/reference
 .venv/bin/black --check reference/python tests/reference
 ```
+
+When PySCF is installed, run the separate zero-field production comparison
+with `python tests/external/pyscf_zero_field.py`.
 
 `pyproject.toml` adds `reference/python` to pytest's import path. The reference
 package deliberately remains outside the installed wheel; the unified

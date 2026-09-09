@@ -4,13 +4,14 @@
 atomic-orbital integrals over complex gauge-including atomic orbitals (GIAOs),
 also called London atomic orbitals.
 
-Milestone 4 is complete. The repository contains the mathematical
+Milestone 5 is complete. The repository contains the mathematical
 specification, independent pure-Python overlap/property references, and a
 production C++20 MD/Hermite engine with a NumPy API. Implemented operators are
 overlap, Cartesian moments, gradient, canonical momentum, canonical kinetic
-energy, the full physical magnetic kinetic energy, and nuclear attraction.
-The complex Boys implementation returns orders 0 through 32 with region and
-error diagnostics plus a cancellation-safe scaled path.
+energy, the full physical magnetic kinetic energy, nuclear attraction, and
+unscreened four-center electron repulsion. The complex Boys implementation
+returns orders 0 through 32 with region and error diagnostics plus a
+cancellation-safe scaled path.
 
 Install a development build and run the tests with:
 
@@ -25,6 +26,8 @@ The public Python data types are `PrimitiveGaussian`, `Shell`, `Basis`,
 `MagneticField`, and `Nucleus`. Each operator has primitive, shell, and
 basis-level entry points where applicable. Result arrays are C-contiguous `complex128`; shell
 blocks use `(ao_a, ao_b)` ordering, and basis matrices use input shell order.
+ERIs default to packed canonical shell-quartet batches; a full `(nao,)*4`
+tensor is opt-in and requires an explicit byte limit.
 
 Start with:
 

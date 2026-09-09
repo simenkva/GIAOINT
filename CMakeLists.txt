@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.4.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.5.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -11,6 +11,7 @@ option(GIAO_ENABLE_SANITIZERS "Enable address and undefined-behavior sanitizers"
 
 add_library(giao_integrals_core
     src/boys.cpp
+    src/eri.cpp
     src/hermite.cpp
     src/nuclear.cpp
     src/overlap.cpp

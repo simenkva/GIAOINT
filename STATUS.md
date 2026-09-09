@@ -52,10 +52,29 @@
 - Independent high-precision Obara--Saika attraction reference, analytic s-s,
   randomized finite-field, negative-real, Hermiticity, gauge-origin,
   zero-field, and allocation-reuse tests.
+- Version 0.4.0 release and ASan/UBSan C++ builds, 225 Python tests, and a
+  clean-wheel installation smoke test.
+- Zero-field normalized Cartesian s/p/d comparison against PySCF 2.8.0 and
+  bundled libcint, with maximum overlap and attraction errors of
+  \(4.44\times10^{-16}\) and \(3.95\times10^{-14}\).
+- Milestone 5 unscreened four-center McMurchie--Davidson ERIs with the full
+  six-index complex London auxiliary, arbitrary Cartesian primitives, general
+  contractions, caller-buffer shell quartets, and reusable workspace.
+- Exact finite-field quartet canonicalization using only pair exchange and
+  conjugate double reversal, plus a C++ block-consumer interface.
+- Packed canonical Python batch iteration by default and an opt-in full
+  `(nao, nao, nao, nao)` tensor protected by an explicit byte limit.
+- Independent 80-digit Obara--Saika ERI reference, an exhaustive 91-case
+  Cartesian core through combined degree two, selected cases through combined
+  degree ten, scaled negative-real validation, symmetry-negative tests, and
+  streamed/full equality.
+- Version 0.5.0 release and ASan/UBSan C++ builds, 238 Python tests, and a
+  clean-wheel installation smoke test.
+- PySCF 2.8.0/libcint zero-field normalized Cartesian s/p/d ERI comparison
+  with maximum error \(1.72\times10^{-14}\).
 
 ## Current limitations
 
-- Electron-repulsion integrals are not yet implemented.
 - The reference engine supports one segmented contraction per shell, while
   the production engine supports one or more contraction rows for overlap and
   every implemented one-electron operator, including nuclear attraction.
@@ -71,6 +90,9 @@
 - The correctness-first adaptive Boys quadrature is not yet performance-tuned;
   an exponential-sum implementation remains a possible Milestone 6 backend.
 - ERI screening bounds with London factors have not been proved or enabled.
+- ERIs are correctness-first, scalar, serial, and unscreened. The full
+  six-index auxiliary has a 4,000,000-entry workspace cap; combined Cartesian
+  order above 32 is rejected.
 - Cartesian functions only are planned for the initial engine.
 
 ## Maximum tested angular momentum
@@ -88,6 +110,11 @@ Complex Boys values are tested through order 32. Nuclear attraction is
 randomized against the independent reference through \(L=4\) on each primitive
 center (combined auxiliary order 8), with contracted p--d shell blocks. The
 production attraction path accepts combined order through 32.
+
+Primitive ERIs are exhaustively compared with the high-precision reference for
+all Cartesian power distributions through combined degree two (91 cases),
+with selected finite-field cases through combined degree ten. Production
+accepts combined order through 32 subject to the auxiliary workspace cap.
 
 ## Known numerical issues
 
@@ -117,6 +144,6 @@ performance-regression tracking and optimization.
 
 ## Next milestone
 
-Milestone 5: implement unscreened four-center MD electron-repulsion integrals,
-then add the conservative complex-symmetry shell-quartet scheduler and bounded
-full/streamed Python consumption paths.
+Milestone 6: establish measured ERI and one-electron performance baselines,
+then add pair caching, contraction-loop tuning, proved screening, and optional
+shell-block parallelism without changing the Milestone 5 unscreened oracle.

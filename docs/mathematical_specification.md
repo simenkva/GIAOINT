@@ -443,7 +443,14 @@ e^{-i\mathbf q\cdot\mathbf P-\mathbf q^2/(4p)-T}G_n(T).
 \]
 
 Its real exponent contains the cancellation before floating-point
-exponentiation; in particular, the \(\mathbf q^2/(4p)\) terms cancel exactly.
+exponentiation. Production evaluates the algebraically simplified form
+
+\[
+e^{-p|\mathbf P-\mathbf C|^2-i\mathbf q\cdot\mathbf C}G_n(T),
+\]
+
+so the \(\mathbf q^2/(4p)\) terms are never formed and subtracted as large
+floating-point values.
 
 At zero field, \(\mathbf P'\) and \(\mathbf Q'\) become real and
 \(T=\rho|\mathbf P-\mathbf Q|^2\ge0\), recovering the conventional ERI seed.

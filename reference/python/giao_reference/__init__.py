@@ -5,6 +5,7 @@ not import the production C++ extension.
 """
 
 from .boys import boys_hypergeometric, boys_quadrature, boys_values
+from .eri import primitive_eri
 from .gaussian import (
     AngularMomentum,
     MagneticField,
@@ -66,6 +67,7 @@ __all__ = [
     "primitive_nuclear_attraction",
     "primitive_overlap",
     "primitive_gradient",
+    "primitive_eri",
     "primitive_kinetic",
     "primitive_magnetic_kinetic",
     "primitive_moment",

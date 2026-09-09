@@ -1,4 +1,5 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
@@ -99,6 +100,46 @@ class Basis:
     @property
     def ao_count(self) -> int: ...
 
+@dataclass(frozen=True)
+class EriBatch:
+    quartets: npt.NDArray[np.uint32]
+    shapes: npt.NDArray[np.int64]
+    offsets: npt.NDArray[np.int64]
+    values: ComplexArray
+    def block(self, index: int) -> ComplexArray: ...
+
+def primitive_eri(
+    a: PrimitiveGaussian,
+    b: PrimitiveGaussian,
+    c: PrimitiveGaussian,
+    d: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> complex: ...
+def eri_shell(
+    a: Shell,
+    b: Shell,
+    c: Shell,
+    d: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def eri_batches(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    quartets: Iterable[Sequence[int]] | None = None,
+    target_bytes: int = 64 * 1024 * 1024,
+) -> Iterator[EriBatch]: ...
+def eri(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    storage: str = "blocks",
+    max_bytes: int | None = None,
+    target_bytes: int = 64 * 1024 * 1024,
+) -> Iterator[EriBatch] | ComplexArray: ...
 def cartesian_components(
     total_angular_momentum: int,
 ) -> tuple[tuple[int, int, int], ...]: ...

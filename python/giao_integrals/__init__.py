@@ -1,4 +1,4 @@
-"""Production one-electron integrals for Cartesian GIAO/London Gaussians."""
+"""Production integrals for Cartesian GIAO/London Gaussians."""
 
 from ._giao_integrals import (
     Basis,
@@ -13,6 +13,7 @@ from ._giao_integrals import (
     boys,
     boys_with_diagnostics,
     cartesian_components,
+    eri_shell,
     gradient,
     gradient_shell,
     kinetic,
@@ -27,6 +28,7 @@ from ._giao_integrals import (
     nuclear_attraction_shell,
     overlap,
     overlap_shell,
+    primitive_eri,
     primitive_gradient,
     primitive_kinetic,
     primitive_magnetic_kinetic,
@@ -36,12 +38,14 @@ from ._giao_integrals import (
     primitive_nuclear_attraction,
     primitive_overlap,
 )
+from .eri import EriBatch, eri, eri_batches
 
 __all__ = [
     "Basis",
     "BoysNumericalError",
     "BoysRegion",
     "CartesianExponent",
+    "EriBatch",
     "MagneticField",
     "Nucleus",
     "PrimitiveGaussian",
@@ -50,6 +54,9 @@ __all__ = [
     "boys",
     "boys_with_diagnostics",
     "cartesian_components",
+    "eri",
+    "eri_batches",
+    "eri_shell",
     "gradient",
     "gradient_shell",
     "kinetic",
@@ -65,6 +72,7 @@ __all__ = [
     "overlap",
     "overlap_shell",
     "primitive_gradient",
+    "primitive_eri",
     "primitive_kinetic",
     "primitive_magnetic_kinetic",
     "primitive_moment",

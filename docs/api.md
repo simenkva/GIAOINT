@@ -3,16 +3,16 @@
 The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 
-The primitive, shell, basis, magnetic-field, overlap, moment, gradient,
-momentum, canonical-kinetic, and magnetic-kinetic portions documented below
-are implemented through Milestone 4. Electron-repulsion and batch-consumer
-interfaces remain planned for their stated later milestones.
+The primitive, shell, basis, magnetic-field, one-electron, electron-repulsion,
+and batch-consumer interfaces documented below are implemented through
+Milestone 5.
 
 ## 1. C++ value types
 
-The installed C++ declarations are in `giao_integrals/types.hpp` and
-`giao_integrals/overlap.hpp`. The following condensed declarations describe
-the value-type interface.
+The installed C++ declarations are in `giao_integrals/types.hpp`,
+`giao_integrals/overlap.hpp`, `giao_integrals/boys.hpp`, and
+`giao_integrals/nuclear.hpp`, and `giao_integrals/eri.hpp`. The following
+condensed declarations describe the value-type interface.
 
 ```cpp
 namespace giao {
@@ -103,6 +103,7 @@ namespace giao {
 
 class IntegralWorkspace;
 class NuclearAttractionWorkspace;
+class EriWorkspace;
 
 [[nodiscard]] std::size_t shell_pair_size(
     const Shell& a, const Shell& b) noexcept;
@@ -135,7 +136,7 @@ void compute_eri(
     const Shell& c, const Shell& d,
     const MagneticField& field,
     std::span<Complex> output,
-    IntegralWorkspace& workspace);
+    EriWorkspace& workspace);
 
 }  // namespace giao
 ```
@@ -309,6 +310,12 @@ conservative mode computes requested shell quartets exactly as indexed. A
 symmetry-aware mode may use pair exchange and simultaneous within-pair reversal
 with conjugation, never the real eightfold canonicalization.
 
+Milestone 5 exposes `canonicalize_shell_quartet` for that exact four-member
+orbit. `compute_eri_tensor` and the default Python iterator schedule one
+canonical representative and expand only those identities. Explicit quartet
+lists passed to the C++ consumer or Python iterator are evaluated exactly as
+requested.
+
 ## 4. Python data model
 
 ```python
@@ -471,6 +478,7 @@ def eri(
     field: MagneticField | None = None,
     storage: str = "blocks",
     max_bytes: int | None = None,
+    target_bytes: int = 64 * 1024**2,
 ): ...
 
 def eri_batches(
@@ -487,6 +495,10 @@ def eri_batches(
 `max_bytes`. The default `storage="blocks"` returns a batch iterator. Each
 batch contains quartet indices, block offsets and one packed complex buffer,
 which limits Python crossings and supports heterogeneous shell shapes.
+`EriBatch.block(i)` returns a shaped view of its packed buffer. With no
+explicit quartet list, the iterator emits canonical representatives under
+pair exchange and conjugate double reversal; it never assumes a one-pair swap.
+Every requested quartet is evaluated: Milestone 5 applies no screening.
 
 The long-term production path is a C++ consumer interface for direct J/K and
 post-Hartree-Fock contractions. Python callbacks are an expert convenience,

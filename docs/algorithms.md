@@ -205,10 +205,11 @@ R^n_{t+1,u,v}=-iq_xR^n_{tuv}+X R^{n+1}_{tuv}
 
 with analogous y/z recurrences and seeds
 \(R^n_{000}=e^{-i q\cdot P-q^2/(4p)}(-2p)^nF_n(T)\). When
-\(\operatorname{Re}(T)<0\), the code instead forms \(e^T F_n(T)\) and
-combines \(e^{-T}\) with the London prefactor before exponentiation. The
-driver accumulates nuclei and primitives in input order and reuses all
-recurrence storage after workspace warmup.
+\(\operatorname{Re}(T)<0\), the code instead forms \(e^T F_n(T)\) and uses
+the simplified combined prefactor
+\(e^{-p|P-C|^2-iq\cdot C}\), avoiding subtraction of large field-dependent
+terms. The driver accumulates nuclei and primitives in input order and reuses
+all recurrence storage after workspace warmup.
 
 ## 6. ERI tensor and symmetry handling
 
@@ -219,14 +220,38 @@ within-pair permutations. At finite field it may reuse only
 (ab|cd)=(cd|ab),\qquad (ab|cd)^*=(ba|dc).
 \]
 
-The quartet scheduler will encode those transformations by named operations
-that state whether conjugation is required. It will not encode them as an
-eightfold integer-index canonicalizer inherited from a real engine.
+The quartet scheduler encodes that four-member orbit and reports whether the
+selected representative requires conjugation. It does not use an eightfold
+integer-index canonicalizer inherited from a real engine.
 
 The MD Coulomb auxiliary at finite field depends on derivatives with respect
 to both pair centers. Unlike the zero-field case, the two derivative triples
 cannot be collapsed using a sign and combined index. Scratch-size estimates
 and benchmarks must use the full tensor.
+
+Milestone 5 implements the full six-index derivative recurrence with spherical
+seed
+
+\[
+R^n_{000,000}=e^{-i\mathbf q_1\cdot\mathbf P-i\mathbf q_2\cdot\mathbf Q}
+(-2\rho)^n F_n(T).
+\]
+
+The two pair London damping factors multiply this seed. For
+\(\operatorname{Re}(T)<0\), production instead contracts scaled
+\(e^T F_n(T)\) with the algebraically combined exponent
+
+\[
+-\rho|\mathbf P-\mathbf Q|^2
+-\frac{|\mathbf q_1+\mathbf q_2|^2}{4(p+s)}
+-i(\mathbf q_1+\mathbf q_2)\cdot
+  \frac{p\mathbf P+s\mathbf Q}{p+s},
+\]
+
+so individually large factors are never formed. The correctness-first table
+allows combined Cartesian order through 32 and caps an individual auxiliary
+allocation at 4,000,000 complex entries. Larger requested tables fail
+diagnostically rather than allocating without bound.
 
 ## 7. Screening policy
 

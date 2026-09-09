@@ -98,6 +98,22 @@ nuclear-attraction comparisons use an independent 75--100 digit Obara--Saika
 reference through \(L=4\) on each center; contracted blocks are tested through
 p--d.
 
+The optional external gate is implemented as
+`tests/external/pyscf_zero_field.py`. With PySCF 2.8.0/libcint it compares
+normalized Cartesian s, p, and d shells after explicit normalization
+conversion; observed maximum overlap and nuclear-attraction errors are
+\(4.44\times10^{-16}\) and \(3.95\times10^{-14}\). Milestone 5 extends the
+same basis comparison to the full zero-field ERI tensor, with maximum error
+\(1.72\times10^{-14}\).
+
+Finite-field primitive ERIs are compared with an independent 80-digit
+Obara--Saika reference. The exhaustive core covers all 91 distributions of
+combined Cartesian degree zero through two across the four centers and three
+axes; selected cases extend to combined degree 10. Separate tests cover the
+scaled negative-real Boys seed, exact pair exchange and conjugate reversal,
+the invalid one-pair swap, general contraction ordering, warmed workspace
+reuse, and equality of canonical streamed blocks with the guarded full tensor.
+
 ## 4. Tolerance policy
 
 Tests use a mixed condition
@@ -118,6 +134,7 @@ category. Initial targets are:
 | C++ moment/gradient/momentum/kinetic vs direct reference | `2e-13` | `2e-11` | randomized primitives through tested angular momentum |
 | contracted property shell blocks | `1e-12` | `2e-11` | includes derivative and magnetic combinations |
 | complex Boys, representable well-conditioned region | `2e-14` | `5e-13` | per order and region |
+| finite-field primitive ERI vs 80-digit OS reference | `2e-12` | `2e-11` | exhaustive combined degree 0--2, sampled through 10 |
 | finite-difference real-space kinetic quadrature | `1e-8` | `1e-8` | three-step convergence diagnostic, not a production tolerance |
 | other numerical quadrature diagnostics | convergence-based | convergence-based | no loose global fallback |
 | finite-difference derivatives | step-study based | `1e-6` initially | tightened after analytic implementation |

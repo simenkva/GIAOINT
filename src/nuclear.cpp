@@ -71,19 +71,18 @@ Complex NuclearKernel::compute(const PrimitiveGaussian& bra,
                                         maximum_order + 1U),
                      scaling);
 
-    const double q_squared =
-        pair.pair_wave_vector.x * pair.pair_wave_vector.x +
-        pair.pair_wave_vector.y * pair.pair_wave_vector.y +
-        pair.pair_wave_vector.z * pair.pair_wave_vector.z;
-    const double q_dot_p =
-        pair.pair_wave_vector.x * pair.product_center.x +
-        pair.pair_wave_vector.y * pair.product_center.y +
-        pair.pair_wave_vector.z * pair.product_center.z;
     Complex common = pair.london_prefactor;
     if (scaling == BoysScaling::exp_z) {
-        common = std::exp(Complex{-q_squared / (4.0 * pair.exponent),
-                                  -q_dot_p} -
-                          argument);
+        const double dx = pair.product_center.x - nucleus.center.x;
+        const double dy = pair.product_center.y - nucleus.center.y;
+        const double dz = pair.product_center.z - nucleus.center.z;
+        const double q_dot_c =
+            pair.pair_wave_vector.x * nucleus.center.x +
+            pair.pair_wave_vector.y * nucleus.center.y +
+            pair.pair_wave_vector.z * nucleus.center.z;
+        common = std::exp(Complex{-pair.exponent *
+                                      (dx * dx + dy * dy + dz * dz),
+                                  -q_dot_c});
     }
 
     const std::size_t side = maximum_order + 1U;
