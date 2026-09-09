@@ -1,3 +1,5 @@
+#include "giao_integrals/boys.hpp"
+#include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
 #include "giao_integrals/property.hpp"
 #include "giao_integrals/types.hpp"
@@ -224,8 +226,17 @@ py::array basis_array(const giao::Basis& basis, py::object output,
 }  // namespace
 
 PYBIND11_MODULE(_giao_integrals, module) {
-    module.doc() = "C++20 overlap engine for Cartesian GIAO/London Gaussians";
-    module.attr("__version__") = "0.3.0";
+    module.doc() = "C++20 one-electron integrals for Cartesian GIAO/London Gaussians";
+    module.attr("__version__") = "0.4.0";
+
+    py::register_exception<giao::BoysNumericalError>(module,
+                                                      "BoysNumericalError");
+
+    py::enum_<giao::BoysRegion>(module, "BoysRegion")
+        .value("POWER_SERIES", giao::BoysRegion::power_series)
+        .value("ADAPTIVE_QUADRATURE", giao::BoysRegion::adaptive_quadrature)
+        .value("SCALED_QUADRATURE", giao::BoysRegion::scaled_quadrature)
+        .value("POSITIVE_ASYMPTOTIC", giao::BoysRegion::positive_asymptotic);
 
     py::class_<giao::CartesianExponent>(module, "CartesianExponent")
         .def(py::init([](const py::object& values) {
@@ -265,6 +276,18 @@ PYBIND11_MODULE(_giao_integrals, module) {
             const auto value = field.london_wave_vector(
                 vec3_from_python(center, "center"));
             return py::make_tuple(value.x, value.y, value.z);
+        });
+
+    py::class_<giao::Nucleus>(module, "Nucleus")
+        .def(py::init([](double charge, const py::object& center) {
+                 return giao::Nucleus(charge,
+                                      vec3_from_python(center, "center"));
+             }),
+             py::arg("charge"), py::arg("center"))
+        .def_readonly("charge", &giao::Nucleus::charge)
+        .def_property_readonly("center", [](const giao::Nucleus& nucleus) {
+            return py::make_tuple(nucleus.center.x, nucleus.center.y,
+                                  nucleus.center.z);
         });
 
     py::class_<giao::PrimitiveGaussian>(module, "PrimitiveGaussian")
@@ -343,6 +366,49 @@ PYBIND11_MODULE(_giao_integrals, module) {
                });
 
     module.def(
+        "boys",
+        [](giao::Complex argument, std::size_t maximum_order, bool scaled) {
+            py::array_t<giao::Complex> result(maximum_order + 1U);
+            auto* data = result.mutable_data();
+            {
+                py::gil_scoped_release release;
+                [[maybe_unused]] const auto diagnostics = giao::compute_boys(
+                    argument,
+                    std::span<giao::Complex>(data, maximum_order + 1U),
+                    scaled ? giao::BoysScaling::exp_z
+                           : giao::BoysScaling::unscaled);
+            }
+            return result;
+        },
+        py::arg("argument"), py::arg("maximum_order"), py::kw_only(),
+        py::arg("scaled") = false);
+
+    module.def(
+        "boys_with_diagnostics",
+        [](giao::Complex argument, std::size_t maximum_order, bool scaled) {
+            py::array_t<giao::Complex> result(maximum_order + 1U);
+            giao::BoysDiagnostics diagnostics;
+            {
+                py::gil_scoped_release release;
+                diagnostics = giao::compute_boys(
+                    argument,
+                    std::span<giao::Complex>(result.mutable_data(),
+                                             maximum_order + 1U),
+                    scaled ? giao::BoysScaling::exp_z
+                           : giao::BoysScaling::unscaled);
+            }
+            py::dict details;
+            details["region"] = py::cast(diagnostics.region);
+            details["estimated_absolute_error"] =
+                diagnostics.estimated_absolute_error;
+            details["quadrature_segments"] = diagnostics.quadrature_segments;
+            details["scaled"] = scaled;
+            return py::make_tuple(std::move(result), std::move(details));
+        },
+        py::arg("argument"), py::arg("maximum_order"), py::kw_only(),
+        py::arg("scaled") = false);
+
+    module.def(
         "primitive_overlap",
         [](const giao::PrimitiveGaussian& bra,
            const giao::PrimitiveGaussian& ket, const py::object& field) {
@@ -394,6 +460,65 @@ PYBIND11_MODULE(_giao_integrals, module) {
         },
         py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
         py::arg("out") = py::none());
+
+    module.def(
+        "primitive_nuclear_attraction",
+        [](const giao::PrimitiveGaussian& bra,
+           const giao::PrimitiveGaussian& ket,
+           const std::vector<giao::Nucleus>& nuclei,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            py::gil_scoped_release release;
+            return giao::primitive_nuclear_attraction(bra, ket, nuclei,
+                                                       field_value);
+        },
+        py::arg("bra"), py::arg("ket"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
+        "nuclear_attraction_shell",
+        [](const giao::Shell& a, const giao::Shell& b,
+           const std::vector<giao::Nucleus>& nuclei,
+           const py::object& field, py::object output) {
+            py::array result = validate_or_create_output(
+                output, {static_cast<py::ssize_t>(a.ao_count()),
+                         static_cast<py::ssize_t>(b.ao_count())});
+            auto* data = static_cast<giao::Complex*>(result.mutable_data());
+            const auto field_value = field_or_zero(field);
+            {
+                py::gil_scoped_release release;
+                giao::NuclearAttractionWorkspace workspace;
+                giao::compute_nuclear_attraction(
+                    a, b, nuclei, field_value,
+                    std::span<giao::Complex>(data, giao::shell_pair_size(a, b)),
+                    workspace);
+            }
+            return result;
+        },
+        py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "nuclear_attraction",
+        [](const giao::Basis& basis,
+           const std::vector<giao::Nucleus>& nuclei,
+           const py::object& field, py::object output) {
+            const auto count = basis.ao_count();
+            py::array result = validate_or_create_output(
+                output, {static_cast<py::ssize_t>(count),
+                         static_cast<py::ssize_t>(count)});
+            auto* data = static_cast<giao::Complex*>(result.mutable_data());
+            const auto field_value = field_or_zero(field);
+            {
+                py::gil_scoped_release release;
+                giao::compute_nuclear_attraction_matrix(
+                    basis, nuclei, field_value,
+                    std::span<giao::Complex>(data, count * count));
+            }
+            return result;
+        },
+        py::arg("basis"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
 
     module.def(
         "primitive_moment",

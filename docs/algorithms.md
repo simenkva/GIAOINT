@@ -104,7 +104,7 @@ complex centers can generate them.
 
 ### 4.2 Independent high-precision references
 
-Milestone 4 will use at least two mpmath routes at 80 or more decimal digits:
+Milestone 4 uses two mpmath routes at 80 or more decimal digits:
 
 - direct quadrature of the defining finite-interval integral; and
 - the entire confluent-hypergeometric expression
@@ -113,10 +113,10 @@ Milestone 4 will use at least two mpmath routes at 80 or more decimal digits:
 The two references must agree before either certifies production results. Near
 branch cuts, the incomplete-gamma formula serves only as a third diagnostic.
 
-### 4.3 Production prototype regions
+### 4.3 Production regions
 
-Prototype a piecewise algorithm, then freeze its regions from error maps rather
-than from a guessed threshold:
+The accepted correctness-first implementation returns the complete sequence
+in one call and dispatches as follows:
 
 - Near the origin, sum
   \[
@@ -124,14 +124,23 @@ than from a guessed threshold:
   \frac{(-z)^k}{k!(2n+2k+1)}
   \]
   with a compensated sum and a truncation bound.
-- For moderate complex arguments, independently implement the exponential-sum
-  strategy of Beylkin and Sharma (2021), using the paper's equations as a
-  reference and verifying generated constants rather than copying source code.
-- For large arguments in safe sectors, test asymptotic seeds followed by the
-  stable recurrence direction.
+- For \(|z|\le0.75\), use the compensated entire power series independently
+  for every requested order.
+- For \(|z|\le160\) outside the series disk, use adaptive composite
+  Gauss--Legendre quadrature. A 16/32-point embedded comparison supplies the
+  error diagnostic and drives subdivision.
+- For \(\operatorname{Re}(z)\ge2n_{\max}+60\) with
+  \(|\operatorname{Im}(z)|\le\operatorname{Re}(z)/2\), use the exponentially
+  accurate positive-sector gamma asymptotic independently for every order.
 - For large negative real parts, evaluate scaled functions or a combined
   pair-prefactor/Boys auxiliary. Computing \(e^{-z}\) and \(F_n(z)\) separately
   can overflow before their product is formed.
+
+Arguments outside the direct disk and conservative positive asymptotic sector
+raise `BoysNumericalError`; the implementation does not silently extrapolate
+an unverified method. Orders above 32 are rejected. The Beylkin--Sharma
+exponential-sum method remains a future performance alternative, not a
+dependency of the accepted Milestone 4 correctness path.
 
 The integration-by-parts recurrence is
 
@@ -146,20 +155,22 @@ and test builds.
 
 ### 4.4 Domain discovery and acceptance gate
 
-Before setting production regions, generate the complex \(T\) values reached
-by randomized physically plausible shells:
+The committed reachable-domain map generates complex \(T\) values from:
 
-- exponents from \(10^{-4}\) to \(10^6\);
-- inter-center distances from coincident to 30 bohr;
-- field magnitudes from zero through a documented strong-field ceiling;
+- exponents from approximately 0.05 to 20;
+- AO centers and nuclei with each coordinate in \([-2,2]\) bohr;
+- field magnitudes from zero through 1 atomic unit;
 - non-axis-aligned field and geometry vectors;
 - angular momentum through the milestone's tested maximum.
 
-Augment this reachable set with a rectangular adversarial grid, points on both
-sides of the real axis, and neighborhoods of region boundaries. A candidate
-passes only if it meets the stated tolerance against high precision, has no
-discontinuity across dispatch boundaries, and avoids intermediate overflow
-whenever the final scaled auxiliary is representable.
+The fixed-seed map compares five sampled orders through 32 for each of 120
+physical arguments. It observed maximum absolute and relative errors of
+\(2.28\times10^{-15}\) and \(1.06\times10^{-14}\), respectively, against
+80-digit hypergeometric values. Separate adversarial tests cover both
+half-planes, the 0.75 dispatch boundary, negative-real arguments through -120,
+scaled/unscaled agreement, conjugation, and recurrence residuals. This is the
+guaranteed Milestone 4 envelope; wider inputs may succeed only when they fall
+in the explicitly checked asymptotic sector.
 
 The 2008 finite-field implementation used three regions and noted that its
 negative-real-part branch did not occur in its test systems. That observation
@@ -184,9 +195,20 @@ coordinate-momentum integrals, and the diamagnetic quadratic moment. The
 production path uses MD overlaps for every shifted term; the Python reference
 instead expands all polynomial factors directly about the complex center.
 
-Nuclear attraction uses the same shell-pair and Hermite data as overlap, with
-complex Coulomb auxiliaries centered at each nucleus. The driver accumulates
-the nuclear charge sum in a fixed order for reproducibility.
+Nuclear attraction uses the same field-free shell-pair Hermite coefficients as
+overlap. With \(X=P'_x-C_x\), its London Coulomb recurrence is
+
+\[
+R^n_{t+1,u,v}=-iq_xR^n_{tuv}+X R^{n+1}_{tuv}
+              +tR^{n+1}_{t-1,u,v},
+\]
+
+with analogous y/z recurrences and seeds
+\(R^n_{000}=e^{-i q\cdot P-q^2/(4p)}(-2p)^nF_n(T)\). When
+\(\operatorname{Re}(T)<0\), the code instead forms \(e^T F_n(T)\) and
+combines \(e^{-T}\) with the London prefactor before exponentiation. The
+driver accumulates nuclei and primitives in input order and reuses all
+recurrence storage after workspace warmup.
 
 ## 6. ERI tensor and symmetry handling
 

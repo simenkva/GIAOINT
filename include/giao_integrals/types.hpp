@@ -131,6 +131,13 @@ struct MagneticField {
     [[nodiscard]] Vec3 london_wave_vector(Vec3 center) const noexcept;
 };
 
+struct Nucleus {
+    double charge{};
+    Vec3 center{};
+
+    Nucleus(double charge_in, Vec3 center_in);
+};
+
 [[nodiscard]] double primitive_normalization(
     double exponent, CartesianExponent angular);
 

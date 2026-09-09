@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
@@ -8,6 +9,14 @@ Angular = Sequence[int]
 ComplexArray = npt.NDArray[np.complex128]
 
 __version__: str
+
+class BoysNumericalError(RuntimeError): ...
+
+class BoysRegion(Enum):
+    POWER_SERIES: BoysRegion
+    ADAPTIVE_QUADRATURE: BoysRegion
+    SCALED_QUADRATURE: BoysRegion
+    POSITIVE_ASYMPTOTIC: BoysRegion
 
 class CartesianExponent:
     def __init__(self, values: Angular) -> None: ...
@@ -32,6 +41,12 @@ class MagneticField:
     @property
     def gauge_origin(self) -> tuple[float, float, float]: ...
     def london_wave_vector(self, center: Real3) -> tuple[float, float, float]: ...
+
+class Nucleus:
+    def __init__(self, charge: float, center: Real3) -> None: ...
+    charge: float
+    @property
+    def center(self) -> tuple[float, float, float]: ...
 
 class PrimitiveGaussian:
     def __init__(
@@ -88,6 +103,12 @@ def cartesian_components(
     total_angular_momentum: int,
 ) -> tuple[tuple[int, int, int], ...]: ...
 def primitive_normalization(exponent: float, angular: Angular) -> float: ...
+def boys(
+    argument: complex, maximum_order: int, *, scaled: bool = False
+) -> ComplexArray: ...
+def boys_with_diagnostics(
+    argument: complex, maximum_order: int, *, scaled: bool = False
+) -> tuple[ComplexArray, dict[str, object]]: ...
 def primitive_overlap(
     bra: PrimitiveGaussian,
     ket: PrimitiveGaussian,
@@ -125,6 +146,13 @@ def primitive_kinetic(
 def primitive_magnetic_kinetic(
     bra: PrimitiveGaussian,
     ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> complex: ...
+def primitive_nuclear_attraction(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    nuclei: Sequence[Nucleus],
     *,
     field: MagneticField | None = None,
 ) -> complex: ...
@@ -174,6 +202,14 @@ def magnetic_kinetic_shell(
     field: MagneticField | None = None,
     out: ComplexArray | None = None,
 ) -> ComplexArray: ...
+def nuclear_attraction_shell(
+    a: Shell,
+    b: Shell,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
 def overlap(
     basis: Basis,
     *,
@@ -210,6 +246,13 @@ def kinetic(
 ) -> ComplexArray: ...
 def magnetic_kinetic(
     basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def nuclear_attraction(
+    basis: Basis,
+    nuclei: Sequence[Nucleus],
     *,
     field: MagneticField | None = None,
     out: ComplexArray | None = None,

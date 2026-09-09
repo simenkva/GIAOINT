@@ -151,6 +151,18 @@ because PySCF, libcint, and Libint are not installed.
   errors. If no prototype meets the target, the milestone remains open rather
   than relaxing tolerances.
 
+The exit gate passed with two 80--100 digit reference definitions, production
+region diagnostics and scaled/unscaled tests through order 32, a reproducible
+120-point reachable-argument map, and adversarial complex-plane cases. The
+physical map's observed maximum absolute and relative errors were
+\(2.28\times10^{-15}\) and \(1.06\times10^{-14}\). Nuclear attraction uses
+the London MD auxiliary recurrence and a cancellation-safe scaled seed; an
+independent Obara--Saika oracle validates randomized primitives through
+\(L=4\) per center and contracted p--d blocks. Analytic s-s, negative-real,
+Hermiticity, zero-field, gauge-origin, validation, output-buffer, and warmed
+allocation tests pass. PySCF, libcint, and Libint were not installed, so the
+optional external-engine zero-field comparison remains unavailable.
+
 ## Milestone 5: four-center ERIs
 
 ### Scope

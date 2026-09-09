@@ -89,6 +89,15 @@ Tests check values, recurrence residuals, conjugation
 agreement when both are representable. High-precision direct integration and
 hypergeometric evaluation must first agree with one another.
 
+Milestone 4 implements this matrix through order 32. The fixed-seed physical
+map uses exponents approximately 0.05--20, coordinates in \([-2,2]\) bohr,
+and field magnitudes through 1 atomic unit. Its 600 sampled comparisons
+observed \(2.28\times10^{-15}\) maximum absolute error and
+\(1.06\times10^{-14}\) maximum relative error. Primitive
+nuclear-attraction comparisons use an independent 75--100 digit Obara--Saika
+reference through \(L=4\) on each center; contracted blocks are tested through
+p--d.
+
 ## 4. Tolerance policy
 
 Tests use a mixed condition

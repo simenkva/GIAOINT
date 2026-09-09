@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.3.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.4.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -10,6 +10,9 @@ option(GIAO_BUILD_BENCHMARKS "Build the overlap benchmark" OFF)
 option(GIAO_ENABLE_SANITIZERS "Enable address and undefined-behavior sanitizers" OFF)
 
 add_library(giao_integrals_core
+    src/boys.cpp
+    src/hermite.cpp
+    src/nuclear.cpp
     src/overlap.cpp
     src/property.cpp
     src/types.cpp

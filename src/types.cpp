@@ -185,4 +185,12 @@ Vec3 MagneticField::london_wave_vector(Vec3 center) const noexcept {
                 0.5 * (B.x * displacement.y - B.y * displacement.x)};
 }
 
+Nucleus::Nucleus(double charge_in, Vec3 center_in)
+    : charge(charge_in), center(center_in) {
+    if (!std::isfinite(charge) || charge <= 0.0) {
+        throw std::invalid_argument("nuclear charge must be finite and positive");
+    }
+    validate_finite(center, "nuclear center");
+}
+
 }  // namespace giao

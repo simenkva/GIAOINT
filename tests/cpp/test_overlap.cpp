@@ -1,3 +1,5 @@
+#include "giao_integrals/boys.hpp"
+#include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
 #include "giao_integrals/property.hpp"
 
@@ -247,6 +249,66 @@ void test_one_electron_properties() {
                 "magnetic kinetic Hermiticity", 8.0e-13);
 }
 
+void test_boys_and_nuclear_attraction() {
+    const auto at_zero = giao::boys_values({0.0, 0.0}, 8);
+    for (std::size_t order = 0; order < at_zero.size(); ++order) {
+        check_close(at_zero[order],
+                    {1.0 / static_cast<double>(2U * order + 1U), 0.0},
+                    "Boys value at zero", 2.0e-14);
+    }
+
+    const giao::Complex argument{-3.0, 2.0};
+    const auto values = giao::boys_values(argument, 12);
+    for (std::size_t order = 0; order < 12; ++order) {
+        const auto residual =
+            static_cast<double>(2U * order + 1U) * values[order] -
+            std::exp(-argument) - 2.0 * argument * values[order + 1U];
+        check(std::abs(residual) < 2.0e-12,
+              "complex Boys recurrence residual");
+    }
+
+    const giao::PrimitiveGaussian bra(0.7, {-0.4, 0.2, 0.8});
+    const giao::PrimitiveGaussian ket(1.3, {0.8, -0.5, 0.1});
+    const giao::Nucleus nucleus(2.0, {0.1, -0.2, 0.3});
+    const giao::MagneticField field({0.3, -0.2, 0.5}, {0.2, -0.1, 0.4});
+    const std::array<giao::Nucleus, 1> nuclei{nucleus};
+    const auto pair = giao::gaussian_product(bra, ket, field);
+    const std::array<giao::Complex, 3> displacement{
+        pair.complex_center[0] - nucleus.center.x,
+        pair.complex_center[1] - nucleus.center.y,
+        pair.complex_center[2] - nucleus.center.z};
+    const auto boys_argument =
+        pair.exponent * (displacement[0] * displacement[0] +
+                         displacement[1] * displacement[1] +
+                         displacement[2] * displacement[2]);
+    const auto f0 = giao::boys_values(boys_argument, 0)[0];
+    const auto expected =
+        -nucleus.charge * (2.0 * std::numbers::pi / pair.exponent) *
+        pair.prefactor() * giao::primitive_normalization(bra.exponent, {}) *
+        giao::primitive_normalization(ket.exponent, {}) * f0;
+    check_close(giao::primitive_nuclear_attraction(bra, ket, nuclei, field),
+                expected, "analytic finite-field ss nuclear attraction",
+                2.0e-13);
+
+    const giao::PrimitiveGaussian higher(0.9, {-0.2, 0.5, 0.1}, {2, 1, 1});
+    check_close(
+        giao::primitive_nuclear_attraction(higher, ket, nuclei, field),
+        std::conj(
+            giao::primitive_nuclear_attraction(ket, higher, nuclei, field)),
+        "nuclear-attraction Hermiticity", 8.0e-12);
+
+    const giao::Shell shell({0.1, -0.3, 0.2}, 2, {1.8, 0.5}, {0.3, 0.8});
+    std::vector<giao::Complex> block(giao::shell_pair_size(shell, shell));
+    giao::NuclearAttractionWorkspace workspace;
+    giao::compute_nuclear_attraction(shell, shell, nuclei, field, block,
+                                     workspace);
+    const auto allocations_before_reuse = allocation_count;
+    giao::compute_nuclear_attraction(shell, shell, nuclei, field, block,
+                                     workspace);
+    check(allocation_count == allocations_before_reuse,
+          "warmed nuclear-attraction shell kernel performs no heap allocations");
+}
+
 }  // namespace
 
 int main() {
@@ -257,6 +319,7 @@ int main() {
     test_shell_and_basis();
     test_validation();
     test_one_electron_properties();
+    test_boys_and_nuclear_attraction();
     if (failures != 0) {
         std::cerr << failures << " test checks failed\n";
         return 1;

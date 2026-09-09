@@ -1,12 +1,17 @@
-"""Production overlap integrals for Cartesian GIAO/London Gaussians."""
+"""Production one-electron integrals for Cartesian GIAO/London Gaussians."""
 
 from ._giao_integrals import (
     Basis,
+    BoysNumericalError,
+    BoysRegion,
     CartesianExponent,
     MagneticField,
+    Nucleus,
     PrimitiveGaussian,
     Shell,
     __version__,
+    boys,
+    boys_with_diagnostics,
     cartesian_components,
     gradient,
     gradient_shell,
@@ -18,6 +23,8 @@ from ._giao_integrals import (
     moment_shell,
     momentum,
     momentum_shell,
+    nuclear_attraction,
+    nuclear_attraction_shell,
     overlap,
     overlap_shell,
     primitive_gradient,
@@ -26,16 +33,22 @@ from ._giao_integrals import (
     primitive_moment,
     primitive_momentum,
     primitive_normalization,
+    primitive_nuclear_attraction,
     primitive_overlap,
 )
 
 __all__ = [
     "Basis",
+    "BoysNumericalError",
+    "BoysRegion",
     "CartesianExponent",
     "MagneticField",
+    "Nucleus",
     "PrimitiveGaussian",
     "Shell",
     "__version__",
+    "boys",
+    "boys_with_diagnostics",
     "cartesian_components",
     "gradient",
     "gradient_shell",
@@ -47,6 +60,8 @@ __all__ = [
     "moment_shell",
     "momentum",
     "momentum_shell",
+    "nuclear_attraction",
+    "nuclear_attraction_shell",
     "overlap",
     "overlap_shell",
     "primitive_gradient",
@@ -54,6 +69,7 @@ __all__ = [
     "primitive_magnetic_kinetic",
     "primitive_moment",
     "primitive_momentum",
+    "primitive_nuclear_attraction",
     "primitive_normalization",
     "primitive_overlap",
 ]

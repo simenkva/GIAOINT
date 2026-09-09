@@ -5,7 +5,7 @@ pair loops, and complex-center machinery remain private.
 
 The primitive, shell, basis, magnetic-field, overlap, moment, gradient,
 momentum, canonical-kinetic, and magnetic-kinetic portions documented below
-are implemented through Milestone 3. Coulomb, ERI, and batch-consumer
+are implemented through Milestone 4. Electron-repulsion and batch-consumer
 interfaces remain planned for their stated later milestones.
 
 ## 1. C++ value types
@@ -102,6 +102,7 @@ centers, angular momentum, and exponents for each Cartesian component.
 namespace giao {
 
 class IntegralWorkspace;
+class NuclearAttractionWorkspace;
 
 [[nodiscard]] std::size_t shell_pair_size(
     const Shell& a, const Shell& b) noexcept;
@@ -127,7 +128,7 @@ void compute_nuclear_attraction(
     std::span<const Nucleus> nuclei,
     const MagneticField& field,
     std::span<Complex> output,
-    IntegralWorkspace& workspace);
+    NuclearAttractionWorkspace& workspace);
 
 void compute_eri(
     const Shell& a, const Shell& b,
@@ -209,6 +210,36 @@ is the canonical operator \(-\tfrac12\nabla^2\) over field-dependent GIAOs;
 compute_magnetic_kinetic is the physical
 \(\tfrac12(\mathbf p+\mathbf A_{\mathbf O})^2\) combination.
 
+### 2.2 Complex Boys API
+
+The installed `giao_integrals/boys.hpp` exposes sequence evaluation without
+requiring the nuclear-attraction driver:
+
+```cpp
+enum class BoysScaling { unscaled, exp_z };
+enum class BoysRegion {
+    power_series,
+    adaptive_quadrature,
+    scaled_quadrature,
+    positive_asymptotic,
+};
+
+struct BoysDiagnostics {
+    BoysRegion region;
+    BoysScaling scaling;
+    double estimated_absolute_error;
+    std::size_t quadrature_segments;
+};
+
+BoysDiagnostics compute_boys(
+    Complex argument, std::span<Complex> values,
+    BoysScaling scaling = BoysScaling::unscaled);
+```
+
+The span length selects orders zero through `values.size() - 1`. An empty span,
+non-finite argument, or order above 32 is invalid. A finite but unsupported
+argument or a failed convergence check raises `BoysNumericalError`.
+
 ## 3. Basis drivers and ERI consumption
 
 ```cpp
@@ -253,6 +284,10 @@ void compute_kinetic_matrix(
 void compute_magnetic_kinetic_matrix(
     const Basis& basis, const MagneticField& field,
     std::span<Complex> output);
+
+void compute_nuclear_attraction_matrix(
+    const Basis& basis, std::span<const Nucleus> nuclei,
+    const MagneticField& field, std::span<Complex> output);
 
 void for_each_eri_shell_quartet(
     const Basis& basis,
@@ -309,6 +344,26 @@ class Nucleus:
     def __init__(self, charge: float, center: npt.ArrayLike) -> None: ...
 ```
 
+`Nucleus` requires a finite positive charge. The attraction functions include
+both that charge and the electronic minus sign.
+
+The special-function API is:
+
+```python
+def boys(
+    argument: complex, maximum_order: int, *, scaled: bool = False
+) -> npt.NDArray[np.complex128]: ...
+
+def boys_with_diagnostics(
+    argument: complex, maximum_order: int, *, scaled: bool = False
+) -> tuple[npt.NDArray[np.complex128], dict[str, object]]: ...
+```
+
+`scaled=True` returns \(e^zF_n(z)\). Diagnostics report the selected
+`BoysRegion`, an absolute error estimate, and the number of composite
+quadrature segments. Orders 0--32 are supported; unsupported complex sectors
+raise `BoysNumericalError`.
+
 A one-dimensional coefficient array denotes one contraction. A two-dimensional
 array has shape `(n_contraction, n_primitive)`. Constructors copy and validate
 small metadata arrays; integral results are ordinary NumPy arrays.
@@ -332,6 +387,15 @@ def kinetic(
 
 def nuclear_attraction(
     basis: Basis,
+    nuclei: list[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    out: npt.NDArray[np.complex128] | None = None,
+) -> npt.NDArray[np.complex128]: ...
+
+def nuclear_attraction_shell(
+    a: Shell,
+    b: Shell,
     nuclei: list[Nucleus],
     *,
     field: MagneticField | None = None,
@@ -432,9 +496,9 @@ not the inner-loop architecture.
 
 Invalid model data raise `std::invalid_argument` in C++ and `ValueError` in
 Python. Size mismatches raise `std::length_error` and `ValueError`. Numerical
-special-function failures raise a typed C++ exception carrying the order,
-argument, algorithm region, and error estimate; Python maps it to
-`NumericalError`.
+special-function domain or convergence failures raise `BoysNumericalError` in
+both C++ and Python. Successful calls expose their region and estimated error
+through `BoysDiagnostics` or `boys_with_diagnostics`.
 
 Serial drivers accumulate primitives and nuclei in input order. Parallel
 drivers document their reduction order and offer a deterministic mode when

@@ -1,6 +1,6 @@
 # Pure-Python reference engine
 
-`giao_reference` implements overlap and Milestone 3 one-electron property
+`giao_reference` implements overlap and Milestone 3/4 one-electron property
 integrals over Cartesian London orbitals. The code mirrors the complex-center
 derivation in the mathematical specification and favors direct formulas over
 recurrence speed. It does not import the C++ extension.
@@ -21,6 +21,10 @@ quadrature checks.
   energy, and physical magnetic kinetic energy;
 - direct polynomial expansion for moments and real-space finite-difference
   quadrature checks for differential operators.
+- dual 80+-digit complex Boys definitions using direct quadrature and the
+  entire confluent-hypergeometric form;
+- nuclear attraction through an independent high-precision Obara--Saika
+  recurrence, distinct from the production McMurchie--Davidson path.
 
 The reference package returns Python complex numbers and nested tuples. NumPy
 arrays belong to the production API introduced with the C++ binding.

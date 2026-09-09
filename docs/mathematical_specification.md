@@ -413,6 +413,38 @@ why evaluating the pair exponentials and \(F_n(T)\) as unrelated floating-point
 numbers can overflow or underflow. Production Coulomb code may need a scaled
 auxiliary that combines them.
 
+For nuclear attraction, define London Coulomb auxiliaries whose spherical
+seeds already contain the pair phase,
+
+\[
+R^n_{000}=e^{-i\mathbf q\cdot\mathbf P-\mathbf q^2/(4p)}
+           (-2p)^nF_n(T),\qquad
+T=p(\mathbf P'-\mathbf C)^2.
+\]
+
+Differentiation with respect to the real product center gives
+
+\[
+R^n_{t+1,u,v}=-iq_xR^n_{tuv}
+ +(P'_x-C_x)R^{n+1}_{tuv}
+ +tR^{n+1}_{t-1,u,v},
+\]
+
+and cyclic y/z analogues. Contracting \(R^0_{tuv}\) with the ordinary,
+field-independent Hermite coefficients yields the Cartesian primitive. This
+is equivalent to differentiating the completed-square expression while
+holding the pair separation, and therefore \(\mathbf q\), fixed.
+
+For \(\operatorname{Re}(T)<0\), use \(G_n(T)=e^T F_n(T)\) and combine the
+exponent as
+
+\[
+e^{-i\mathbf q\cdot\mathbf P-\mathbf q^2/(4p)-T}G_n(T).
+\]
+
+Its real exponent contains the cancellation before floating-point
+exponentiation; in particular, the \(\mathbf q^2/(4p)\) terms cancel exactly.
+
 At zero field, \(\mathbf P'\) and \(\mathbf Q'\) become real and
 \(T=\rho|\mathbf P-\mathbf Q|^2\ge0\), recovering the conventional ERI seed.
 

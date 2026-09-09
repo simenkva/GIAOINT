@@ -39,13 +39,26 @@
 - Independent direct-moment property reference, randomized comparisons,
   analytic cases, symmetry/covariance tests, and real-space finite-difference
   quadrature validation.
+- Milestone 4 dual 80+-digit complex Boys references using defining
+  quadrature and the entire hypergeometric representation.
+- Production Boys sequences through order 32 with compensated series,
+  adaptive embedded quadrature, positive-sector asymptotics, scaled values,
+  dispatch/error diagnostics, and typed numerical failures.
+- Cancellation-safe pairing of scaled Boys values with London damping for
+  negative-real arguments.
+- Complex McMurchie--Davidson nuclear-attraction auxiliaries, arbitrary
+  Cartesian primitive integrals, contracted shell-pair/nucleus drivers, and
+  basis matrices.
+- Independent high-precision Obara--Saika attraction reference, analytic s-s,
+  randomized finite-field, negative-real, Hermiticity, gauge-origin,
+  zero-field, and allocation-reuse tests.
 
 ## Current limitations
 
-- Nuclear-attraction and electron-repulsion integrals are not yet implemented.
+- Electron-repulsion integrals are not yet implemented.
 - The reference engine supports one segmented contraction per shell, while
   the production engine supports one or more contraction rows for overlap and
-  every Milestone 3 operator.
+  every implemented one-electron operator, including nuclear attraction.
 - The double-precision direct-moment formula prioritizes clarity and can lose
   accuracy through cancellation for high angular momentum or extreme input.
 - The production MD one-electron paths are scalar and serial. Shell-pair
@@ -53,8 +66,10 @@
   to Milestone 6.
 - Milestone 3 operators intentionally compose multiple shifted MD overlaps for
   auditability. This repeats pair setup and is not yet performance-tuned.
-- Complex Boys-function production algorithm remains a gated Milestone 4
-  decision after prototypes are tested over the reachable complex domain.
+- Complex Boys orders above 32 and arguments outside either \(|z|\le160\) or
+  the conservative positive asymptotic sector are rejected diagnostically.
+- The correctness-first adaptive Boys quadrature is not yet performance-tuned;
+  an exponential-sum implementation remains a possible Milestone 6 backend.
 - ERI screening bounds with London factors have not been proved or enabled.
 - Cartesian functions only are planned for the initial engine.
 
@@ -66,14 +81,18 @@ randomized double- and 80-digit-reference coverage through 6. Primitive
 normalization is tested for every component through 6. Shell-block comparisons
 include pairs through \(L=5\). Milestone 3 primitive property comparisons are
 randomized through \(L=6\), with contracted property blocks through f-d. The
-implementation has no hard-coded angular-momentum ceiling.
+overlap and Milestone 3 implementations have no hard-coded angular-momentum
+ceiling.
+
+Complex Boys values are tested through order 32. Nuclear attraction is
+randomized against the independent reference through \(L=4\) on each primitive
+center (combined auxiliary order 8), with contracted p--d shell blocks. The
+production attraction path accepts combined order through 32.
 
 ## Known numerical issues
 
-- Complex Boys arguments can have negative real parts.
-- Separating London pair prefactors from Boys values can overflow or lose
-  relative accuracy even when their product is finite.
-- Upward and downward Boys recurrences have different stability regions.
+- Very strong fields can produce negative-real Boys arguments outside the
+  verified direct disk; these fail rather than returning an unmeasured value.
 - High angular momentum and diffuse/tight exponent combinations can amplify
   cancellation in Hermite contractions.
 - Direct complex-center polynomial expansion can suffer catastrophic
@@ -98,6 +117,6 @@ performance-regression tracking and optimization.
 
 ## Next milestone
 
-Milestone 4: implement and map a stable complex Boys-function algorithm, then
-build nuclear-attraction MD auxiliaries and contracted shell-pair/nucleus
-drivers with analytic, high-precision, and zero-field validation.
+Milestone 5: implement unscreened four-center MD electron-repulsion integrals,
+then add the conservative complex-symmetry shell-quartet scheduler and bounded
+full/streamed Python consumption paths.

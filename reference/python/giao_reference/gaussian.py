@@ -134,6 +134,21 @@ ZERO_FIELD = MagneticField()
 
 
 @dataclass(frozen=True, slots=True)
+class Nucleus:
+    """A positive point nuclear charge in atomic units."""
+
+    charge: float
+    center: Vector3
+
+    def __post_init__(self) -> None:
+        charge = float(self.charge)
+        if not math.isfinite(charge) or charge <= 0.0:
+            raise ValueError("nuclear charge must be finite and positive")
+        object.__setattr__(self, "charge", charge)
+        object.__setattr__(self, "center", _vector3(self.center, "nuclear center"))
+
+
+@dataclass(frozen=True, slots=True)
 class PrimitiveGaussian:
     """One Cartesian primitive, including a scalar prefactor."""
 

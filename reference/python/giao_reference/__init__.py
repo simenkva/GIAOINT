@@ -4,9 +4,11 @@ This package favors direct formulas and independent checks over speed. It does
 not import the production C++ extension.
 """
 
+from .boys import boys_hypergeometric, boys_quadrature, boys_values
 from .gaussian import (
     AngularMomentum,
     MagneticField,
+    Nucleus,
     PrimitiveGaussian,
     Shell,
     Vector3,
@@ -14,6 +16,11 @@ from .gaussian import (
     double_factorial,
     gaussian_value,
     primitive_normalization,
+)
+from .nuclear import (
+    contracted_component_nuclear_attraction,
+    primitive_nuclear_attraction,
+    shell_nuclear_attraction,
 )
 from .overlap import (
     GaussianPair,
@@ -41,16 +48,22 @@ __all__ = [
     "AngularMomentum",
     "GaussianPair",
     "MagneticField",
+    "Nucleus",
     "PrimitiveGaussian",
     "Shell",
     "Vector3",
     "cartesian_components",
+    "boys_hypergeometric",
+    "boys_quadrature",
+    "boys_values",
+    "contracted_component_nuclear_attraction",
     "contracted_component_overlap",
     "contraction_normalization",
     "double_factorial",
     "gaussian_product",
     "gaussian_value",
     "primitive_normalization",
+    "primitive_nuclear_attraction",
     "primitive_overlap",
     "primitive_gradient",
     "primitive_kinetic",
@@ -63,5 +76,6 @@ __all__ = [
     "shell_moment",
     "shell_momentum",
     "shell_overlap",
+    "shell_nuclear_attraction",
     "ss_overlap",
 ]
