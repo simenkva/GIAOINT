@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.5.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.6.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
 option(GIAO_BUILD_PYTHON "Build the pybind11 extension" ON)
 option(GIAO_BUILD_TESTS "Build the C++ unit tests" ON)
-option(GIAO_BUILD_BENCHMARKS "Build the overlap benchmark" OFF)
+option(GIAO_BUILD_BENCHMARKS "Build the integral benchmark suite" OFF)
 option(GIAO_ENABLE_SANITIZERS "Enable address and undefined-behavior sanitizers" OFF)
+option(GIAO_ENABLE_OPENMP "Enable OpenMP shell-block parallelism" OFF)
 
 add_library(giao_integrals_core
     src/boys.cpp
@@ -44,6 +45,12 @@ if(GIAO_ENABLE_SANITIZERS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     )
 endif()
 
+if(GIAO_ENABLE_OPENMP)
+    find_package(OpenMP REQUIRED COMPONENTS CXX)
+    target_link_libraries(giao_integrals_core PUBLIC OpenMP::OpenMP_CXX)
+    target_compile_definitions(giao_integrals_core PUBLIC GIAO_HAS_OPENMP=1)
+endif()
+
 if(GIAO_BUILD_PYTHON)
     set(PYBIND11_FINDPYTHON ON)
     find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
@@ -64,6 +71,18 @@ endif()
 if(GIAO_BUILD_BENCHMARKS)
     add_executable(giao_overlap_benchmark benchmarks/overlap_benchmark.cpp)
     target_link_libraries(giao_overlap_benchmark PRIVATE giao_integrals::core)
+    add_executable(giao_integral_benchmark benchmarks/integral_benchmark.cpp)
+    target_link_libraries(giao_integral_benchmark PRIVATE giao_integrals::core)
+    add_executable(giao_eri_backend_benchmark
+        benchmarks/eri_backend_benchmark.cpp)
+    target_link_libraries(giao_eri_backend_benchmark
+        PRIVATE giao_integrals::core)
+    if(GIAO_ENABLE_OPENMP)
+        add_executable(giao_eri_parallel_benchmark
+            benchmarks/eri_parallel_benchmark.cpp)
+        target_link_libraries(giao_eri_parallel_benchmark
+            PRIVATE giao_integrals::core)
+    endif()
 endif()
 
 install(TARGETS giao_integrals_core

@@ -14,6 +14,15 @@ def small_basis():
     )
 
 
+def separated_basis():
+    return gi.Basis(
+        [
+            gi.Shell((0.0, 0.0, 0.0), 0, (0.8,), (1.0,)),
+            gi.Shell((8.0, 0.0, 0.0), 0, (0.8,), (1.0,)),
+        ]
+    )
+
+
 def scatter_batches(basis, batches):
     count = basis.ao_count
     offsets = basis.ao_offsets
@@ -162,3 +171,61 @@ def test_general_contractions_preserve_contraction_major_ao_order():
         np.testing.assert_allclose(
             actual[contractions], expected, atol=4.0e-13, rtol=2.0e-12
         )
+
+
+def test_complex_shell_quartets_obey_cached_schwarz_bounds():
+    basis = small_basis()
+    field = gi.MagneticField((0.3, -0.5, 0.2), (0.1, 0.4, -0.2))
+    bounds = gi.eri_schwarz_bounds(basis, field=field)
+    assert bounds.shape == (2, 2)
+    np.testing.assert_array_equal(bounds, bounds.T)
+    for a, b, c, d in np.ndindex((2, 2, 2, 2)):
+        shells = basis.shells
+        block = gi.eri_shell(shells[a], shells[b], shells[c], shells[d], field=field)
+        assert np.max(np.abs(block)) <= bounds[a, b] * bounds[c, d] * (1.0 + 2.0e-12)
+
+
+def test_screening_converges_monotonically_to_unscreened_tensor():
+    basis = separated_basis()
+    maximum_bytes = 2**4 * np.dtype(np.complex128).itemsize
+    exact = gi.eri(basis, storage="full", max_bytes=maximum_bytes)
+    errors = []
+    for threshold in (2.0, 0.5, 1.0e-8, 0.0):
+        screened = gi.eri(
+            basis,
+            storage="full",
+            max_bytes=maximum_bytes,
+            screening_threshold=threshold,
+        )
+        error = float(np.max(np.abs(screened - exact)))
+        errors.append(error)
+        if threshold > 0.0:
+            assert error <= threshold
+    assert all(
+        left >= right for left, right in zip(errors[:-1], errors[1:], strict=True)
+    )
+    assert errors[-1] == 0.0
+
+    batches = list(
+        gi.eri_batches(basis, screening_threshold=1.0e-8, target_bytes=100_000)
+    )
+    assert sum(batch.requested_count for batch in batches) == 7
+    assert sum(batch.screened_count for batch in batches) > 0
+    assert sum(len(batch.quartets) for batch in batches) < 7
+
+
+@pytest.mark.parametrize("threshold", (-1.0, np.inf, np.nan))
+def test_screening_threshold_validation(threshold):
+    basis = separated_basis()
+    with pytest.raises(ValueError, match="finite and non-negative"):
+        gi.eri(basis, screening_threshold=threshold)
+
+
+def test_thread_count_validation_and_openmp_capability():
+    basis = separated_basis()
+    with pytest.raises(ValueError, match="positive integer"):
+        gi.eri(basis, threads=0)
+    assert gi.openmp_max_threads() >= 1
+    if not gi.openmp_enabled():
+        with pytest.raises(ValueError, match="OpenMP-enabled"):
+            list(gi.eri_batches(basis, threads=2))

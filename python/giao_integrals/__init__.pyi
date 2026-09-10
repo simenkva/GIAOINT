@@ -106,6 +106,8 @@ class EriBatch:
     shapes: npt.NDArray[np.int64]
     offsets: npt.NDArray[np.int64]
     values: ComplexArray
+    requested_count: int
+    screened_count: int
     def block(self, index: int) -> ComplexArray: ...
 
 def primitive_eri(
@@ -131,6 +133,8 @@ def eri_batches(
     field: MagneticField | None = None,
     quartets: Iterable[Sequence[int]] | None = None,
     target_bytes: int = 64 * 1024 * 1024,
+    screening_threshold: float = 0.0,
+    threads: int = 1,
 ) -> Iterator[EriBatch]: ...
 def eri(
     basis: Basis,
@@ -139,7 +143,14 @@ def eri(
     storage: str = "blocks",
     max_bytes: int | None = None,
     target_bytes: int = 64 * 1024 * 1024,
+    screening_threshold: float = 0.0,
+    threads: int = 1,
 ) -> Iterator[EriBatch] | ComplexArray: ...
+def eri_schwarz_bounds(
+    basis: Basis, *, field: MagneticField | None = None
+) -> npt.NDArray[np.float64]: ...
+def openmp_enabled() -> bool: ...
+def openmp_max_threads() -> int: ...
 def cartesian_components(
     total_angular_momentum: int,
 ) -> tuple[tuple[int, int, int], ...]: ...

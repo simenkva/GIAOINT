@@ -15,6 +15,7 @@ from ._giao_integrals import (
     MagneticField,
     _eri_batch,
     _eri_full,
+    _EriSchwarzBounds,
 )
 
 Quartet = tuple[int, int, int, int]
@@ -22,7 +23,7 @@ Quartet = tuple[int, int, int, int]
 
 @dataclass(frozen=True)
 class EriBatch:
-    """Packed, unscreened shell-quartet results.
+    """Packed shell-quartet results and screening counts.
 
     ``values[offsets[i]:offsets[i + 1]]`` reshaped to ``shapes[i]`` is the
     C-contiguous block for ``quartets[i]``.
@@ -32,6 +33,8 @@ class EriBatch:
     shapes: npt.NDArray[np.int64]
     offsets: npt.NDArray[np.int64]
     values: npt.NDArray[np.complex128]
+    requested_count: int = 0
+    screened_count: int = 0
 
     def block(self, index: int) -> npt.NDArray[np.complex128]:
         """Return one shell-quartet block as a shaped view."""
@@ -77,12 +80,14 @@ def eri_batches(
     field: MagneticField | None = None,
     quartets: Iterable[Sequence[int]] | None = None,
     target_bytes: int = 64 * 1024 * 1024,
+    screening_threshold: float = 0.0,
+    threads: int = 1,
 ) -> Iterator[EriBatch]:
     """Yield packed shell-quartet batches without allocating an AO tensor.
 
     With no explicit ``quartets``, only canonical representatives under the
-    exact finite-field ERI symmetries are emitted. No numerical screening is
-    applied.
+    exact finite-field ERI symmetries are emitted. Screening is disabled when
+    ``screening_threshold`` is zero, which is the default.
     """
 
     if isinstance(target_bytes, (bool, np.bool_)) or not isinstance(
@@ -91,20 +96,39 @@ def eri_batches(
         raise ValueError("target_bytes must be a positive integer")
     if target_bytes <= 0:
         raise ValueError("target_bytes must be a positive integer")
+    screening_threshold = float(screening_threshold)
+    if not np.isfinite(screening_threshold) or screening_threshold < 0.0:
+        raise ValueError("screening_threshold must be finite and non-negative")
+    if isinstance(threads, (bool, np.bool_)) or not isinstance(
+        threads, (int, np.integer)
+    ):
+        raise ValueError("threads must be a positive integer")
+    if threads <= 0:
+        raise ValueError("threads must be a positive integer")
 
     shells = basis.shells
+    bounds = (
+        _EriSchwarzBounds(basis, field=field) if screening_threshold > 0.0 else None
+    )
     packed_quartets: list[Quartet] = []
     packed_bytes = 0
 
     def emit() -> EriBatch:
-        quartet_array, shapes, offsets, values = _eri_batch(
-            basis, packed_quartets, field=field
+        quartet_array, shapes, offsets, values, requested, screened = _eri_batch(
+            basis,
+            packed_quartets,
+            field=field,
+            screening_threshold=screening_threshold,
+            threads=int(threads),
+            bounds=bounds,
         )
         return EriBatch(
             np.asarray(quartet_array, dtype=np.uint32),
             np.asarray(shapes, dtype=np.int64),
             np.asarray(offsets, dtype=np.int64),
             np.asarray(values, dtype=np.complex128),
+            int(requested),
+            int(screened),
         )
 
     for quartet in _checked_quartets(len(shells), quartets):
@@ -130,13 +154,30 @@ def eri(
     storage: str = "blocks",
     max_bytes: int | None = None,
     target_bytes: int = 64 * 1024 * 1024,
+    screening_threshold: float = 0.0,
+    threads: int = 1,
 ) -> Iterator[EriBatch] | npt.NDArray[np.complex128]:
     """Compute ERIs as streamed blocks or an explicitly guarded full tensor."""
 
+    screening_threshold = float(screening_threshold)
+    if not np.isfinite(screening_threshold) or screening_threshold < 0.0:
+        raise ValueError("screening_threshold must be finite and non-negative")
+    if isinstance(threads, (bool, np.bool_)) or not isinstance(
+        threads, (int, np.integer)
+    ):
+        raise ValueError("threads must be a positive integer")
+    if threads <= 0:
+        raise ValueError("threads must be a positive integer")
     if storage == "blocks":
         if max_bytes is not None:
             raise ValueError("max_bytes is only valid with storage='full'")
-        return eri_batches(basis, field=field, target_bytes=target_bytes)
+        return eri_batches(
+            basis,
+            field=field,
+            target_bytes=target_bytes,
+            screening_threshold=screening_threshold,
+            threads=int(threads),
+        )
     if storage != "full":
         raise ValueError("storage must be 'blocks' or 'full'")
     if max_bytes is None:
@@ -154,4 +195,20 @@ def eri(
             f"full ERI tensor requires {required} bytes, "
             f"exceeding max_bytes={max_bytes}"
         )
-    return np.asarray(_eri_full(basis, field=field), dtype=np.complex128)
+    return np.asarray(
+        _eri_full(
+            basis,
+            field=field,
+            screening_threshold=screening_threshold,
+            threads=int(threads),
+        ),
+        dtype=np.complex128,
+    )
+
+
+def eri_schwarz_bounds(
+    basis: Basis, *, field: MagneticField | None = None
+) -> npt.NDArray[np.float64]:
+    """Return the shell-pair Schwarz factors used by ERI screening."""
+
+    return np.asarray(_EriSchwarzBounds(basis, field=field).values, dtype=np.float64)

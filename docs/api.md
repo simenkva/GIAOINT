@@ -259,6 +259,23 @@ struct ShellQuartetBlockView {
     std::span<const Complex> values;
 };
 
+struct EriEvaluationOptions {
+    double screening_threshold;
+    std::size_t thread_count;
+};
+
+struct EriStatistics {
+    std::size_t requested_quartets;
+    std::size_t computed_quartets;
+    std::size_t screened_quartets;
+};
+
+class EriSchwarzBounds {
+public:
+    EriSchwarzBounds(const Basis&, const MagneticField& = {});
+    double operator()(std::size_t a, std::size_t b) const;
+};
+
 using QuartetConsumer = void (*)(
     const ShellQuartetBlockView&, void* user_data);
 
@@ -297,6 +314,15 @@ void for_each_eri_shell_quartet(
     QuartetConsumer consumer,
     void* user_data);
 
+EriStatistics evaluate_eri_shell_quartets(
+    const Basis& basis,
+    std::span<const ShellQuartetIndex> quartets,
+    const MagneticField& field,
+    const EriEvaluationOptions& options,
+    const EriSchwarzBounds* bounds,
+    QuartetConsumer consumer,
+    void* user_data);
+
 }  // namespace giao
 ```
 
@@ -315,6 +341,13 @@ orbit. `compute_eri_tensor` and the default Python iterator schedule one
 canonical representative and expand only those identities. Explicit quartet
 lists passed to the C++ consumer or Python iterator are evaluated exactly as
 requested.
+
+The original `for_each_eri_shell_quartet` is the serial, unscreened
+compatibility entry point. `evaluate_eri_shell_quartets` adds explicit
+screening and thread options and returns counts. Positive screening requires
+bounds built for the same basis and field. `thread_count > 1` requires a build
+configured with `GIAO_ENABLE_OPENMP=ON`; `openmp_enabled()` and
+`openmp_max_threads()` report runtime capability.
 
 ## 4. Python data model
 
@@ -479,6 +512,8 @@ def eri(
     storage: str = "blocks",
     max_bytes: int | None = None,
     target_bytes: int = 64 * 1024**2,
+    screening_threshold: float = 0.0,
+    threads: int = 1,
 ): ...
 
 def eri_batches(
@@ -487,7 +522,13 @@ def eri_batches(
     field: MagneticField | None = None,
     quartets: npt.ArrayLike | None = None,
     target_bytes: int = 64 * 1024**2,
+    screening_threshold: float = 0.0,
+    threads: int = 1,
 ): ...
+
+def eri_schwarz_bounds(
+    basis: Basis, *, field: MagneticField | None = None
+) -> npt.NDArray[np.float64]: ...
 ```
 
 `storage="full"` returns a C-contiguous complex tensor with shape
@@ -499,6 +540,10 @@ which limits Python crossings and supports heterogeneous shell shapes.
 explicit quartet list, the iterator emits canonical representatives under
 pair exchange and conjugate double reversal; it never assumes a one-pair swap.
 Every requested quartet is evaluated: Milestone 5 applies no screening.
+Milestone 6 retains that behavior at the default `screening_threshold=0.0`.
+Positive thresholds use cached complex Schwarz factors. Batches expose
+`requested_count` and `screened_count`; their packed quartet arrays contain
+only computed blocks. `threads` applies within each batch.
 
 The long-term production path is a C++ consumer interface for direct J/K and
 post-Hartree-Fock contractions. Python callbacks are an expert convenience,

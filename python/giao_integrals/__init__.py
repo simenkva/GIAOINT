@@ -26,6 +26,8 @@ from ._giao_integrals import (
     momentum_shell,
     nuclear_attraction,
     nuclear_attraction_shell,
+    openmp_enabled,
+    openmp_max_threads,
     overlap,
     overlap_shell,
     primitive_eri,
@@ -38,7 +40,7 @@ from ._giao_integrals import (
     primitive_nuclear_attraction,
     primitive_overlap,
 )
-from .eri import EriBatch, eri, eri_batches
+from .eri import EriBatch, eri, eri_batches, eri_schwarz_bounds
 
 __all__ = [
     "Basis",
@@ -57,6 +59,7 @@ __all__ = [
     "eri",
     "eri_batches",
     "eri_shell",
+    "eri_schwarz_bounds",
     "gradient",
     "gradient_shell",
     "kinetic",
@@ -71,6 +74,8 @@ __all__ = [
     "nuclear_attraction_shell",
     "overlap",
     "overlap_shell",
+    "openmp_enabled",
+    "openmp_max_threads",
     "primitive_gradient",
     "primitive_eri",
     "primitive_kinetic",

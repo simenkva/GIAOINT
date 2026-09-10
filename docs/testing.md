@@ -114,6 +114,15 @@ scaled negative-real Boys seed, exact pair exchange and conjugate reversal,
 the invalid one-pair swap, general contraction ordering, warmed workspace
 reuse, and equality of canonical streamed blocks with the guarded full tensor.
 
+Milestone 6 checks every finite-field AO block against its cached shell Schwarz
+product, verifies that screening error decreases monotonically to exactly zero
+as the threshold reaches zero, and compares threshold-zero evaluation with the
+Milestone 5 path. Serial and OpenMP builds run the same C++ suite. The OpenMP
+suite also requires input-ordered callbacks and bitwise-equal blocks at one and
+two threads. Python validates screening statistics, option failures, and
+capability reporting. Release benchmark checksums are identical before and
+after the cache and layout changes.
+
 ## 4. Tolerance policy
 
 Tests use a mixed condition
@@ -158,6 +167,8 @@ not a global tolerance increase.
 - Property tests use fixed top-level seeds while recording minimized failing
   examples.
 - Sanitizer jobs exercise extreme shell metadata and workspace growth.
+- OpenMP jobs compare thread-local shell blocks with serial results before any
+  scaling result is accepted.
 
 ## 6. Performance verification
 
@@ -167,9 +178,11 @@ class, primitive counts, contraction counts, field, iteration count, checksum,
 wall time, integrals per second, and shell blocks per second.
 
 Milestone 2 records overlap throughput without a pass/fail threshold.
-Milestone 6 establishes dedicated-runner baselines and flags median regressions
-above a chosen noise-aware threshold. Numerical tests run after every
-optimization; matching a performance baseline never excuses changed values.
+Milestone 6 establishes a stable JSON-lines schema and checked-in reference
+reports. The current reports are informational; a future dedicated runner may
+introduce noise-aware regression thresholds once enough history exists.
+Numerical tests run after every optimization; matching a performance baseline
+never excuses changed values.
 
 ## 7. Milestone gate template
 

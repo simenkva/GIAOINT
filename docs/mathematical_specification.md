@@ -484,6 +484,37 @@ electron exchange and complex conjugation give only
 Swapping one member of a pair has no general symmetry. The conventional real
 eightfold symmetry returns at zero field.
 
+### 8.1 Complex ERI Schwarz bound
+
+Let \(\rho_{ab}(\mathbf r)=\omega_a^*(\mathbf r)\omega_b(\mathbf r)\)
+and equip complex charge distributions with the positive Coulomb inner
+product
+
+\[
+\langle f,g\rangle_C=
+\iint f^*(\mathbf r_1)r_{12}^{-1}g(\mathbf r_2)\,d1\,d2.
+\]
+
+Then \((ab|cd)=\langle\rho_{ba},\rho_{cd}\rangle_C\). Cauchy--Schwarz gives
+
+\[
+|(ab|cd)|\le
+\sqrt{(ab|ba)}\sqrt{(dc|cd)}.
+\]
+
+The two factors are real and non-negative in exact arithmetic. This proof
+does not assume real orbitals: London phases are already contained in the
+complex pair densities. For shells \(A,B\), define
+
+\[
+Q_{AB}=\max_{a\in A,b\in B}\sqrt{|(ab|ba)|}.
+\]
+
+Every AO integral in shell quartet \(ABCD\) is therefore bounded by
+\(Q_{AB}Q_{CD}\). Production screening may omit the complete quartet when
+that product is below an explicit threshold. This is an elementwise integral
+bound, not a bound on an accumulated energy or Fock-matrix error.
+
 ## 9. Translation covariance
 
 Translate every center, nucleus, and gauge origin by the same vector

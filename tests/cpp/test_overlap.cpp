@@ -315,6 +315,17 @@ struct ConsumerState {
     giao::Complex value{};
 };
 
+struct CollectedBlocks {
+    std::vector<giao::ShellQuartetIndex> quartets;
+    std::vector<std::vector<giao::Complex>> values;
+};
+
+void collect_quartet(const giao::ShellQuartetBlockView& block, void* data) {
+    auto& collected = *static_cast<CollectedBlocks*>(data);
+    collected.quartets.push_back(block.shells);
+    collected.values.emplace_back(block.values.begin(), block.values.end());
+}
+
 void capture_quartet(const giao::ShellQuartetBlockView& block, void* data) {
     auto& state = *static_cast<ConsumerState*>(data);
     ++state.count;
@@ -394,6 +405,73 @@ void test_electron_repulsion() {
           "shell-quartet canonicalization records conjugation");
 }
 
+void test_eri_screening_and_parallel_driver() {
+    const giao::Shell near({0.0, 0.0, 0.0}, 0, {0.8}, {1.0});
+    const giao::Shell far({8.0, 0.0, 0.0}, 0, {0.8}, {1.0});
+    const giao::Basis basis({near, far});
+    const giao::MagneticField field({0.1, -0.2, 0.3});
+    const giao::EriSchwarzBounds bounds(basis, field);
+    check(bounds.shell_count() == 2U, "ERI Schwarz shell count");
+    check(std::abs(bounds(0, 1) - bounds(1, 0)) < 1.0e-30,
+          "ERI Schwarz factors are symmetric");
+
+    std::vector<giao::ShellQuartetIndex> quartets;
+    for (std::uint32_t a = 0; a < 2; ++a) {
+        for (std::uint32_t b = 0; b < 2; ++b) {
+            for (std::uint32_t c = 0; c < 2; ++c) {
+                for (std::uint32_t d = 0; d < 2; ++d) {
+                    quartets.push_back({a, b, c, d});
+                    std::array<giao::Complex, 1> value{};
+                    giao::EriWorkspace workspace;
+                    giao::compute_eri(basis.shells()[a], basis.shells()[b],
+                                      basis.shells()[c], basis.shells()[d],
+                                      field, value, workspace);
+                    const double schwarz = bounds(a, b) * bounds(c, d);
+                    check(std::abs(value[0]) <=
+                              schwarz * (1.0 + 2.0e-12) + 1.0e-15,
+                          "complex shell ERI obeys Schwarz bound");
+                }
+            }
+        }
+    }
+
+    CollectedBlocks unscreened;
+    const auto unscreened_statistics = giao::evaluate_eri_shell_quartets(
+        basis, quartets, field, {}, nullptr, collect_quartet, &unscreened);
+    check(unscreened_statistics.requested_quartets == quartets.size() &&
+              unscreened_statistics.computed_quartets == quartets.size() &&
+              unscreened_statistics.screened_quartets == 0U,
+          "zero threshold preserves the unscreened ERI path");
+
+    CollectedBlocks screened;
+    const auto screened_statistics = giao::evaluate_eri_shell_quartets(
+        basis, quartets, field, {1.0e-8, 1U}, &bounds, collect_quartet,
+        &screened);
+    check(screened_statistics.screened_quartets > 0U &&
+              screened_statistics.computed_quartets +
+                      screened_statistics.screened_quartets ==
+                  quartets.size(),
+          "positive threshold screens bounded shell quartets");
+
+    if (giao::openmp_enabled()) {
+        CollectedBlocks parallel;
+        const auto parallel_statistics = giao::evaluate_eri_shell_quartets(
+            basis, quartets, field, {0.0, 2U}, nullptr, collect_quartet,
+            &parallel);
+        check(parallel_statistics.computed_quartets == quartets.size(),
+              "OpenMP ERI driver computes every unscreened quartet");
+        check(parallel.quartets.size() == unscreened.quartets.size(),
+              "OpenMP ERI callback count");
+        for (std::size_t index = 0; index < parallel.values.size(); ++index) {
+            check(parallel.quartets[index].as_array() ==
+                      unscreened.quartets[index].as_array(),
+                  "OpenMP ERI callback ordering is deterministic");
+            check_close(parallel.values[index][0], unscreened.values[index][0],
+                        "OpenMP ERI block is bitwise-path equivalent", 0.0);
+        }
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -406,6 +484,7 @@ int main() {
     test_one_electron_properties();
     test_boys_and_nuclear_attraction();
     test_electron_repulsion();
+    test_eri_screening_and_parallel_driver();
     if (failures != 0) {
         std::cerr << failures << " test checks failed\n";
         return 1;

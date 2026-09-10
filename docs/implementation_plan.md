@@ -216,6 +216,18 @@ wheel-install smoke test.
   ERIs across low and moderate angular momentum;
 - thread-scaling report and allocation profile.
 
+The exit gate passed with cached Boys and pair-Hermite data, generation-tagged
+auxiliary scratch, contiguous pair contraction coefficients, the proved
+complex Coulomb Schwarz screen, and opt-in OpenMP with thread-local workspaces
+and input-ordered callbacks. The JSON-lines suite covers every baseline
+operator at zero and finite field. On the recorded AppleClang arm64 run,
+p--p--p--p ERIs improved by 21.7% at zero field and 29.9% at finite field;
+the 76-quartet OpenMP workload reached 1.84x, 3.64x, and 6.48x on 2, 4, and 8
+threads. A benchmark-only direct OS prototype agreed within
+\(5.6\times10^{-17}\) and was mixed across shell classes, so MD remains the
+production oracle while a contracted HGP prototype remains a future measured
+option.
+
 ## Milestone 7: derivatives
 
 ### Scope
@@ -283,14 +295,12 @@ performance replacement rather than an open correctness dependency.
 1. **License.** Choose a permissive license before accepting external
    contributors or distributing wheels. MIT or BSD-3-Clause fits the intended
    library use.
-2. **First optimized ERI backend.** Decide between direct London OS and HGP only
-   after MD timing identifies the limiting shell classes.
+2. **Next optimized ERI backend.** Milestone 6 found the direct London OS
+   prototype competitive but mixed across its small shell matrix. Decide
+   whether a contracted HGP prototype is worthwhile after broader profiling.
 3. **External oracle in required CI.** PySCF/libcint is convenient for optional
    zero-field validation. Decide whether a pinned external-engine job is
    mandatory or periodic because it increases wheel and CI cost.
-4. **Deterministic parallel default.** Choose whether reproducible summation or
-   maximum OpenMP throughput is the default in Milestone 6; expose the other as
-   an option either way.
 5. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
    support should be accepted only with a maintained CI runner.
 
@@ -301,6 +311,9 @@ performance replacement rather than an open correctness dependency.
 - London phase \(e^{-i\boldsymbol\kappa_A\cdot r}\) with
   \(\boldsymbol\kappa_A=\tfrac12\boldsymbol{\mathcal B}\times(\mathbf A-\mathbf O)\).
 - Cartesian primitives and the stated component order.
+- Deterministic serial execution remains the default. Optional OpenMP uses an
+  explicit thread count, static scheduling, thread-local workspaces, and
+  input-order callback delivery.
 - Input coefficients multiply normalized primitives; contraction
   normalization is explicit.
 - `complex128` throughout the public integral API.

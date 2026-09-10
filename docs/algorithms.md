@@ -18,7 +18,7 @@ the fastest final kernel.
 |---|---|---|---|---|
 | McMurchie-Davidson/Hermite | Direct. Standard field-free Hermite expansion coefficients survive; London dependence moves into Fourier-transformed Hermites and complex Coulomb auxiliaries. | Compact mathematics, arbitrary Cartesian angular momentum, natural moments and derivatives, direct precedent for finite-field London orbitals. | Six-index Coulomb auxiliary tables lose a zero-field dimensional reduction; transforms and temporary storage can cost more than direct Cartesian recurrences. | Initial reference-quality C++ backend and first Coulomb backend. |
 | Obara-Saika (OS) | Valid after complex corrections to product-center terms and complex Boys seeds. | Builds Cartesian integrals directly, avoids an explicit Hermite-to-Cartesian transform, established performance path. | More recurrence branches to audit; field-dependent imaginary shifts make sign errors easy; contraction strategy needs care. | Prototype after the MD ERI oracle passes. |
-| Head-Gordon-Pople (HGP) | Extends OS with recurrence placement that can move work outside contraction loops. | Strong candidate for contracted ERIs and derivatives; known field-free efficiency. | Requires a trusted OS base and recurrence-path planner; complex London symmetry reduces familiar shortcuts. | Candidate optimized backend in Milestone 6. |
+| Head-Gordon-Pople (HGP) | Extends OS with recurrence placement that can move work outside contraction loops. | Strong candidate for contracted ERIs and derivatives; known field-free efficiency. | Requires a trusted OS base and recurrence-path planner; complex London symmetry reduces familiar shortcuts. | The Milestone 6 direct-OS prototype was competitive but mixed; a contracted HGP prototype remains future work. |
 | Rys quadrature | Formally extendable, but roots and weights become complex when the Boys argument is complex. | Efficient at higher angular momentum in conventional engines; separable Cartesian factors. | Complex quadrature-root generation, root ordering, and coalescence introduce a second difficult special-function problem. | Defer until complex-root conditioning is demonstrated. |
 | Direct quadrature/Fourier integration | Useful as an independent low-order check. | Different numerical route, simple to reason about for special cases. | Too slow and difficult to bound for production four-center integrals. | Tests only. |
 
@@ -255,28 +255,44 @@ diagnostically rather than allocating without bound.
 
 ## 7. Screening policy
 
-Milestone 5 initially runs unscreened. Screening enters only after a bound has
-been proved for the modulus of London shell quartets. The real plane-wave
-factor has unit modulus at the AO level, but complex-center rearrangements
-contain damping and potentially growing auxiliaries; bounds must apply to the
-original integral or a cancellation-safe equivalent.
+Milestone 6 implements the Coulomb-space Cauchy--Schwarz bound derived in the
+mathematical specification. `EriSchwarzBounds` caches one symmetric factor per
+shell pair from the positive self-pair integrals. A 64-epsilon multiplicative
+margin and outward `nextafter` protect the floating representation of each
+factor. A quartet is omitted only when `Q_ab * Q_cd < threshold`.
 
-A screening implementation must expose its threshold, preserve the unscreened
-path, and pass monotone-convergence tests as the threshold tightens. The code
-will distinguish rigorous upper bounds from heuristic estimates. Heuristics
-may order work but may not discard quartets.
+Threshold zero bypasses bound construction and is the exact Milestone 5 path.
+The Python default remains zero. Tests verify the bound directly for complex
+quartets and show monotonically decreasing tensor error as the threshold is
+tightened. The threshold bounds each discarded AO integral; users must select
+an application-level threshold appropriate to subsequent contractions.
 
-## 8. Optimization sequence
+## 8. Milestone 6 caching and parallel layout
+
+An `EriWorkspace` now caches Boys sequences by complex argument and order,
+field-free Hermite tables by pair geometry/angular key, and the three-axis
+Hermite products used by the final contraction. Auxiliary readiness uses
+generation tags instead of clearing the full six-index table for every
+Cartesian integral. These caches change neither recurrence nor accumulation
+order.
+
+`evaluate_eri_shell_quartets` validates and screens work serially. With an
+OpenMP-enabled build it then assigns independent shell blocks using static
+scheduling and one workspace per thread. Completed blocks are delivered to
+the consumer serially in input order. Consequently scheduling does not change
+primitive reduction order, serial output is deterministic, and parallel output
+is bitwise identical for the tested workload. Output-block storage is bounded
+by the caller's batch size.
+
+## 9. Optimization sequence
 
 Optimization begins after reference agreement:
 
-1. reuse scratch buffers and precompute shell-pair invariants;
-2. choose contraction loop order from measurements;
-3. reduce temporary table extents and improve contiguous access;
-4. add shell-pair/quartet screening with a validated bound;
-5. compare MD with OS/HGP for representative shell classes;
-6. parallelize independent shell blocks with thread-local scratch;
-7. consider SIMD or generated kernels only when profiles justify them.
+Milestone 6 completed scratch reuse, pair-invariant caches, contiguous
+three-axis contraction coefficients, generation-tagged auxiliary storage,
+Schwarz screening, an OS prototype comparison, and optional block-level
+OpenMP. A direct OS/HGP contracted backend, SIMD/generated kernels, and deeper
+shell-pair data reuse remain measurement-driven follow-ups.
 
 Each change keeps a scalar correctness path and records before/after benchmark
 data with compiler, CPU, field, basis, shell class, and checksum.

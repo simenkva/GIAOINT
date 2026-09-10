@@ -245,7 +245,7 @@ void append_eri_block(const giao::ShellQuartetBlockView& block,
 
 PYBIND11_MODULE(_giao_integrals, module) {
     module.doc() = "C++20 Cartesian GIAO/London Gaussian integrals";
-    module.attr("__version__") = "0.5.0";
+    module.attr("__version__") = "0.6.0";
 
     py::register_exception<giao::BoysNumericalError>(module,
                                                       "BoysNumericalError");
@@ -365,6 +365,24 @@ PYBIND11_MODULE(_giao_integrals, module) {
                 basis.ao_offsets().begin(), basis.ao_offsets().end())));
         })
         .def_property_readonly("ao_count", &giao::Basis::ao_count);
+
+    py::class_<giao::EriSchwarzBounds>(module, "_EriSchwarzBounds")
+        .def(py::init([](const giao::Basis& basis, const py::object& field) {
+                 const auto field_value = field_or_zero(field);
+                 py::gil_scoped_release release;
+                 return giao::EriSchwarzBounds(basis, field_value);
+             }),
+             py::arg("basis"), py::kw_only(), py::arg("field") = py::none())
+        .def("bound", &giao::EriSchwarzBounds::operator())
+        .def_property_readonly("values", [](const giao::EriSchwarzBounds& bounds) {
+            const auto count = bounds.shell_count();
+            py::array_t<double> result(
+                {static_cast<py::ssize_t>(count),
+                 static_cast<py::ssize_t>(count)});
+            std::copy(bounds.values().begin(), bounds.values().end(),
+                      result.mutable_data());
+            return result;
+        });
 
     module.def("cartesian_components", [](const py::object& angular_momentum) {
         const auto values = giao::cartesian_components(
@@ -581,7 +599,8 @@ PYBIND11_MODULE(_giao_integrals, module) {
 
     module.def(
         "_eri_full",
-        [](const giao::Basis& basis, const py::object& field) {
+        [](const giao::Basis& basis, const py::object& field,
+           double screening_threshold, std::size_t threads) {
             const auto count = basis.ao_count();
             py::array_t<giao::Complex> result(
                 {static_cast<py::ssize_t>(count),
@@ -591,31 +610,44 @@ PYBIND11_MODULE(_giao_integrals, module) {
             const auto field_value = field_or_zero(field);
             {
                 py::gil_scoped_release release;
-                giao::compute_eri_tensor(
-                    basis, field_value,
-                    std::span<giao::Complex>(result.mutable_data(),
-                                             result.size()));
+                const std::optional<giao::EriSchwarzBounds> bounds =
+                    screening_threshold > 0.0
+                        ? std::optional<giao::EriSchwarzBounds>(
+                              std::in_place, basis, field_value)
+                        : std::nullopt;
+                [[maybe_unused]] const auto statistics =
+                    giao::compute_eri_tensor(
+                        basis, field_value,
+                        {screening_threshold, threads},
+                        bounds ? &*bounds : nullptr,
+                        std::span<giao::Complex>(result.mutable_data(),
+                                                 result.size()));
             }
             return result;
         },
-        py::arg("basis"), py::kw_only(), py::arg("field") = py::none());
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("screening_threshold") = 0.0, py::arg("threads") = 1U);
 
     module.def(
         "_eri_batch",
         [](const giao::Basis& basis,
            const std::vector<std::array<std::uint32_t, 4>>& quartet_arrays,
-           const py::object& field) {
+           const py::object& field, double screening_threshold,
+           std::size_t threads, const giao::EriSchwarzBounds* bounds) {
             std::vector<giao::ShellQuartetIndex> quartets;
             quartets.reserve(quartet_arrays.size());
             for (const auto& value : quartet_arrays) {
                 quartets.push_back({value[0], value[1], value[2], value[3]});
             }
             PackedEriData packed;
+            giao::EriStatistics statistics;
             const auto field_value = field_or_zero(field);
             {
                 py::gil_scoped_release release;
-                giao::for_each_eri_shell_quartet(
-                    basis, quartets, field_value, append_eri_block, &packed);
+                statistics = giao::evaluate_eri_shell_quartets(
+                    basis, quartets, field_value,
+                    {screening_threshold, threads}, bounds, append_eri_block,
+                    &packed);
             }
             py::array_t<std::uint32_t> quartet_result(
                 {static_cast<py::ssize_t>(packed.quartets.size()),
@@ -647,10 +679,14 @@ PYBIND11_MODULE(_giao_integrals, module) {
             return py::make_tuple(std::move(quartet_result),
                                   std::move(shape_result),
                                   std::move(offset_result),
-                                  std::move(value_result));
+                                  std::move(value_result),
+                                  statistics.requested_quartets,
+                                  statistics.screened_quartets);
         },
         py::arg("basis"), py::arg("quartets"), py::kw_only(),
-        py::arg("field") = py::none());
+        py::arg("field") = py::none(),
+        py::arg("screening_threshold") = 0.0, py::arg("threads") = 1U,
+        py::arg("bounds") = py::none());
 
     module.def(
         "_canonical_shell_quartet",
@@ -663,6 +699,9 @@ PYBIND11_MODULE(_giao_integrals, module) {
                 canonical.conjugate);
         },
         py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"));
+
+    module.def("openmp_enabled", &giao::openmp_enabled);
+    module.def("openmp_max_threads", &giao::openmp_max_threads);
 
     module.def(
         "primitive_moment",

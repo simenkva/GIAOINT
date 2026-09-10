@@ -72,6 +72,20 @@
   clean-wheel installation smoke test.
 - PySCF 2.8.0/libcint zero-field normalized Cartesian s/p/d ERI comparison
   with maximum error \(1.72\times10^{-14}\).
+- Milestone 6 cached Boys sequences and pair Hermite products, contiguous
+  three-axis contraction coefficients, and generation-tagged ERI auxiliary
+  scratch without changing the audited MD recurrence.
+- Proved complex Coulomb-space Schwarz screening with cached shell-pair bounds,
+  an explicit threshold, conservative floating margin, screening statistics,
+  and an exact threshold-zero path.
+- Optional OpenMP shell-quartet evaluation with static scheduling, thread-local
+  workspaces, input-ordered serial callbacks, and runtime capability queries.
+- Reproducible JSON-lines benchmarks for all baseline operators, ERI backend
+  comparison, and thread scaling, with a checked-in AppleClang arm64 report.
+- Benchmark-only direct Cartesian OS prototype agreeing with MD within
+  \(5.6\times10^{-17}\) on representative zero- and finite-field primitives.
+- Version 0.6.0 release and ASan/UBSan/OpenMP C++ builds, 244 Python tests,
+  an OpenMP Python smoke test, and a clean-wheel installation smoke test.
 
 ## Current limitations
 
@@ -80,17 +94,17 @@
   every implemented one-electron operator, including nuclear attraction.
 - The double-precision direct-moment formula prioritizes clarity and can lose
   accuracy through cancellation for high angular momentum or extreme input.
-- The production MD one-electron paths are scalar and serial. Shell-pair
-  caching, screening, parallelism, and tuned/vectorized kernels are deferred
-  to Milestone 6.
+- The production one-electron paths remain scalar and serial; Milestone 6
+  parallelism targets independent ERI shell quartets.
 - Milestone 3 operators intentionally compose multiple shifted MD overlaps for
   auditability. This repeats pair setup and is not yet performance-tuned.
 - Complex Boys orders above 32 and arguments outside either \(|z|\le160\) or
   the conservative positive asymptotic sector are rejected diagnostically.
 - The correctness-first adaptive Boys quadrature is not yet performance-tuned;
-  an exponential-sum implementation remains a possible Milestone 6 backend.
-- ERI screening bounds with London factors have not been proved or enabled.
-- ERIs are correctness-first, scalar, serial, and unscreened. The full
+  an exponential-sum implementation remains a possible future backend.
+- ERIs remain correctness-first and scalar within each shell block. Screening
+  and shell-block OpenMP are opt-in; the default remains unscreened and serial.
+  The full
   six-index auxiliary has a 4,000,000-entry workspace cap; combined Cartesian
   order above 32 is rejected.
 - Cartesian functions only are planned for the initial engine.
@@ -138,12 +152,17 @@ The first release-build overlap baseline is recorded on the development
 machine with AppleClang 21: a finite-field f-f shell pair with 4x4 primitives
 evaluated 20,000 times at approximately 8.2k shell blocks/s and 0.82M
 integrals/s. This is an informational scalar baseline, not a CI threshold.
-No separate Milestone 3 property benchmark is recorded; the shifted-overlap
-composition is deliberately correctness-first. Milestone 6 adds stable
-performance-regression tracking and optimization.
+Milestone 6 adds a JSON-lines release harness for overlap, kinetic, attraction,
+and ERIs at zero and finite field. On the recorded AppleClang 21 arm64 run,
+p--p--p--p ERI throughput improved from 580.4 to 706.6 blocks/s at zero field
+(+21.7%) and from 536.4 to 696.9 blocks/s at finite field (+29.9%). A
+76-quartet finite-field p-shell batch scaled to 1.84x, 3.64x, and 6.48x at 2,
+4, and 8 OpenMP threads. Full conditions and the MD/OS prototype comparison
+are in `benchmarks/results/m6_macos_arm64.md`. These remain informational,
+machine-specific baselines rather than noisy CI thresholds.
 
 ## Next milestone
 
-Milestone 6: establish measured ERI and one-electron performance baselines,
-then add pair caching, contraction-loop tuning, proved screening, and optional
-shell-block parallelism without changing the Milestone 5 unscreened oracle.
+Milestone 7: implement analytic nuclear-coordinate and magnetic-field
+derivatives with separate ordinary-Gaussian and London-phase terms, then
+validate them by multi-step finite differences and symmetry/covariance tests.

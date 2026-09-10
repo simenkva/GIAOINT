@@ -122,5 +122,7 @@ The initial CMake targets will be:
 CI should cover Linux and macOS, GCC and Clang, Python 3.11 through 3.14, and
 Debug/Release builds. Separate jobs will run AddressSanitizer plus
 UndefinedBehaviorSanitizer, Python tests against an installed wheel, and a
-non-failing benchmark report. Performance thresholds become gating only after
-Milestone 6 establishes stable runners.
+non-failing benchmark report. Milestone 6 established stable benchmark
+executables, a JSON-lines schema, and checked-in reference reports. The reports
+remain non-gating until repeated dedicated-runner measurements justify
+noise-aware thresholds.
