@@ -287,6 +287,37 @@ ordering, shapes, and exception categories. Release notes and `STATUS.md`
 record the tested numerical domain and limitations. Spherical functions remain
 an explicitly separate, unimplemented transformation layer.
 
+## Milestone 9: ERI performance
+
+Status: planned, not started. See `docs/eri_performance_plan.md` for the
+detailed plan, measured baseline, and staged rollout.
+
+### Scope
+
+- profile the ERI path before optimizing it (see the detailed plan for
+  method and results);
+- rewrite the six-index R-tensor recursion in `src/eri.cpp` from
+  recursive/memoized to iterative bottom-up, with no formula change;
+- add a collapsed real-arithmetic fast path for exact zero field, using the
+  standard MD sign-collapse identity that finite field's two independent
+  derivative triples cannot use;
+- hoist per-quartet-invariant `gaussian_product` calls out of the
+  per-Cartesian-component loop;
+- document, and decide whether to change, the screening/threading defaults
+  once per-quartet cost drops.
+
+### Tests and exit gate
+
+- every existing ERI correctness test (Obara-Saika oracle, symmetry,
+  Hermiticity, zero-field, gauge-origin, PySCF/libcint comparison, sanitizer
+  builds) passes unchanged after each phase;
+- randomized iterative-vs-recursive and fast-path-vs-general-path equality
+  tests before either replaces a prior path as the only implementation;
+- before/after JSON-lines benchmarks on the development machine, recorded
+  with compiler/CPU/thread-count provenance;
+- any Python default change is recorded in `docs/compatibility.md` and
+  `CHANGELOG.md`, not made silently.
+
 ## Highest-risk issues
 
 | Risk | Failure mode | Planned control |
@@ -314,13 +345,10 @@ Milestone 4 resolved the initial Boys questions: the guaranteed direct disk is
 series/quadrature/asymptotic dispatcher. Beylkin--Sharma remains an optional
 performance replacement rather than an open correctness dependency.
 
-1. **Next optimized ERI backend.** Milestone 6 found the direct London OS
-   prototype competitive but mixed across its small shell matrix. Decide
-   whether a contracted HGP prototype is worthwhile after broader profiling.
-2. **External oracle in required CI.** PySCF/libcint is convenient for optional
+1. **External oracle in required CI.** PySCF/libcint is convenient for optional
    zero-field validation. Decide whether a pinned external-engine job is
    mandatory or periodic because it increases wheel and CI cost.
-3. **Native Windows support.** Linux and macOS are the initial release matrix.
+2. **Native Windows support.** Linux and macOS are the initial release matrix.
    Windows support should be accepted only with a maintained CI runner.
 
 ## Decisions already resolved
@@ -345,3 +373,11 @@ performance replacement rather than an open correctness dependency.
 - Unscreened ERIs before any complex screening optimization.
 - Streaming/direct ERI consumption as the default architecture.
 - BSD-3-Clause licensing and Linux/macOS as the initial release matrix.
+- Next optimized ERI backend (was an unresolved decision through Milestone 8):
+  stack-sampling profiling of the production MD path (Milestone 9 planning,
+  see `docs/eri_performance_plan.md`) found 99.6% of ERI time inside the
+  six-index R-tensor recursion in `src/eri.cpp`, not in the Boys function or
+  in `gaussian_product`. The decision is to rewrite that recursion
+  iteratively and add a collapsed real-arithmetic zero-field path, not to
+  replace MD with the benchmark-only OS/HGP prototype, which does not
+  address the measured architectural bottleneck.

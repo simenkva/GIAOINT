@@ -140,7 +140,10 @@
   and shell-block OpenMP are opt-in; the default remains unscreened and serial.
   The full
   six-index auxiliary has a 4,000,000-entry workspace cap; combined Cartesian
-  order above 32 is rejected.
+  order above 32 is rejected. Stack-sampling profiling done for Milestone 9
+  planning found 99.6% of ERI wall time inside the six-index recursion in
+  `src/eri.cpp`, not the Boys function; see `docs/eri_performance_plan.md`
+  for the measurement and the planned iterative/zero-field-fast-path rewrite.
 - Derivative shell drivers are correctness-first compositions of shifted
   production kernels. They are serial, do not yet use derivative screening,
   and may repeat primitive setup.
@@ -214,7 +217,9 @@ machine-specific baselines rather than noisy CI thresholds.
 
 ## Next milestone
 
-The planned Milestone 0--8 sequence is complete. Candidate follow-on work is
-measured ERI/derivative optimization, a separately validated spherical
-transformation layer, or preparation of a 1.0 API freeze. Mixed
-nuclear/magnetic derivatives remain deferred.
+The planned Milestone 0--8 sequence is complete. Milestone 9, ERI
+performance, is planned but not started; `docs/eri_performance_plan.md`
+records the profiling baseline, staged rollout, and exit gate. A separately
+validated spherical transformation layer and preparation of a 1.0 API freeze
+remain candidate work after Milestone 9. Mixed nuclear/magnetic derivatives
+remain deferred.

@@ -4,7 +4,8 @@
 atomic-orbital integrals over complex gauge-including atomic orbitals (GIAOs),
 also called London atomic orbitals.
 
-Milestone 8 is complete. The repository contains the mathematical
+Milestone 8 is complete; Milestone 9 (ERI performance) is planned, see
+`docs/eri_performance_plan.md`. The repository contains the mathematical
 specification, independent pure-Python overlap/property references, and a
 production C++20 MD/Hermite engine with a NumPy API. Implemented operators are
 overlap, Cartesian moments, gradient, canonical momentum, canonical kinetic
@@ -55,6 +56,7 @@ Start with:
 - [Current status](STATUS.md)
 - [Compatibility policy](docs/compatibility.md)
 - [Spherical transform design](docs/spherical_transform_design.md)
+- [ERI performance plan](docs/eri_performance_plan.md)
 - [Release checklist](docs/release_checklist.md)
 - [Benchmark suite](benchmarks/README.md)
 - [Pure-Python reference guide](reference/README.md)

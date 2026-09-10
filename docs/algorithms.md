@@ -291,8 +291,27 @@ Optimization begins after reference agreement:
 Milestone 6 completed scratch reuse, pair-invariant caches, contiguous
 three-axis contraction coefficients, generation-tagged auxiliary storage,
 Schwarz screening, an OS prototype comparison, and optional block-level
-OpenMP. A direct OS/HGP contracted backend, SIMD/generated kernels, and deeper
-shell-pair data reuse remain measurement-driven follow-ups.
+OpenMP.
+
+Milestone 9 planning profiled the production path (stack sampling on a
+standalone microbenchmark, `sample` on macOS) instead of guessing the next
+target. The result: 99.6% of ERI wall time is inside the six-index
+Hermite/Boys-derivative recursion in `EriKernel::compute`
+(`src/eri.cpp:242-319`), and its per-quartet cost scales worse with angular
+momentum than the primitive/Cartesian combinatorics alone predict (measured
+rate drops 294x from s-s-s-s to p-p-p-p against an 81x growth in call count,
+then 130x against a 16x growth from p-p-p-p to d-d-d-d). Boys evaluation,
+`gaussian_product`, and Hermite-coefficient construction are each under 1% of
+measured time. Zero field currently costs about the same as finite field
+(6-11% faster, not the 2-4x a real-arithmetic path would give), because the
+recursion is `std::complex<double>` unconditionally regardless of whether the
+imaginary parts are structurally zero. A direct OS/HGP contracted backend
+would not address this: it is a different recurrence for the same six-index
+generality, not a change to the recursion's iteration architecture. See
+`docs/eri_performance_plan.md` for the full measurement and the staged
+rewrite it motivates (iterative bottom-up recursion, then a collapsed
+real-arithmetic zero-field path using the sign-collapse identity this section
+already rules out at finite field).
 
 Each change keeps a scalar correctness path and records before/after benchmark
 data with compiler, CPU, field, basis, shell class, and checksum.
