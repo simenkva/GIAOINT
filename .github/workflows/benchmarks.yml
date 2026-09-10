@@ -1,0 +1,22 @@
+name: Benchmarks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  quick-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: cmake --preset benchmarks
+      - run: cmake --build --preset benchmarks --parallel 2
+      - run: build/presets/benchmarks/giao_integral_benchmark --quick > benchmark.jsonl
+      - uses: actions/upload-artifact@v6
+        with:
+          name: benchmark-${{ github.sha }}
+          path: benchmark.jsonl

@@ -1,14 +1,26 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.7.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.8.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
+
+configure_file(
+    include/giao_integrals/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/giao_integrals/version.hpp
+    @ONLY
+)
 
 option(GIAO_BUILD_PYTHON "Build the pybind11 extension" ON)
 option(GIAO_BUILD_TESTS "Build the C++ unit tests" ON)
 option(GIAO_BUILD_BENCHMARKS "Build the integral benchmark suite" OFF)
 option(GIAO_ENABLE_SANITIZERS "Enable address and undefined-behavior sanitizers" OFF)
 option(GIAO_ENABLE_OPENMP "Enable OpenMP shell-block parallelism" OFF)
+option(GIAO_ENABLE_CLANG_TIDY "Run clang-tidy while compiling" OFF)
+
+if(GIAO_ENABLE_CLANG_TIDY)
+    find_program(GIAO_CLANG_TIDY_EXECUTABLE NAMES clang-tidy REQUIRED)
+    set(CMAKE_CXX_CLANG_TIDY "${GIAO_CLANG_TIDY_EXECUTABLE}")
+endif()
 
 add_library(giao_integrals_core
     src/boys.cpp
@@ -24,6 +36,7 @@ add_library(giao_integrals::core ALIAS giao_integrals_core)
 target_compile_features(giao_integrals_core PUBLIC cxx_std_20)
 target_include_directories(giao_integrals_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
     $<INSTALL_INTERFACE:include>
 )
 set_target_properties(giao_integrals_core PROPERTIES
@@ -93,7 +106,13 @@ install(TARGETS giao_integrals_core
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    PATTERN "*.in" EXCLUDE
+)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/giao_integrals/version.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/giao_integrals
+)
 install(EXPORT giao_integralsTargets
     FILE giao_integralsTargets.cmake
     NAMESPACE giao_integrals::

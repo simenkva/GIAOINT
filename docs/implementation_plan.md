@@ -280,6 +280,13 @@ zero-field agreement with PySCF 2.8.0/libcint.
 - release notes state numerical domain, maximum tested angular momentum,
   performance environment, and remaining limitations.
 
+The exit gate passed in version 0.8.0. Source and binary packaging, native
+presets, examples, and benchmark comparison are exercised by CI and local
+release validation. The compatibility policy freezes units, ownership,
+ordering, shapes, and exception categories. Release notes and `STATUS.md`
+record the tested numerical domain and limitations. Spherical functions remain
+an explicitly separate, unimplemented transformation layer.
+
 ## Highest-risk issues
 
 | Risk | Failure mode | Planned control |
@@ -307,17 +314,14 @@ Milestone 4 resolved the initial Boys questions: the guaranteed direct disk is
 series/quadrature/asymptotic dispatcher. Beylkin--Sharma remains an optional
 performance replacement rather than an open correctness dependency.
 
-1. **License.** Choose a permissive license before accepting external
-   contributors or distributing wheels. MIT or BSD-3-Clause fits the intended
-   library use.
-2. **Next optimized ERI backend.** Milestone 6 found the direct London OS
+1. **Next optimized ERI backend.** Milestone 6 found the direct London OS
    prototype competitive but mixed across its small shell matrix. Decide
    whether a contracted HGP prototype is worthwhile after broader profiling.
-3. **External oracle in required CI.** PySCF/libcint is convenient for optional
+2. **External oracle in required CI.** PySCF/libcint is convenient for optional
    zero-field validation. Decide whether a pinned external-engine job is
    mandatory or periodic because it increases wheel and CI cost.
-5. **Initial platform matrix.** Linux and macOS are proposed. Native Windows
-   support should be accepted only with a maintained CI runner.
+3. **Native Windows support.** Linux and macOS are the initial release matrix.
+   Windows support should be accepted only with a maintained CI runner.
 
 ## Decisions already resolved
 
@@ -340,3 +344,4 @@ performance replacement rather than an open correctness dependency.
 - Independent direct-moment Python overlap reference.
 - Unscreened ERIs before any complex screening optimization.
 - Streaming/direct ERI consumption as the default architecture.
+- BSD-3-Clause licensing and Linux/macOS as the initial release matrix.

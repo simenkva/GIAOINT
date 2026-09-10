@@ -4,7 +4,7 @@
 atomic-orbital integrals over complex gauge-including atomic orbitals (GIAOs),
 also called London atomic orbitals.
 
-Milestone 7 is complete. The repository contains the mathematical
+Milestone 8 is complete. The repository contains the mathematical
 specification, independent pure-Python overlap/property references, and a
 production C++20 MD/Hermite engine with a NumPy API. Implemented operators are
 overlap, Cartesian moments, gradient, canonical momentum, canonical kinetic
@@ -13,7 +13,7 @@ unscreened four-center electron repulsion. The complex Boys implementation
 returns orders 0 through 32 with region and error diagnostics plus a
 cancellation-safe scaled path.
 
-Install a development build and run the tests with:
+Install a development build and run the tests with Python 3.11--3.14:
 
 ```console
 python3 -m venv .venv
@@ -21,6 +21,12 @@ python3 -m venv .venv
 .venv/bin/python -m pip install --no-build-isolation -e .
 .venv/bin/pytest -q
 ```
+
+With the project conda environment, replace the first line with
+`conda activate pyscf` and use `python` in the remaining commands. The C++20
+core can be built independently with `cmake --preset release`,
+`cmake --build --preset release`, and `ctest --preset release`; the presets
+require Ninja.
 
 The public Python data types are `PrimitiveGaussian`, `Shell`, `Basis`,
 `MagneticField`, and `Nucleus`. Each operator has primitive, shell, and
@@ -47,8 +53,14 @@ Start with:
 - [Repository assessment](docs/repository_assessment.md)
 - [References](docs/references.md)
 - [Current status](STATUS.md)
+- [Compatibility policy](docs/compatibility.md)
+- [Spherical transform design](docs/spherical_transform_design.md)
+- [Release checklist](docs/release_checklist.md)
 - [Benchmark suite](benchmarks/README.md)
 - [Pure-Python reference guide](reference/README.md)
+
+Runnable examples are in [`examples/`](examples). The project is distributed
+under the [BSD-3-Clause license](LICENSE).
 
 The original project brief remains in
 [`giao_integrals_codex_master_prompt.md`](giao_integrals_codex_master_prompt.md).

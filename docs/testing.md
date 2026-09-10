@@ -61,6 +61,15 @@ The ordinary Gaussian and London terms are also assembled separately for an
 overlap case and required to be individually nonzero before comparison with
 the combined analytic response.
 
+Milestone 8 adds boundary tests for empty bases and empty nucleus lists,
+explicit derivative shapes at zero size, diagnostic failure at the Coulomb
+angular-order boundary, randomized finite-field conjugation of values and
+responses, executable examples, and malformed/missing benchmark-history data.
+CI runs the full Python suite on CPython 3.11--3.14 under Linux and macOS. A
+separate native matrix covers release and ASan/UBSan builds, while clang-tidy
+provides static-analysis coverage. Optional PySCF/libcint validation remains a
+release check because it is not a runtime dependency.
+
 ## 2. Invariant and covariance tests
 
 Every operator milestone includes:

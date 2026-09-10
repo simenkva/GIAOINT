@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python ${{ matrix.python }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pip install --no-build-isolation -e .
+      - run: python -m pytest -q
+      - run: python -m ruff check python reference tests examples benchmarks/compare_results.py
+      - run: python -m black --check python reference tests examples benchmarks/compare_results.py
+
+  native:
+    name: Native ${{ matrix.preset }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        preset: [release, sanitizers]
+    steps:
+      - uses: actions/checkout@v7
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }} --parallel 2
+      - run: ctest --preset ${{ matrix.preset }}
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo apt-get update && sudo apt-get install -y clang-tidy ninja-build
+      - run: >-
+          cmake -S . -B build/static -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DGIAO_BUILD_PYTHON=OFF
+          -DGIAO_BUILD_TESTS=ON
+          -DGIAO_ENABLE_CLANG_TIDY=ON
+      - run: cmake --build build/static --parallel 2
+
+  openmp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: >-
+          cmake -S . -B build/openmp -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DGIAO_BUILD_PYTHON=OFF
+          -DGIAO_BUILD_TESTS=ON
+          -DGIAO_ENABLE_OPENMP=ON
+      - run: cmake --build build/openmp --parallel 2
+      - run: ctest --test-dir build/openmp --output-on-failure

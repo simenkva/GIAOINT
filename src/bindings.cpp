@@ -5,6 +5,7 @@
 #include "giao_integrals/overlap.hpp"
 #include "giao_integrals/property.hpp"
 #include "giao_integrals/types.hpp"
+#include "giao_integrals/version.hpp"
 
 #include <pybind11/complex.h>
 #include <pybind11/numpy.h>
@@ -269,7 +270,7 @@ void append_eri_block(const giao::ShellQuartetBlockView& block,
 
 PYBIND11_MODULE(_giao_integrals, module) {
     module.doc() = "C++20 Cartesian GIAO/London Gaussian integrals";
-    module.attr("__version__") = "0.7.0";
+    module.attr("__version__") = std::string(giao::version);
 
     py::register_exception<giao::BoysNumericalError>(module,
                                                       "BoysNumericalError");

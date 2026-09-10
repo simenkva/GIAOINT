@@ -1,5 +1,9 @@
 # Repository assessment and proposed layout
 
+This file preserves the Milestone 0 starting assessment and design proposal.
+The implemented layout has since been kept deliberately flatter; see
+`README.md`, `STATUS.md`, and the installed headers for the current project.
+
 ## Assessment on 2026-09-08
 
 The repository contained one file when Milestone 0 began:

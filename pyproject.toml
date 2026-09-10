@@ -7,15 +7,43 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "giao-integrals"
-version = "0.7.0"
+version = "0.8.0"
 description = "Cartesian integrals for complex GIAO/London Gaussians"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26"]
+keywords = ["quantum-chemistry", "GIAO", "London-orbitals", "integrals"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+
+[project.urls]
+Documentation = "https://github.com/simenkva/GIAO-integrals/tree/main/docs"
+Issues = "https://github.com/simenkva/GIAO-integrals/issues"
+Repository = "https://github.com/simenkva/GIAO-integrals"
 
 [tool.scikit-build]
 cmake.build-type = "Release"
 wheel.packages = ["python/giao_integrals"]
+sdist.include = [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "examples/**",
+]
+
+[tool.scikit-build.cmake.define]
+GIAO_BUILD_TESTS = "OFF"
+GIAO_BUILD_BENCHMARKS = "OFF"
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"

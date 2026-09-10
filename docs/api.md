@@ -4,14 +4,34 @@ The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 
 The primitive, shell, basis, magnetic-field, one-electron, electron-repulsion,
-and batch-consumer interfaces documented below are implemented through
-Milestone 5.
+batch-consumer, screening, parallel, and derivative interfaces documented below
+are implemented in version 0.8.0.
+
+All positions, Gaussian exponents, moment origins, magnetic fields, energies,
+and derivatives use atomic units. Coefficients multiply normalized primitives
+unless shell normalization is disabled explicitly. Cartesian components are
+ordered by descending x power and then descending y power; contraction index
+is outermost. Inputs are copied into owning model objects. Returned arrays own
+their storage unless the caller supplies `out=`, in which case that exact array
+is filled and returned.
+
+| Quantity | Unit |
+|---|---|
+| centers and moment origins | bohr \(a_0\) |
+| Gaussian exponents | \(a_0^{-2}\) |
+| magnetic field | atomic magnetic-field unit |
+| overlap | dimensionless |
+| moment with powers `(px, py, pz)` | \(a_0^{px+py+pz}\) |
+| kinetic, magnetic kinetic, attraction, and ERI | hartree \(E_h\) |
+| center or potential-center derivative | value unit per \(a_0\) |
+| magnetic derivative | value unit per atomic magnetic-field unit |
 
 ## 1. C++ value types
 
 The installed C++ declarations are in `giao_integrals/types.hpp`,
-`giao_integrals/overlap.hpp`, `giao_integrals/boys.hpp`, and
-`giao_integrals/nuclear.hpp`, and `giao_integrals/eri.hpp`. The following
+`giao_integrals/overlap.hpp`, `giao_integrals/boys.hpp`,
+`giao_integrals/nuclear.hpp`, `giao_integrals/eri.hpp`, and
+`giao_integrals/derivatives.hpp`. The following
 condensed declarations describe the value-type interface.
 
 ```cpp
@@ -581,7 +601,7 @@ a molecular atom derivative.
 All shell and basis derivative functions support strict `out=` buffers and
 release the GIL. ERI derivatives are shell-quartet only; the API does not
 allocate an automatic derivative of the full fourth-rank AO tensor. Mixed
-nuclear/magnetic derivatives are not included in version 0.7.0.
+nuclear/magnetic derivatives are not included in version 0.8.0.
 
 ## 8. Errors and reproducibility
 
@@ -595,3 +615,8 @@ Serial drivers accumulate primitives and nuclei in input order. Parallel
 drivers document their reduction order and offer a deterministic mode when
 bitwise repeatability matters. Public functions never read mutable global
 field or screening state.
+
+The compatibility boundary and staged warning mechanism are specified in
+[`compatibility.md`](compatibility.md). In particular, changes to units,
+normalization, ordering, shapes, or finite-field symmetries count as API
+changes rather than ordinary numerical refinements.

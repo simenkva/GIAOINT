@@ -19,6 +19,19 @@ also expose accidental numerical changes. Run performance comparisons on an
 otherwise idle, frequency-stable machine; the checked-in reports are
 informational and are not portable CI thresholds.
 
+Compare two runs with:
+
+```console
+python benchmarks/compare_results.py baseline.jsonl current.jsonl
+```
+
+The default is deliberately non-gating. On a controlled, dedicated runner,
+`--minimum-ratio 0.90` makes a throughput loss greater than 10% fail. The
+comparator fails on missing or malformed cases; new cases are reported without
+failing. Archive the raw JSONL alongside the compiler, CPU, operating system,
+thread count, and build options rather than treating cross-machine ratios as
+meaningful.
+
 On AppleClang with the conda `llvm-openmp` package, an explicit configuration
 is needed:
 
@@ -32,4 +45,3 @@ cmake -S . -B build-openmp \
 ```
 
 Other compilers use CMake's normal `FindOpenMP` discovery.
-

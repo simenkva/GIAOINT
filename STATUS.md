@@ -104,6 +104,22 @@
 - Version 0.7.0 release with 270 Python tests, clean release and
   ASan/UBSan/OpenMP C++ builds, a clean-wheel installation smoke test, and
   unchanged PySCF 2.8.0/libcint zero-field agreement.
+- Milestone 8 BSD-3-Clause licensing, expanded package metadata, stable
+  examples, CMake presets, and documented source, wheel, and downstream CMake
+  consumption paths.
+- GitHub Actions matrices for CPython 3.11--3.14 on Linux and macOS, native
+  release, ASan/UBSan, OpenMP, clang-tidy, tag-triggered wheel/sdist artifacts,
+  and scheduled informational benchmarks.
+- A pre-1.0 compatibility policy with tested Python warnings and an installed
+  C++ deprecation macro; units, ordering, ownership, shapes, and exception
+  categories are part of the documented compatibility boundary.
+- Machine-readable benchmark comparison with optional regression thresholds,
+  explicit missing/malformed-case failures, a release checklist, changelog,
+  contribution guide, and a decoupled spherical-transform design.
+- Version 0.8.0 validation with 280 Python tests, Ruff and Black checks,
+  release, ASan/UBSan, and OpenMP C++ builds, clean sdist and wheel builds,
+  clean-wheel example smoke tests, an installed-package downstream CMake
+  consumer, and unchanged PySCF 2.8.0/libcint zero-field agreement.
 
 ## Current limitations
 
@@ -198,6 +214,7 @@ machine-specific baselines rather than noisy CI thresholds.
 
 ## Next milestone
 
-Milestone 8: production hardening, including CI and wheel matrices, stable
-examples and release documentation, licensing, expanded edge-domain testing,
-and performance-regression tracking.
+The planned Milestone 0--8 sequence is complete. Candidate follow-on work is
+measured ERI/derivative optimization, a separately validated spherical
+transformation layer, or preparation of a 1.0 API freeze. Mixed
+nuclear/magnetic derivatives remain deferred.

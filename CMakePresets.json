@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release library and tests",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/presets/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GIAO_BUILD_PYTHON": "OFF",
+        "GIAO_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "sanitizers",
+      "displayName": "Debug with ASan and UBSan",
+      "inherits": "release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "GIAO_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "benchmarks",
+      "displayName": "Release benchmarks",
+      "inherits": "release",
+      "cacheVariables": {
+        "GIAO_BUILD_TESTS": "OFF",
+        "GIAO_BUILD_BENCHMARKS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "release" },
+    { "name": "sanitizers", "configurePreset": "sanitizers" },
+    { "name": "benchmarks", "configurePreset": "benchmarks" }
+  ],
+  "testPresets": [
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "sanitizers",
+      "configurePreset": "sanitizers",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}
