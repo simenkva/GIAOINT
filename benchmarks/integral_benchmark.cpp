@@ -62,7 +62,7 @@ void report(const std::string& name, const std::string& operation,
     const auto blocks_per_second =
         static_cast<double>(measurement.iterations) / measurement.seconds;
     std::cout << std::setprecision(12)
-              << "{\"schema_version\":1,\"library_version\":\"0.6.0\""
+              << "{\"schema_version\":1,\"library_version\":\"0.7.0\""
               << ",\"compiler\":\"" << compiler_name() << "\""
               << ",\"case\":\"" << name << "\""
               << ",\"operator\":\"" << operation << "\""

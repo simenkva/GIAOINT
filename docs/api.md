@@ -549,7 +549,41 @@ The long-term production path is a C++ consumer interface for direct J/K and
 post-Hartree-Fock contractions. Python callbacks are an expert convenience,
 not the inner-loop architecture.
 
-## 7. Errors and reproducibility
+## 7. Analytic derivative API
+
+The installed `giao_integrals/derivatives.hpp` header exposes analytic first
+derivatives for overlap, canonical kinetic energy, physical magnetic kinetic
+energy, nuclear attraction, and four-center ERIs. Primitive functions return
+fixed `std::array` values. Shell and basis functions accept caller-owned
+contiguous spans.
+
+Python uses leading derivative dimensions:
+
+| Function family | Shape |
+|---|---|
+| `primitive_*_center_derivatives` | `(2, 3)` for one-electron integrals; `(4, 3)` for ERIs |
+| `primitive_*_magnetic_derivatives` | `(3,)` |
+| `*_center_derivatives_shell` | `(2, 3, nao_a, nao_b)` |
+| `eri_center_derivatives_shell` | `(4, 3, nao_a, nao_b, nao_c, nao_d)` |
+| `*_magnetic_derivatives_shell` | `(3, ...)` |
+| `*_nuclear_derivatives` | `(nshell, 3, nao, nao)` |
+| `*_magnetic_derivatives` | `(3, nao, nao)` |
+
+The center index follows the input function order and the direction index is
+`x, y, z`. `nuclear_attraction_nucleus_derivatives_shell` has shape
+`(nnucleus, 3, nao_a, nao_b)`. At basis level,
+`nuclear_attraction_nuclear_derivatives` returns a pair: shell-center response
+with shape `(nshell, 3, nao, nao)` and potential-center response with shape
+`(nnucleus, 3, nao, nao)`. This separation is deliberate because `Basis` has
+no atom-to-shell ownership map. The caller sums the applicable entries to form
+a molecular atom derivative.
+
+All shell and basis derivative functions support strict `out=` buffers and
+release the GIL. ERI derivatives are shell-quartet only; the API does not
+allocate an automatic derivative of the full fourth-rank AO tensor. Mixed
+nuclear/magnetic derivatives are not included in version 0.7.0.
+
+## 8. Errors and reproducibility
 
 Invalid model data raise `std::invalid_argument` in C++ and `ValueError` in
 Python. Size mismatches raise `std::length_error` and `ValueError`. Numerical

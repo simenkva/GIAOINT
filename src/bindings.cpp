@@ -1,4 +1,5 @@
 #include "giao_integrals/boys.hpp"
+#include "giao_integrals/derivatives.hpp"
 #include "giao_integrals/eri.hpp"
 #include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
@@ -32,7 +33,6 @@ giao::Vec3 vec3_from_python(const py::handle& value, const char* name) {
     const auto values = converted.unchecked<1>();
     return giao::Vec3{values(0), values(1), values(2)};
 }
-
 giao::CartesianExponent angular_from_python(const py::handle& value) {
     if (!PySequence_Check(value.ptr()) || PyUnicode_Check(value.ptr()) ||
         PyBytes_Check(value.ptr())) {
@@ -224,6 +224,30 @@ py::array basis_array(const giao::Basis& basis, py::object output,
     return result;
 }
 
+template <std::size_t count>
+py::array derivative_values(const std::array<giao::Complex, count>& values,
+                            const std::vector<py::ssize_t>& shape) {
+    py::array_t<giao::Complex> result(shape);
+    std::copy(values.begin(), values.end(), result.mutable_data());
+    return result;
+}
+
+template <typename Compute>
+py::array derivative_array(py::object output, const std::vector<py::ssize_t>& shape,
+                           Compute&& compute) {
+    py::array result = validate_or_create_output(std::move(output), shape);
+    auto* data = static_cast<giao::Complex*>(result.mutable_data());
+    std::size_t size = 1U;
+    for (const auto extent : shape) {
+        size *= static_cast<std::size_t>(extent);
+    }
+    {
+        py::gil_scoped_release release;
+        compute(std::span<giao::Complex>(data, size));
+    }
+    return result;
+}
+
 struct PackedEriData {
     std::vector<std::array<std::uint32_t, 4>> quartets;
     std::vector<std::array<std::size_t, 4>> shapes;
@@ -245,7 +269,7 @@ void append_eri_block(const giao::ShellQuartetBlockView& block,
 
 PYBIND11_MODULE(_giao_integrals, module) {
     module.doc() = "C++20 Cartesian GIAO/London Gaussian integrals";
-    module.attr("__version__") = "0.6.0";
+    module.attr("__version__") = "0.7.0";
 
     py::register_exception<giao::BoysNumericalError>(module,
                                                       "BoysNumericalError");
@@ -775,6 +799,181 @@ PYBIND11_MODULE(_giao_integrals, module) {
         py::arg("field") = py::none());
 
     module.def(
+        "primitive_overlap_center_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 6> values;
+            {
+                py::gil_scoped_release release;
+                values =
+                    giao::primitive_overlap_center_derivatives(bra, ket, field_value);
+            }
+            return derivative_values(values, {2, 3});
+        },
+        py::arg("bra"), py::arg("ket"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "primitive_overlap_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 3> values;
+            {
+                py::gil_scoped_release release;
+                values =
+                    giao::primitive_overlap_magnetic_derivatives(bra, ket, field_value);
+            }
+            return derivative_values(values, {3});
+        },
+        py::arg("bra"), py::arg("ket"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "primitive_kinetic_center_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 6> values;
+            {
+                py::gil_scoped_release release;
+                values =
+                    giao::primitive_kinetic_center_derivatives(bra, ket, field_value);
+            }
+            return derivative_values(values, {2, 3});
+        },
+        py::arg("bra"), py::arg("ket"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "primitive_kinetic_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 3> values;
+            {
+                py::gil_scoped_release release;
+                values =
+                    giao::primitive_kinetic_magnetic_derivatives(bra, ket, field_value);
+            }
+            return derivative_values(values, {3});
+        },
+        py::arg("bra"), py::arg("ket"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "primitive_magnetic_kinetic_center_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 6> values;
+            {
+                py::gil_scoped_release release;
+                values = giao::primitive_magnetic_kinetic_center_derivatives(
+                    bra, ket, field_value);
+            }
+            return derivative_values(values, {2, 3});
+        },
+        py::arg("bra"), py::arg("ket"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "primitive_magnetic_kinetic_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 3> values;
+            {
+                py::gil_scoped_release release;
+                values = giao::primitive_magnetic_kinetic_magnetic_derivatives(
+                    bra, ket, field_value);
+            }
+            return derivative_values(values, {3});
+        },
+        py::arg("bra"), py::arg("ket"), py::kw_only(), py::arg("field") = py::none());
+
+    module.def(
+        "primitive_nuclear_attraction_center_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const std::vector<giao::Nucleus>& nuclei, const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 6> values;
+            {
+                py::gil_scoped_release release;
+                values = giao::primitive_nuclear_attraction_center_derivatives(
+                    bra, ket, nuclei, field_value);
+            }
+            return derivative_values(values, {2, 3});
+        },
+        py::arg("bra"), py::arg("ket"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
+        "primitive_nuclear_attraction_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const std::vector<giao::Nucleus>& nuclei, const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 3> values;
+            {
+                py::gil_scoped_release release;
+                values = giao::primitive_nuclear_attraction_magnetic_derivatives(
+                    bra, ket, nuclei, field_value);
+            }
+            return derivative_values(values, {3});
+        },
+        py::arg("bra"), py::arg("ket"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
+        "primitive_nuclear_attraction_nucleus_derivatives",
+        [](const giao::PrimitiveGaussian& bra, const giao::PrimitiveGaussian& ket,
+           const std::vector<giao::Nucleus>& nuclei, const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            py::array_t<giao::Complex> result(
+                {static_cast<py::ssize_t>(nuclei.size()), py::ssize_t{3}});
+            {
+                py::gil_scoped_release release;
+                giao::primitive_nuclear_attraction_nucleus_derivatives(
+                    bra, ket, nuclei, field_value,
+                    std::span<giao::Complex>(result.mutable_data(),
+                                             nuclei.size() * 3U));
+            }
+            return result;
+        },
+        py::arg("bra"), py::arg("ket"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
+        "primitive_eri_center_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const giao::PrimitiveGaussian& c, const giao::PrimitiveGaussian& d,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 12> values;
+            {
+                py::gil_scoped_release release;
+                values =
+                    giao::primitive_eri_center_derivatives(a, b, c, d, field_value);
+            }
+            return derivative_values(values, {4, 3});
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
+        "primitive_eri_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const giao::PrimitiveGaussian& c, const giao::PrimitiveGaussian& d,
+           const py::object& field) {
+            const auto field_value = field_or_zero(field);
+            std::array<giao::Complex, 3> values;
+            {
+                py::gil_scoped_release release;
+                values =
+                    giao::primitive_eri_magnetic_derivatives(a, b, c, d, field_value);
+            }
+            return derivative_values(values, {3});
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),
+        py::arg("field") = py::none());
+
+    module.def(
         "moment_shell",
         [](const giao::Shell& a, const giao::Shell& b,
            const py::object& powers, const py::object& origin,
@@ -916,4 +1115,327 @@ PYBIND11_MODULE(_giao_integrals, module) {
         },
         py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
         py::arg("out") = py::none());
+    module.def(
+        "overlap_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(std::move(output),
+                                    {2, 3, static_cast<py::ssize_t>(a.ao_count()),
+                                     static_cast<py::ssize_t>(b.ao_count())},
+                                    [&](auto values) {
+                                        giao::compute_overlap_center_derivatives(
+                                            a, b, field_value, values);
+                                    });
+        },
+        py::arg("a"), py::arg("b"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "overlap_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(std::move(output),
+                                    {3, static_cast<py::ssize_t>(a.ao_count()),
+                                     static_cast<py::ssize_t>(b.ao_count())},
+                                    [&](auto values) {
+                                        giao::compute_overlap_magnetic_derivatives(
+                                            a, b, field_value, values);
+                                    });
+        },
+        py::arg("a"), py::arg("b"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "kinetic_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(std::move(output),
+                                    {2, 3, static_cast<py::ssize_t>(a.ao_count()),
+                                     static_cast<py::ssize_t>(b.ao_count())},
+                                    [&](auto values) {
+                                        giao::compute_kinetic_center_derivatives(
+                                            a, b, field_value, values);
+                                    });
+        },
+        py::arg("a"), py::arg("b"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "kinetic_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(std::move(output),
+                                    {3, static_cast<py::ssize_t>(a.ao_count()),
+                                     static_cast<py::ssize_t>(b.ao_count())},
+                                    [&](auto values) {
+                                        giao::compute_kinetic_magnetic_derivatives(
+                                            a, b, field_value, values);
+                                    });
+        },
+        py::arg("a"), py::arg("b"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "magnetic_kinetic_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(
+                std::move(output),
+                {2, 3, static_cast<py::ssize_t>(a.ao_count()),
+                 static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) {
+                    giao::compute_magnetic_kinetic_center_derivatives(a, b, field_value,
+                                                                      values);
+                });
+        },
+        py::arg("a"), py::arg("b"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "magnetic_kinetic_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(
+                std::move(output),
+                {3, static_cast<py::ssize_t>(a.ao_count()),
+                 static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) {
+                    giao::compute_magnetic_kinetic_magnetic_derivatives(
+                        a, b, field_value, values);
+                });
+        },
+        py::arg("a"), py::arg("b"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "nuclear_attraction_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b,
+           const std::vector<giao::Nucleus>& nuclei, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(
+                std::move(output),
+                {2, 3, static_cast<py::ssize_t>(a.ao_count()),
+                 static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) {
+                    giao::compute_nuclear_attraction_center_derivatives(
+                        a, b, nuclei, field_value, values);
+                });
+        },
+        py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "nuclear_attraction_nucleus_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b,
+           const std::vector<giao::Nucleus>& nuclei, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(
+                std::move(output),
+                {static_cast<py::ssize_t>(nuclei.size()), 3,
+                 static_cast<py::ssize_t>(a.ao_count()),
+                 static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) {
+                    giao::compute_nuclear_attraction_nucleus_derivatives(
+                        a, b, nuclei, field_value, values);
+                });
+        },
+        py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "nuclear_attraction_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b,
+           const std::vector<giao::Nucleus>& nuclei, const py::object& field,
+           py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(
+                std::move(output),
+                {3, static_cast<py::ssize_t>(a.ao_count()),
+                 static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) {
+                    giao::compute_nuclear_attraction_magnetic_derivatives(
+                        a, b, nuclei, field_value, values);
+                });
+        },
+        py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "eri_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const giao::Shell& c,
+           const giao::Shell& d, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(std::move(output),
+                                    {4, 3, static_cast<py::ssize_t>(a.ao_count()),
+                                     static_cast<py::ssize_t>(b.ao_count()),
+                                     static_cast<py::ssize_t>(c.ao_count()),
+                                     static_cast<py::ssize_t>(d.ao_count())},
+                                    [&](auto values) {
+                                        giao::compute_eri_center_derivatives(
+                                            a, b, c, d, field_value, values);
+                                    });
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "eri_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const giao::Shell& c,
+           const giao::Shell& d, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            return derivative_array(std::move(output),
+                                    {3, static_cast<py::ssize_t>(a.ao_count()),
+                                     static_cast<py::ssize_t>(b.ao_count()),
+                                     static_cast<py::ssize_t>(c.ao_count()),
+                                     static_cast<py::ssize_t>(d.ao_count())},
+                                    [&](auto values) {
+                                        giao::compute_eri_magnetic_derivatives(
+                                            a, b, c, d, field_value, values);
+                                    });
+        },
+        py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
+
+    module.def(
+        "overlap_nuclear_derivatives",
+        [](const giao::Basis& basis, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output),
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, count, count},
+                [&](auto values) {
+                    giao::compute_overlap_nuclear_derivative_matrices(
+                        basis, field_value, values);
+                });
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "overlap_magnetic_derivatives",
+        [](const giao::Basis& basis, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output), {3, count, count}, [&](auto values) {
+                    giao::compute_overlap_magnetic_derivative_matrices(
+                        basis, field_value, values);
+                });
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "kinetic_nuclear_derivatives",
+        [](const giao::Basis& basis, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output),
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, count, count},
+                [&](auto values) {
+                    giao::compute_kinetic_nuclear_derivative_matrices(
+                        basis, field_value, values);
+                });
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "kinetic_magnetic_derivatives",
+        [](const giao::Basis& basis, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output), {3, count, count}, [&](auto values) {
+                    giao::compute_kinetic_magnetic_derivative_matrices(
+                        basis, field_value, values);
+                });
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "magnetic_kinetic_nuclear_derivatives",
+        [](const giao::Basis& basis, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output),
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, count, count},
+                [&](auto values) {
+                    giao::compute_magnetic_kinetic_nuclear_derivative_matrices(
+                        basis, field_value, values);
+                });
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "magnetic_kinetic_magnetic_derivatives",
+        [](const giao::Basis& basis, const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output), {3, count, count}, [&](auto values) {
+                    giao::compute_magnetic_kinetic_magnetic_derivative_matrices(
+                        basis, field_value, values);
+                });
+        },
+        py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none());
+
+    module.def(
+        "nuclear_attraction_nuclear_derivatives",
+        [](const giao::Basis& basis, const std::vector<giao::Nucleus>& nuclei,
+           const py::object& field, py::object shell_output,
+           py::object nucleus_output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            py::array shell_result = validate_or_create_output(
+                std::move(shell_output),
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, count, count});
+            py::array nucleus_result = validate_or_create_output(
+                std::move(nucleus_output),
+                {static_cast<py::ssize_t>(nuclei.size()), 3, count, count});
+            {
+                py::gil_scoped_release release;
+                giao::compute_nuclear_attraction_nuclear_derivative_matrices(
+                    basis, nuclei, field_value,
+                    std::span<giao::Complex>(
+                        static_cast<giao::Complex*>(shell_result.mutable_data()),
+                        shell_result.size()),
+                    std::span<giao::Complex>(
+                        static_cast<giao::Complex*>(nucleus_result.mutable_data()),
+                        nucleus_result.size()));
+            }
+            return py::make_tuple(std::move(shell_result), std::move(nucleus_result));
+        },
+        py::arg("basis"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("shell_out") = py::none(),
+        py::arg("nucleus_out") = py::none());
+
+    module.def(
+        "nuclear_attraction_magnetic_derivatives",
+        [](const giao::Basis& basis, const std::vector<giao::Nucleus>& nuclei,
+           const py::object& field, py::object output) {
+            const auto field_value = field_or_zero(field);
+            const auto count = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(
+                std::move(output), {3, count, count}, [&](auto values) {
+                    giao::compute_nuclear_attraction_magnetic_derivative_matrices(
+                        basis, nuclei, field_value, values);
+                });
+        },
+        py::arg("basis"), py::arg("nuclei"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none());
 }

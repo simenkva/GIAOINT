@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.6.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.7.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -12,6 +12,7 @@ option(GIAO_ENABLE_OPENMP "Enable OpenMP shell-block parallelism" OFF)
 
 add_library(giao_integrals_core
     src/boys.cpp
+    src/derivatives.cpp
     src/eri.cpp
     src/hermite.cpp
     src/nuclear.cpp

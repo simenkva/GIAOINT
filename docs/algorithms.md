@@ -296,3 +296,20 @@ shell-pair data reuse remain measurement-driven follow-ups.
 
 Each change keeps a scalar correctness path and records before/after benchmark
 data with compiler, CPU, field, basis, shell class, and checksum.
+
+## 10. Analytic first derivatives
+
+Milestone 7 applies the center and field raising/lowering identities in the
+mathematical specification to the already-audited primitive kernels. Shifted
+terms are raw primitives carrying the original component's normalization;
+they are never renormalized as members of a different angular shell. This one
+response layer covers overlap, canonical kinetic, physical magnetic kinetic,
+nuclear attraction, and ERIs without differentiating each MD recurrence.
+
+Potential-center attraction derivatives use integration by parts and spatial
+orbital gradients. The physical magnetic kinetic field derivative adds the
+explicit angular-momentum and quadratic-moment response of its Hamiltonian.
+Shell drivers contract derivative values with leading center/field axes, and
+basis drivers scatter shell-center contributions into one matrix per shell and
+Cartesian direction. Quartet derivatives remain shell-block APIs to preserve
+the library's no-mandatory-\(O(N^4)\)-storage policy.

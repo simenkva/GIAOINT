@@ -309,3 +309,211 @@ def nuclear_attraction(
     field: MagneticField | None = None,
     out: ComplexArray | None = None,
 ) -> ComplexArray: ...
+def primitive_overlap_center_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_overlap_magnetic_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_kinetic_center_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_kinetic_magnetic_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_magnetic_kinetic_center_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_magnetic_kinetic_magnetic_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_nuclear_attraction_center_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_nuclear_attraction_nucleus_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_nuclear_attraction_magnetic_derivatives(
+    bra: PrimitiveGaussian,
+    ket: PrimitiveGaussian,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_eri_center_derivatives(
+    a: PrimitiveGaussian,
+    b: PrimitiveGaussian,
+    c: PrimitiveGaussian,
+    d: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def primitive_eri_magnetic_derivatives(
+    a: PrimitiveGaussian,
+    b: PrimitiveGaussian,
+    c: PrimitiveGaussian,
+    d: PrimitiveGaussian,
+    *,
+    field: MagneticField | None = None,
+) -> ComplexArray: ...
+def overlap_center_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def overlap_magnetic_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def kinetic_center_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def kinetic_magnetic_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def magnetic_kinetic_center_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def magnetic_kinetic_magnetic_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def nuclear_attraction_center_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def nuclear_attraction_nucleus_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def nuclear_attraction_magnetic_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def eri_center_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    c: Shell,
+    d: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def eri_magnetic_derivatives_shell(
+    a: Shell,
+    b: Shell,
+    c: Shell,
+    d: Shell,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def overlap_nuclear_derivatives(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def overlap_magnetic_derivatives(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def kinetic_nuclear_derivatives(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def kinetic_magnetic_derivatives(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def magnetic_kinetic_nuclear_derivatives(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def magnetic_kinetic_magnetic_derivatives(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...
+def nuclear_attraction_nuclear_derivatives(
+    basis: Basis,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    shell_out: ComplexArray | None = None,
+    nucleus_out: ComplexArray | None = None,
+) -> tuple[ComplexArray, ComplexArray]: ...
+def nuclear_attraction_magnetic_derivatives(
+    basis: Basis,
+    nuclei: Sequence[Nucleus],
+    *,
+    field: MagneticField | None = None,
+    out: ComplexArray | None = None,
+) -> ComplexArray: ...

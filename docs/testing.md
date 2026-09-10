@@ -51,6 +51,16 @@ several step sizes. Require the expected truncation-error regime before
 comparing the extrapolated result. Test ordinary Gaussian and London-phase
 derivative contributions separately.
 
+Milestone 7 uses centered differences at two step sizes followed by Richardson
+extrapolation. Primitive checks cover overlap, canonical and physical magnetic
+kinetic energy, nuclear attraction basis and potential centers, and ERIs at
+finite field. Contracted shell and basis checks exercise leading derivative
+axis ordering, general contraction, strict `out=` handling, Hermiticity,
+zero-field translation identities, and local-operator gauge-origin behavior.
+The ordinary Gaussian and London terms are also assembled separately for an
+overlap case and required to be individually nonzero before comparison with
+the combined analytic response.
+
 ## 2. Invariant and covariance tests
 
 Every operator milestone includes:
@@ -147,6 +157,7 @@ category. Initial targets are:
 | finite-difference real-space kinetic quadrature | `1e-8` | `1e-8` | three-step convergence diagnostic, not a production tolerance |
 | other numerical quadrature diagnostics | convergence-based | convergence-based | no loose global fallback |
 | finite-difference derivatives | step-study based | `1e-6` initially | tightened after analytic implementation |
+| M7 analytic derivatives vs Richardson extrapolation | `8e-9` | `8e-8` | primitive, contracted shell, basis, and ERI shell-quartet paths |
 
 These are starting gates. A test may use a different tolerance only with a
 named numerical reason and an error study. Near-zero references emphasize

@@ -86,6 +86,24 @@
   \(5.6\times10^{-17}\) on representative zero- and finite-field primitives.
 - Version 0.6.0 release and ASan/UBSan/OpenMP C++ builds, 244 Python tests,
   an OpenMP Python smoke test, and a clean-wheel installation smoke test.
+- Milestone 7 analytic first derivatives for overlap, canonical kinetic,
+  physical magnetic kinetic, nuclear attraction, and four-center ERIs using
+  normalization-preserving angular raising/lowering identities.
+- Separate ordinary-Gaussian and London-phase center response, analytic field
+  response of every London factor, and the explicit angular-momentum and
+  diamagnetic response of the physical magnetic Hamiltonian.
+- Separate attraction basis-center and potential-center derivatives, with the
+  latter evaluated analytically through integration by parts and spatial
+  orbital gradients.
+- Primitive, contracted shell-block, one-electron basis-matrix, and ERI
+  shell-quartet derivative APIs with leading center/axis dimensions, strict
+  NumPy `out=` validation, and GIL release.
+- Two-step central finite differences with Richardson extrapolation,
+  Hermiticity, zero-field translation, gauge-origin, contribution-separation,
+  and C++ smoke tests for the derivative paths.
+- Version 0.7.0 release with 270 Python tests, clean release and
+  ASan/UBSan/OpenMP C++ builds, a clean-wheel installation smoke test, and
+  unchanged PySCF 2.8.0/libcint zero-field agreement.
 
 ## Current limitations
 
@@ -107,6 +125,14 @@
   The full
   six-index auxiliary has a 4,000,000-entry workspace cap; combined Cartesian
   order above 32 is rejected.
+- Derivative shell drivers are correctness-first compositions of shifted
+  production kernels. They are serial, do not yet use derivative screening,
+  and may repeat primitive setup.
+- `Basis` has no atom-to-shell ownership map. Basis-center and attraction
+  potential-center derivatives are therefore returned separately for callers
+  to assemble into atom derivatives.
+- Mixed nuclear/magnetic derivatives and derivatives of the general
+  moment/gradient/momentum property APIs are not yet exposed.
 - Cartesian functions only are planned for the initial engine.
 
 ## Maximum tested angular momentum
@@ -129,6 +155,15 @@ Primitive ERIs are exhaustively compared with the high-precision reference for
 all Cartesian power distributions through combined degree two (91 cases),
 with selected finite-field cases through combined degree ten. Production
 accepts combined order through 32 subject to the auxiliary workspace cap.
+
+Milestone 7 overlap center and field derivatives are randomized through
+angular momentum 4 on each primitive. Canonical and physical kinetic and
+nuclear-attraction primitive derivatives are checked through combined angular
+degree 3, with contracted s--p blocks and one-electron basis matrices. ERI
+derivatives are checked for finite-field primitive and s--s--p--s shell cases
+through combined degree 2. Since analytic differentiation raises one angular
+component, derivative calls require the corresponding base kernel to accept
+one additional order.
 
 ## Known numerical issues
 
@@ -163,6 +198,6 @@ machine-specific baselines rather than noisy CI thresholds.
 
 ## Next milestone
 
-Milestone 7: implement analytic nuclear-coordinate and magnetic-field
-derivatives with separate ordinary-Gaussian and London-phase terms, then
-validate them by multi-step finite differences and symmetry/covariance tests.
+Milestone 8: production hardening, including CI and wheel matrices, stable
+examples and release documentation, licensing, expanded edge-domain testing,
+and performance-regression tracking.

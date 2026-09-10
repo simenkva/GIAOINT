@@ -1,4 +1,5 @@
 #include "giao_integrals/boys.hpp"
+#include "giao_integrals/derivatives.hpp"
 #include "giao_integrals/eri.hpp"
 #include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
@@ -472,6 +473,77 @@ void test_eri_screening_and_parallel_driver() {
     }
 }
 
+void test_analytic_derivatives() {
+    const giao::PrimitiveGaussian bra(0.73, {0.2, -0.4, 0.1}, {1, 0, 1});
+    const giao::PrimitiveGaussian ket(1.11, {-0.3, 0.5, -0.2}, {0, 1, 0});
+    const giao::MagneticField field({0.17, -0.11, 0.23}, {0.2, -0.3, 0.1});
+    constexpr double step = 1.0e-5;
+
+    const auto center = giao::primitive_overlap_center_derivatives(bra, ket, field);
+    const giao::PrimitiveGaussian plus_center(
+        bra.exponent, {bra.center.x + step, bra.center.y, bra.center.z}, bra.angular);
+    const giao::PrimitiveGaussian minus_center(
+        bra.exponent, {bra.center.x - step, bra.center.y, bra.center.z}, bra.angular);
+    const auto finite_center = (giao::primitive_overlap(plus_center, ket, field) -
+                                giao::primitive_overlap(minus_center, ket, field)) /
+                               (2.0 * step);
+    check_close(center[0], finite_center, "analytic overlap center derivative", 2.0e-9);
+
+    const auto magnetic = giao::primitive_overlap_magnetic_derivatives(bra, ket, field);
+    const giao::MagneticField plus_field({field.B.x, field.B.y + step, field.B.z},
+                                         field.gauge_origin);
+    const giao::MagneticField minus_field({field.B.x, field.B.y - step, field.B.z},
+                                          field.gauge_origin);
+    const auto finite_magnetic = (giao::primitive_overlap(bra, ket, plus_field) -
+                                  giao::primitive_overlap(bra, ket, minus_field)) /
+                                 (2.0 * step);
+    check_close(magnetic[1], finite_magnetic, "analytic overlap magnetic derivative",
+                2.0e-9);
+
+    const std::array<giao::Nucleus, 1> nucleus{giao::Nucleus(1.4, {0.1, -0.2, 0.3})};
+    std::array<giao::Complex, 3> potential_derivative{};
+    giao::primitive_nuclear_attraction_nucleus_derivatives(bra, ket, nucleus, field,
+                                                           potential_derivative);
+    const std::array<giao::Nucleus, 1> plus_nucleus{
+        giao::Nucleus(1.4, {0.1, -0.2, 0.3 + step})};
+    const std::array<giao::Nucleus, 1> minus_nucleus{
+        giao::Nucleus(1.4, {0.1, -0.2, 0.3 - step})};
+    const auto finite_potential =
+        (giao::primitive_nuclear_attraction(bra, ket, plus_nucleus, field) -
+         giao::primitive_nuclear_attraction(bra, ket, minus_nucleus, field)) /
+        (2.0 * step);
+    check_close(potential_derivative[2], finite_potential,
+                "analytic attraction potential-center derivative", 3.0e-9);
+
+    const auto physical_magnetic =
+        giao::primitive_magnetic_kinetic_magnetic_derivatives(bra, ket, field);
+    giao::IntegralWorkspace physical_workspace;
+    const auto finite_physical =
+        (giao::primitive_magnetic_kinetic(bra, ket, plus_field, physical_workspace) -
+         giao::primitive_magnetic_kinetic(bra, ket, minus_field, physical_workspace)) /
+        (2.0 * step);
+    check_close(physical_magnetic[1], finite_physical,
+                "physical magnetic kinetic field derivative", 3.0e-9);
+
+    const giao::PrimitiveGaussian c(0.8, {0.4, 0.2, -0.1}, {0, 0, 0});
+    const giao::PrimitiveGaussian d(1.2, {-0.2, -0.4, 0.3}, {0, 0, 0});
+    const auto eri_center =
+        giao::primitive_eri_center_derivatives(bra, ket, c, d, field);
+    const auto finite_eri = (giao::primitive_eri(plus_center, ket, c, d, field) -
+                             giao::primitive_eri(minus_center, ket, c, d, field)) /
+                            (2.0 * step);
+    check_close(eri_center[0], finite_eri, "analytic ERI center derivative", 3.0e-9);
+
+    const giao::Shell shell_a({0.1, -0.2, 0.3}, 0, {0.7}, {1.0});
+    const giao::Shell shell_b({-0.4, 0.2, 0.1}, 1, {0.9}, {1.0});
+    std::vector<giao::Complex> shell_derivatives(
+        6U * giao::shell_pair_size(shell_a, shell_b));
+    giao::compute_overlap_center_derivatives(shell_a, shell_b, field,
+                                             shell_derivatives);
+    check(shell_derivatives.size() == 18U,
+          "derivative shell block has leading center and axis dimensions");
+}
+
 }  // namespace
 
 int main() {
@@ -485,6 +557,7 @@ int main() {
     test_boys_and_nuclear_attraction();
     test_electron_repulsion();
     test_eri_screening_and_parallel_driver();
+    test_analytic_derivatives();
     if (failures != 0) {
         std::cerr << failures << " test checks failed\n";
         return 1;

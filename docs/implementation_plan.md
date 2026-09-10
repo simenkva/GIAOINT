@@ -230,6 +230,8 @@ option.
 
 ## Milestone 7: derivatives
 
+Status: completed on 2026-09-10.
+
 ### Scope
 
 - first nuclear derivatives;
@@ -244,6 +246,19 @@ option.
 - translational and gauge covariance of derivative tensors;
 - derivative symmetry identities and zero-field limits;
 - maximum tested angular momentum and difficult numerical regions recorded.
+
+The exit gate passed with one response layer built from normalized-preserving
+angular shifts. It covers overlap, canonical kinetic energy, physical magnetic
+kinetic energy including explicit Hamiltonian response, nuclear attraction
+basis and potential centers, and four-center ERIs. Primitive, contracted-shell,
+and one-electron basis drivers expose explicit center/field dimensions and
+strict NumPy output buffers. Two-step centered differences with Richardson
+extrapolation validate every operator at finite field; additional tests cover
+separated ordinary/London terms, Hermiticity, zero-field translation, and
+gauge-origin behavior. Mixed nuclear/magnetic derivatives remain deferred.
+The final gate contains 270 passing Python tests, clean release and
+ASan/UBSan/OpenMP C++ builds, a 0.7.0 wheel-install smoke test, and unchanged
+zero-field agreement with PySCF 2.8.0/libcint.
 
 ## Milestone 8: production hardening
 

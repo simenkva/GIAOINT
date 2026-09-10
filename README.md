@@ -4,7 +4,7 @@
 atomic-orbital integrals over complex gauge-including atomic orbitals (GIAOs),
 also called London atomic orbitals.
 
-Milestone 6 is complete. The repository contains the mathematical
+Milestone 7 is complete. The repository contains the mathematical
 specification, independent pure-Python overlap/property references, and a
 production C++20 MD/Hermite engine with a NumPy API. Implemented operators are
 overlap, Cartesian moments, gradient, canonical momentum, canonical kinetic
@@ -31,6 +31,11 @@ tensor is opt-in and requires an explicit byte limit.
 Optional, threshold-controlled complex Schwarz screening and OpenMP
 shell-quartet parallelism are available without changing the unscreened
 default.
+Analytic first derivatives with respect to basis centers, attraction-potential
+centers, and magnetic-field components are available for the baseline
+Hamiltonian integrals and ERI shell quartets. Basis and potential-center
+responses remain separate because the basis model does not assume atom-to-shell
+ownership.
 
 Start with:
 

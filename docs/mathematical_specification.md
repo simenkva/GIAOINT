@@ -640,16 +640,92 @@ gauge-origin dependence of the canonical kinetic matrix. At zero field,
 
 ## 11. Nuclear and magnetic derivatives
 
-Future nuclear derivatives act on both the ordinary Gaussian and the phase.
-For a center \(\mathbf A\),
+Milestone 7 differentiates normalized primitives while holding exponents,
+contraction coefficients, and the original primitive normalization fixed. Let
+\(\omega_{\mathbf a,A}^{\tau}\) denote a ket for \(\tau=-1\) and its complex
+conjugate bra for \(\tau=+1\). A shifted angular function on the right-hand
+side retains the normalization of the unshifted function. For a basis center
+\(\mathbf A\),
 
 \[
 \frac{\partial\boldsymbol\kappa_A}{\partial A_j}
 =\frac12\boldsymbol{\mathcal B}\times\mathbf e_j,
 \]
 
-so differentiating \(\omega_A\) produces a polynomial-Gaussian derivative and
-\(-i(\partial\boldsymbol\kappa_A/\partial A_j)\cdot\mathbf r\) times the
-original orbital. Magnetic-field derivatives likewise act on every London
-phase. Production derivatives may use raising/lowering relations, but their
-tests must isolate both contributions.
+and the complete center derivative is
+
+\[
+\frac{\partial\omega_{\mathbf a,A}^{\tau}}{\partial A_j}
+=-a_j\omega_{\mathbf a-\mathbf e_j,A}^{\tau}
++2\alpha\omega_{\mathbf a+\mathbf e_j,A}^{\tau}
++\frac{\tau i}{2}\sum_k
+ (\boldsymbol{\mathcal B}\times\mathbf e_j)_k
+ \left(\omega_{\mathbf a+\mathbf e_k,A}^{\tau}
+       +A_k\omega_{\mathbf a,A}^{\tau}\right).
+\]
+
+The first two terms are the ordinary Gaussian response; the final sum is the
+London-phase response. Both are present for every differentiated basis
+function in a one- or two-electron integral.
+
+At fixed centers and gauge origin, the magnetic-field derivative follows from
+
+\[
+\frac{\partial\boldsymbol\kappa_A}{\partial\mathcal B_j}
+=\frac12\mathbf e_j\times(\mathbf A-\mathbf O),
+\]
+
+so
+
+\[
+\frac{\partial\omega_{\mathbf a,A}^{\tau}}{\partial\mathcal B_j}
+=\frac{\tau i}{2}\sum_k
+ [\mathbf e_j\times(\mathbf A-\mathbf O)]_k
+ \left(\omega_{\mathbf a+\mathbf e_k,A}^{\tau}
+       +A_k\omega_{\mathbf a,A}^{\tau}\right).
+\]
+
+Overlap, canonical kinetic, nuclear attraction, and electron repulsion have no
+explicit magnetic-field dependence in their operators, so their response is
+the sum of this term over their two or four basis functions. The physical
+magnetic kinetic operator has an additional explicit response. With
+\(\mathbf s=\mathbf r-\mathbf O\),
+
+\[
+h_{\mathrm{mag}}=\frac{p^2}{2}+\frac12\boldsymbol{\mathcal B}\cdot
+\mathbf L_{\mathbf O}
++\frac18\left(\mathcal B^2s^2-(\boldsymbol{\mathcal B}\cdot\mathbf s)^2\right),
+\]
+
+\[
+\frac{\partial h_{\mathrm{mag}}}{\partial\mathcal B_j}
+=\frac12 L_{\mathbf O,j}
++\frac14\left[\mathcal B_j s^2
+ -(\boldsymbol{\mathcal B}\cdot\mathbf s)s_j\right].
+\]
+
+For a potential center \(\mathbf C_K\), integration by parts gives a route
+that does not differentiate the complex Boys recurrence explicitly:
+
+\[
+\frac{\partial}{\partial C_{K,j}}
+\left\langle a\left|-\frac{Z_K}{|\mathbf r-\mathbf C_K|}\right|b\right\rangle
+=\left\langle\partial_j a\left|-\frac{Z_K}{|\mathbf r-\mathbf C_K|}\right|b\right\rangle
++\left\langle a\left|-\frac{Z_K}{|\mathbf r-\mathbf C_K|}\right|
+\partial_j b\right\rangle,
+\]
+
+where
+
+\[
+\partial_j\omega_{\mathbf a,A}^{\tau}
+=a_j\omega_{\mathbf a-\mathbf e_j,A}^{\tau}
+-2\alpha\omega_{\mathbf a+\mathbf e_j,A}^{\tau}
++\tau i\kappa_{A,j}\omega_{\mathbf a,A}^{\tau}.
+\]
+
+Because `Basis` does not assign shells to atoms, basis-center derivatives and
+attraction-potential-center derivatives remain separate public quantities.
+An electronic-structure caller forms an atom derivative by summing the shell
+and potential terms belonging to that atom. Mixed nuclear/magnetic derivatives
+are not part of the Milestone 7 API.
