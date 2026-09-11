@@ -20,13 +20,25 @@
 #include <vector>
 
 std::size_t allocation_count = 0;
+std::size_t allocation_sizes[4096];
 
 void* operator new(std::size_t size) {
+    if (allocation_count < 4096) {
+        allocation_sizes[allocation_count] = size;
+    }
     ++allocation_count;
     if (void* memory = std::malloc(size)) {
         return memory;
     }
     throw std::bad_alloc();
+}
+
+void report_unexpected_allocations(const char* label, std::size_t before) {
+    for (std::size_t index = before; index < allocation_count && index < 4096;
+         ++index) {
+        std::cerr << "DIAG " << label << ": allocation #" << index
+                  << " size=" << allocation_sizes[index] << " bytes\n";
+    }
 }
 
 void operator delete(void* memory) noexcept { std::free(memory); }
@@ -310,6 +322,7 @@ void test_boys_and_nuclear_attraction() {
     const auto allocations_before_reuse = allocation_count;
     giao::compute_nuclear_attraction(shell, shell, nuclei, field, block,
                                      workspace);
+    report_unexpected_allocations("nuclear-attraction", allocations_before_reuse);
     check(allocation_count == allocations_before_reuse,
           "warmed nuclear-attraction shell kernel performs no heap allocations");
 }
@@ -389,11 +402,13 @@ void test_electron_repulsion() {
     const auto allocations_before_reuse = allocation_count;
     giao::compute_eri(shell_a, shell_b, shell_a, shell_b, field, block,
                       workspace);
+    report_unexpected_allocations("ERI", allocations_before_reuse);
     check(allocation_count == allocations_before_reuse,
           "warmed ERI shell kernel performs no heap allocations");
     giao::compute_eri(shell_a, shell_b, shell_a, shell_b, {}, block, workspace);
     const auto real_allocations_before_reuse = allocation_count;
     giao::compute_eri(shell_a, shell_b, shell_a, shell_b, {}, block, workspace);
+    report_unexpected_allocations("zero-field ERI", real_allocations_before_reuse);
     check(allocation_count == real_allocations_before_reuse,
           "warmed zero-field ERI shell kernel performs no heap allocations");
 
