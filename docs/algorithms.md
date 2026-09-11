@@ -271,10 +271,9 @@ an application-level threshold appropriate to subsequent contractions.
 
 An `EriWorkspace` now caches Boys sequences by complex argument and order,
 field-free Hermite tables by pair geometry/angular key, and the three-axis
-Hermite products used by the final contraction. Auxiliary readiness uses
-generation tags instead of clearing the full six-index table for every
-Cartesian integral. These caches change neither recurrence nor accumulation
-order.
+Hermite products used by the final contraction. Milestone 6 used generation
+tags for auxiliary readiness. Milestone 9 replaces those tags with a
+bottom-up fill; it keeps the Boys and Hermite caches.
 
 `evaluate_eri_shell_quartets` validates and screens work serially. With an
 OpenMP-enabled build it then assigns independent shell blocks using static
@@ -293,28 +292,39 @@ three-axis contraction coefficients, generation-tagged auxiliary storage,
 Schwarz screening, an OS prototype comparison, and optional block-level
 OpenMP.
 
-Milestone 9 planning profiled the production path (stack sampling on a
-standalone microbenchmark, `sample` on macOS) instead of guessing the next
-target. The result: 99.6% of ERI wall time is inside the six-index
-Hermite/Boys-derivative recursion in `EriKernel::compute`
-(`src/eri.cpp:242-319`), and its per-quartet cost scales worse with angular
-momentum than the primitive/Cartesian combinatorics alone predict (measured
-rate drops 294x from s-s-s-s to p-p-p-p against an 81x growth in call count,
-then 130x against a 16x growth from p-p-p-p to d-d-d-d). Boys evaluation,
-`gaussian_product`, and Hermite-coefficient construction are each under 1% of
-measured time. Zero field currently costs about the same as finite field
-(6-11% faster, not the 2-4x a real-arithmetic path would give), because the
-recursion is `std::complex<double>` unconditionally regardless of whether the
-imaginary parts are structurally zero. A direct OS/HGP contracted backend
-would not address this: it is a different recurrence for the same six-index
-generality, not a change to the recursion's iteration architecture. See
-`docs/eri_performance_plan.md` for the full measurement and the staged
-rewrite it motivates (iterative bottom-up recursion, then a collapsed
-real-arithmetic zero-field path using the sign-collapse identity this section
-already rules out at finite field).
+Milestone 9 replaces the recursive, memoized six-index auxiliary with a
+bottom-up fill. Each angular entry stores a contiguous sequence of Boys
+orders. Lexicographic angular traversal is a topological order: lowering any
+coordinate gives an earlier entry. The recurrence reads only those earlier
+entries at orders `n` and `n+1`, and fills `0 <= n <= L - degree`. This
+preserves the finite-field recurrence and its term order without recursive
+calls, generation tags, or per-call index construction.
 
-Each change keeps a scalar correctness path and records before/after benchmark
-data with compiler, CPU, field, basis, shell class, and checksum.
+At exactly `B == (0,0,0)`, the kernel uses
+
+\[
+R^n_{tuv,\tau\phi\chi}
+= (-1)^{\tau+\phi+\chi}R^n_{t+\tau,u+\phi,v+\chi}.
+\]
+
+It fills and contracts the combined three-index table in real arithmetic.
+Signed zeros select this path; any nonzero field component selects the
+six-index complex path. Both paths retain the combined-order-32 and original
+six-index workspace admission limits. The real table needs fewer bytes;
+workspaces retain their peak capacity for reuse. An ssss quartet uses its
+Boys seed without building an angular table.
+
+The shell driver computes bra pair data once per primitive bra pair and ket
+pair data once per primitive quartet, outside the Cartesian loops. It keeps
+primitive contraction order, normalization, output ordering, and the
+finite-field symmetry scheduler unchanged.
+
+Before removing the recursive path, validation compared the iterative path
+with 192 frozen recursive values from randomized quartets through g functions
+and the independent high-precision OS oracle. C++ tests compare the real path
+with the general path at zero field and check exact dispatch boundaries and
+workspace reuse. See `eri_performance_plan.md` and
+`../benchmarks/results/m9_macos_arm64.md` for measurements and remaining costs.
 
 ## 10. Analytic first derivatives
 

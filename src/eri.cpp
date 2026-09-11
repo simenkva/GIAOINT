@@ -1,6 +1,7 @@
 #include "giao_integrals/eri.hpp"
 
 #include "hermite.hpp"
+#include "eri_kernel.hpp"
 
 #include <algorithm>
 #include <array>
@@ -35,15 +36,6 @@ std::size_t checked_product(std::span<const std::size_t> factors,
     return result;
 }
 
-std::size_t auxiliary_index(const std::array<std::size_t, 7>& indices,
-                            const std::array<std::size_t, 7>& dimensions) {
-    std::size_t result = indices[0];
-    for (std::size_t axis = 1; axis < dimensions.size(); ++axis) {
-        result = result * dimensions[axis] + indices[axis];
-    }
-    return result;
-}
-
 std::size_t quartet_flat_index(std::size_t a, std::size_t b, std::size_t c,
                                std::size_t d,
                                const std::array<std::size_t, 4>& shape) {
@@ -72,23 +64,14 @@ void validate_quartet(const Basis& basis, ShellQuartetIndex quartet) {
 
 namespace detail {
 
-struct EriKernel {
-    static Complex compute(const PrimitiveGaussian& a,
-                           const PrimitiveGaussian& b,
-                           const PrimitiveGaussian& c,
-                           const PrimitiveGaussian& d,
-                           const MagneticField& field,
-                           EriWorkspace& workspace);
-};
-
 Complex EriKernel::compute(const PrimitiveGaussian& a,
                            const PrimitiveGaussian& b,
                            const PrimitiveGaussian& c,
                            const PrimitiveGaussian& d,
-                           const MagneticField& field,
+                           const GaussianPairData& pair_ab,
+                           const GaussianPairData& pair_cd,
+                           bool real_zero_field,
                            EriWorkspace& workspace) {
-    const auto pair_ab = gaussian_product(a, b, field);
-    const auto pair_cd = gaussian_product(c, d, field);
     const std::array<std::size_t, 6> maxima{
         static_cast<std::size_t>(a.angular.x + b.angular.x),
         static_cast<std::size_t>(a.angular.y + b.angular.y),
@@ -107,7 +90,17 @@ Complex EriKernel::compute(const PrimitiveGaussian& a,
         maximum_order + 1U, maxima[0] + 1U, maxima[1] + 1U,
         maxima[2] + 1U, maxima[3] + 1U, maxima[4] + 1U,
         maxima[5] + 1U};
-    workspace.prepare(dimensions, maximum_order);
+    // Preserve the established angular/workspace admission limits on both
+    // paths, while allocating only the collapsed table at exact zero field.
+    if (checked_product(dimensions, "ERI auxiliary size overflow") >
+        maximum_auxiliary_entries) {
+        throw std::length_error("ERI auxiliary exceeds the workspace limit");
+    }
+    workspace.prepare(real_zero_field
+                          ? std::array<std::size_t, 7>{maximum_order + 1U,
+                                1U, 1U, 1U, 1U, 1U, 1U}
+                          : dimensions,
+                      maximum_order);
 
     const std::array<const PrimitiveGaussian*, 4> primitives{&a, &b, &c, &d};
     const std::array<const GaussianPairData*, 2> pairs{&pair_ab, &pair_cd};
@@ -216,129 +209,158 @@ Complex EriKernel::compute(const PrimitiveGaussian& a,
         common = std::exp(Complex{real_part, -dot(total_wave, weighted_center)});
     }
 
-    ++workspace.auxiliary_generation_;
-    if (workspace.auxiliary_generation_ == 0U) {
-        std::fill(workspace.auxiliary_generation_tags_.begin(),
-                  workspace.auxiliary_generation_tags_.end(), 0U);
-        ++workspace.auxiliary_generation_;
-    }
-    const auto generation = workspace.auxiliary_generation_;
-    double radial_factor = 1.0;
-    for (std::size_t n = 0; n <= maximum_order; ++n) {
-        const std::array<std::size_t, 7> indices{n, 0U, 0U, 0U,
-                                                0U, 0U, 0U};
-        const auto index = auxiliary_index(indices, dimensions);
-        workspace.auxiliary_[index] = common * radial_factor * workspace.boys_[n];
-        workspace.auxiliary_generation_tags_[index] = generation;
-        radial_factor *= -2.0 * rho;
-    }
-
-    const std::array<double, 3> wave_ab{pair_ab.pair_wave_vector.x,
-                                        pair_ab.pair_wave_vector.y,
-                                        pair_ab.pair_wave_vector.z};
-    const std::array<double, 3> wave_cd{pair_cd.pair_wave_vector.x,
-                                        pair_cd.pair_wave_vector.y,
-                                        pair_cd.pair_wave_vector.z};
-    const auto auxiliary =
-        [&](auto&& self, std::size_t n, std::size_t t, std::size_t u,
-            std::size_t v, std::size_t tau, std::size_t phi,
-            std::size_t chi) -> Complex {
-        const std::array<std::size_t, 7> indices{n, t, u, v, tau, phi, chi};
-        const auto index = auxiliary_index(indices, dimensions);
-        if (workspace.auxiliary_generation_tags_[index] == generation) {
-            return workspace.auxiliary_[index];
-        }
-        const std::array<std::size_t, 3> first{t, u, v};
-        const std::array<std::size_t, 3> second{tau, phi, chi};
-        Complex value{};
-        bool evaluated = false;
-        for (std::size_t axis = 0; axis < 3 && !evaluated; ++axis) {
-            if (first[axis] == 0U) {
-                continue;
-            }
-            auto lower_first = first;
-            --lower_first[axis];
-            value = Complex{0.0, -wave_ab[axis]} *
-                    self(self, n, lower_first[0], lower_first[1],
-                         lower_first[2], second[0], second[1], second[2]);
-            value += displacement[axis] *
-                     self(self, n + 1U, lower_first[0], lower_first[1],
-                          lower_first[2], second[0], second[1], second[2]);
-            if (lower_first[axis] > 0U) {
-                auto twice_lower = lower_first;
-                --twice_lower[axis];
-                value += static_cast<double>(lower_first[axis]) *
-                         self(self, n + 1U, twice_lower[0], twice_lower[1],
-                              twice_lower[2], second[0], second[1], second[2]);
-            }
-            if (second[axis] > 0U) {
-                auto lower_second = second;
-                --lower_second[axis];
-                value -= static_cast<double>(second[axis]) *
-                         self(self, n + 1U, lower_first[0], lower_first[1],
-                              lower_first[2], lower_second[0], lower_second[1],
-                              lower_second[2]);
-            }
-            evaluated = true;
-        }
-        for (std::size_t axis = 0; axis < 3 && !evaluated; ++axis) {
-            if (second[axis] == 0U) {
-                continue;
-            }
-            auto lower_second = second;
-            --lower_second[axis];
-            value = Complex{0.0, -wave_cd[axis]} *
-                    self(self, n, first[0], first[1], first[2],
-                         lower_second[0], lower_second[1], lower_second[2]);
-            value -= displacement[axis] *
-                     self(self, n + 1U, first[0], first[1], first[2],
-                          lower_second[0], lower_second[1], lower_second[2]);
-            if (first[axis] > 0U) {
-                auto lower_first = first;
-                --lower_first[axis];
-                value -= static_cast<double>(first[axis]) *
-                         self(self, n + 1U, lower_first[0], lower_first[1],
-                              lower_first[2], lower_second[0], lower_second[1],
-                              lower_second[2]);
-            }
-            if (lower_second[axis] > 0U) {
-                auto twice_lower = lower_second;
-                --twice_lower[axis];
-                value += static_cast<double>(lower_second[axis]) *
-                         self(self, n + 1U, first[0], first[1], first[2],
-                              twice_lower[0], twice_lower[1], twice_lower[2]);
-            }
-            evaluated = true;
-        }
-        if (!evaluated) {
-            throw std::logic_error("invalid ERI auxiliary recurrence state");
-        }
-        workspace.auxiliary_[index] = value;
-        workspace.auxiliary_generation_tags_[index] = generation;
-        return value;
-    };
-
     Complex contraction{};
-    const auto ab_y_extent = maxima[1] + 1U;
-    const auto ab_z_extent = maxima[2] + 1U;
-    const auto cd_y_extent = maxima[4] + 1U;
-    const auto cd_z_extent = maxima[5] + 1U;
-    for (std::size_t t = 0; t <= maxima[0]; ++t) {
-        for (std::size_t u = 0; u <= maxima[1]; ++u) {
-            for (std::size_t v = 0; v <= maxima[2]; ++v) {
-                const double coefficient_ab =
-                    workspace.pair_hermite_products_[0]
-                        [(t * ab_y_extent + u) * ab_z_extent + v];
-                for (std::size_t tau = 0; tau <= maxima[3]; ++tau) {
-                    for (std::size_t phi = 0; phi <= maxima[4]; ++phi) {
-                        for (std::size_t chi = 0; chi <= maxima[5]; ++chi) {
-                            contraction +=
-                                coefficient_ab *
-                                workspace.pair_hermite_products_[1]
-                                    [(tau * cd_y_extent + phi) * cd_z_extent +
-                                     chi] *
-                                auxiliary(auxiliary, 0U, t, u, v, tau, phi,
-                                          chi);
+    if (maximum_order == 0U) {
+        contraction = common * workspace.boys_[0];
+    } else if (real_zero_field) {
+        // R(t,u,v;tau,phi,chi) = (-1)^(tau+phi+chi)
+        //                      R(t+tau,u+phi,v+chi) only at exact B = 0.
+        const std::array<std::size_t, 3> combined{
+            maxima[0] + maxima[3], maxima[1] + maxima[4],
+            maxima[2] + maxima[5]};
+        const std::size_t orders = maximum_order + 1U;
+        const std::array<std::size_t, 3> strides{
+            (combined[1] + 1U) * (combined[2] + 1U) * orders,
+            (combined[2] + 1U) * orders, orders};
+        auto& table = workspace.real_auxiliary_;
+        const auto size = (combined[0] + 1U) * strides[0];
+        table.resize(std::max(table.size(), size));
+        double radial_factor = 1.0;
+        for (std::size_t n = 0; n <= maximum_order; ++n) {
+            table[n] = radial_factor * workspace.boys_[n].real();
+            radial_factor *= -2.0 * rho;
+        }
+        for (std::size_t x = 0; x <= combined[0]; ++x) {
+            for (std::size_t y = 0; y <= combined[1]; ++y) {
+                for (std::size_t z = 0; z <= combined[2]; ++z) {
+                    const auto degree = x + y + z;
+                    if (degree == 0U) {
+                        continue;
+                    }
+                    const auto axis = x > 0U ? 0U : (y > 0U ? 1U : 2U);
+                    const auto power = axis == 0U ? x : (axis == 1U ? y : z);
+                    const auto index =
+                        x * strides[0] + y * strides[1] + z * strides[2];
+                    const auto lower = index - strides[axis];
+                    const double shift = displacement[axis].real();
+                    for (std::size_t n = 0; n <= maximum_order - degree; ++n) {
+                        double value = shift * table[lower + n + 1U];
+                        if (power > 1U) {
+                            value += static_cast<double>(power - 1U) *
+                                     table[lower - strides[axis] + n + 1U];
+                        }
+                        table[index + n] = value;
+                    }
+                }
+            }
+        }
+        double real_contraction = 0.0;
+        for (std::size_t t = 0; t <= maxima[0]; ++t) {
+            for (std::size_t u = 0; u <= maxima[1]; ++u) {
+                for (std::size_t v = 0; v <= maxima[2]; ++v) {
+                    const double coefficient_ab =
+                        workspace.pair_hermite_products_[0]
+                            [(t * (maxima[1] + 1U) + u) * (maxima[2] + 1U) + v];
+                    for (std::size_t tau = 0; tau <= maxima[3]; ++tau) {
+                        for (std::size_t phi = 0; phi <= maxima[4]; ++phi) {
+                            for (std::size_t chi = 0; chi <= maxima[5]; ++chi) {
+                                const double sign =
+                                    (tau + phi + chi) % 2U == 0U ? 1.0 : -1.0;
+                                real_contraction += coefficient_ab *
+                                    workspace.pair_hermite_products_[1]
+                                        [(tau * (maxima[4] + 1U) + phi) *
+                                             (maxima[5] + 1U) + chi] *
+                                    (sign * table[(t + tau) * strides[0] +
+                                                  (u + phi) * strides[1] +
+                                                  (v + chi) * strides[2]]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        contraction = real_contraction;
+    } else {
+        // Angular entries are lexicographically ordered. Every recurrence
+        // dependency lowers a coordinate, so its complete Boys-order sequence
+        // has already been filled. Boys order is contiguous within each entry.
+        const std::size_t orders = maximum_order + 1U;
+        std::array<std::size_t, 6> strides{};
+        strides[5] = orders;
+        for (std::size_t axis = 5; axis > 0; --axis) {
+            strides[axis - 1U] = strides[axis] * (maxima[axis] + 1U);
+        }
+        const std::size_t angular_entries =
+            strides[0] * (maxima[0] + 1U) / orders;
+        double radial_factor = 1.0;
+        for (std::size_t n = 0; n <= maximum_order; ++n) {
+            workspace.auxiliary_[n] = common * radial_factor * workspace.boys_[n];
+            radial_factor *= -2.0 * rho;
+        }
+        const std::array<double, 6> waves{
+            pair_ab.pair_wave_vector.x, pair_ab.pair_wave_vector.y,
+            pair_ab.pair_wave_vector.z, pair_cd.pair_wave_vector.x,
+            pair_cd.pair_wave_vector.y, pair_cd.pair_wave_vector.z};
+        for (std::size_t entry = 1; entry < angular_entries; ++entry) {
+            std::array<std::size_t, 6> powers{};
+            std::size_t remaining = entry;
+            std::size_t degree = 0;
+            for (std::size_t axis = 6; axis-- > 0;) {
+                powers[axis] = remaining % (maxima[axis] + 1U);
+                remaining /= maxima[axis] + 1U;
+                degree += powers[axis];
+            }
+            std::size_t axis = 0;
+            while (powers[axis] == 0U) {
+                ++axis;
+            }
+            const auto index = entry * orders;
+            const auto lower = index - strides[axis];
+            const auto coordinate = axis % 3U;
+            const auto shift = axis < 3U ? displacement[coordinate]
+                                         : -displacement[coordinate];
+            const Complex wave{0.0, -waves[axis]};
+            for (std::size_t n = 0; n <= maximum_order - degree; ++n) {
+                Complex value = wave * workspace.auxiliary_[lower + n];
+                value += shift * workspace.auxiliary_[lower + n + 1U];
+                if (powers[axis] > 1U) {
+                    value += static_cast<double>(powers[axis] - 1U) *
+                             workspace.auxiliary_[lower - strides[axis] + n + 1U];
+                }
+                // The selected axis is the first nonzero bra coordinate, or
+                // a ket coordinate when the entire bra triple is zero.
+                if (axis < 3U && powers[axis + 3U] > 0U) {
+                    value -= static_cast<double>(powers[axis + 3U]) *
+                             workspace.auxiliary_[lower - strides[axis + 3U] +
+                                                  n + 1U];
+                }
+                workspace.auxiliary_[index + n] = value;
+            }
+        }
+
+        const auto ab_y_extent = maxima[1] + 1U;
+        const auto ab_z_extent = maxima[2] + 1U;
+        const auto cd_y_extent = maxima[4] + 1U;
+        const auto cd_z_extent = maxima[5] + 1U;
+        for (std::size_t t = 0; t <= maxima[0]; ++t) {
+            for (std::size_t u = 0; u <= maxima[1]; ++u) {
+                for (std::size_t v = 0; v <= maxima[2]; ++v) {
+                    const double coefficient_ab =
+                        workspace.pair_hermite_products_[0]
+                            [(t * ab_y_extent + u) * ab_z_extent + v];
+                    for (std::size_t tau = 0; tau <= maxima[3]; ++tau) {
+                        for (std::size_t phi = 0; phi <= maxima[4]; ++phi) {
+                            for (std::size_t chi = 0; chi <= maxima[5]; ++chi) {
+                                contraction +=
+                                    coefficient_ab *
+                                    workspace.pair_hermite_products_[1]
+                                        [(tau * cd_y_extent + phi) * cd_z_extent +
+                                         chi] *
+                                    workspace.auxiliary_[
+                                        t * strides[0] + u * strides[1] +
+                                        v * strides[2] + tau * strides[3] +
+                                        phi * strides[4] + chi * strides[5]];
+                            }
                         }
                     }
                 }
@@ -387,8 +409,6 @@ void EriWorkspace::prepare(
     }
     boys_.resize(std::max(boys_.size(), auxiliary_dimensions[0]));
     auxiliary_.resize(std::max(auxiliary_.size(), table_size));
-    auxiliary_generation_tags_.resize(
-        std::max(auxiliary_generation_tags_.size(), table_size));
 }
 
 CanonicalShellQuartet canonicalize_shell_quartet(
@@ -418,7 +438,10 @@ std::size_t shell_quartet_size(const Shell& a, const Shell& b,
 Complex primitive_eri(const PrimitiveGaussian& a, const PrimitiveGaussian& b,
                       const PrimitiveGaussian& c, const PrimitiveGaussian& d,
                       const MagneticField& field, EriWorkspace& workspace) {
-    return detail::EriKernel::compute(a, b, c, d, field, workspace);
+    return detail::EriKernel::compute(
+        a, b, c, d, gaussian_product(a, b, field),
+        gaussian_product(c, d, field), detail::EriKernel::use_real_path(field),
+        workspace);
 }
 
 Complex primitive_eri(const PrimitiveGaussian& a, const PrimitiveGaussian& b,
@@ -463,10 +486,21 @@ void compute_eri(const Shell& a, const Shell& b, const Shell& c,
         }
     }
 
+    const bool real_zero_field = detail::EriKernel::use_real_path(field);
     for (std::size_t pa = 0; pa < a.primitive_count(); ++pa) {
         for (std::size_t pb = 0; pb < b.primitive_count(); ++pb) {
+            const auto pair_ab = gaussian_product(
+                PrimitiveGaussian(a.exponents()[pa], a.center(), {}, 1.0, false),
+                PrimitiveGaussian(b.exponents()[pb], b.center(), {}, 1.0, false),
+                field);
             for (std::size_t pc = 0; pc < c.primitive_count(); ++pc) {
                 for (std::size_t pd = 0; pd < d.primitive_count(); ++pd) {
+                    const auto pair_cd = gaussian_product(
+                        PrimitiveGaussian(c.exponents()[pc], c.center(), {},
+                                          1.0, false),
+                        PrimitiveGaussian(d.exponents()[pd], d.center(), {},
+                                          1.0, false),
+                        field);
                     const std::array<std::size_t, 4> primitive_indices{pa, pb,
                                                                       pc, pd};
                     for (std::size_t ca = 0; ca < a.cartesian_count(); ++ca) {
@@ -495,10 +529,11 @@ void compute_eri(const Shell& a, const Shell& b, const Shell& c,
                                                               d.center(),
                                                               d.components()[cd],
                                                               1.0, false)};
-                                    Complex primitive_value = primitive_eri(
-                                        primitives[0], primitives[1],
-                                        primitives[2], primitives[3], field,
-                                        workspace);
+                                    Complex primitive_value =
+                                        detail::EriKernel::compute(
+                                            primitives[0], primitives[1],
+                                            primitives[2], primitives[3], pair_ab,
+                                            pair_cd, real_zero_field, workspace);
                                     for (std::size_t center = 0; center < 4;
                                          ++center) {
                                         const auto& shell = *shells[center];

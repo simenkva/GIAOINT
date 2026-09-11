@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — Milestone 9
+
+Replaced the recursive ERI auxiliary with an iterative six-index fill and
+added a collapsed real-arithmetic path for exact zero field. Shell evaluation
+reuses Gaussian-pair data across Cartesian components; ssss evaluation uses
+the Boys seed directly. Public numerical conventions, output shapes, and
+angular/workspace admission limits remain unchanged.
+
+Screening and threading stay opt-in: `screening_threshold=0.0`, `threads=1`.
+The performance example accepts both options and sets the same requested
+thread count for PySCF. Before/after measurements, randomized cross-checks,
+and profiling results are in `benchmarks/results/m9_macos_arm64.md`.
+
 ## 0.8.0 — 2026-09-10
 
 Milestone 8 hardens the 0.7 integral engine for repeatable distribution. It

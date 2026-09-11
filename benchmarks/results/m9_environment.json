@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-11",
+  "cpu": "Apple M2 Pro",
+  "cores": 12,
+  "performance_cores": 8,
+  "efficiency_cores": 4,
+  "memory_gb": 32,
+  "os": "macOS 26.6.2 (25G83)",
+  "architecture": "arm64",
+  "compiler": "AppleClang 21.0.0 (clang-2100.1.1.101)",
+  "cmake": "4.1.2",
+  "build_type": "Release",
+  "cxx_flags": "-O3 -DNDEBUG",
+  "baseline_commit": "2d5b3b13c85fb1258788d698bff551bebbde4b93",
+  "optimized_revision": "unreleased Milestone 9 workspace",
+  "serial_threads": 1,
+  "screening_threshold": 0.0,
+  "openmp_library": "/opt/anaconda3/envs/pyscf/lib/libomp.dylib",
+  "source_sha256": {
+    "src/eri.cpp": "61d31f73af463084df6dc6575077b171f2caab253f2d65e8165bb4e71c8ba393",
+    "src/eri_kernel.hpp": "40e23cb02425b014979c41bad60ec3ff3de15af82589bbef50526a2aed9a1386",
+    "include/giao_integrals/eri.hpp": "a5d1231197a090dd3578c9be46ca177bfd27f259880597c725312a056dd266db",
+    "benchmarks/integral_benchmark.cpp": "0487d1b8cc26548f34786d37eb2206c5252a0a4f0e6caca3d5fc56e723a203be"
+  }
+}

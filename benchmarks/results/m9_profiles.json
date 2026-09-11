@@ -1,0 +1,187 @@
+[
+  {
+    "case": "before_zero",
+    "tool": "/usr/bin/sample",
+    "duration_seconds": 5,
+    "interval_ms": 1,
+    "total_samples": 4165,
+    "top_of_stack_minimum_count": 5,
+    "top_of_stack": [
+      {
+        "symbol": "_ZZN4giao6detail9EriKernel7computeERKNS_17PrimitiveGaussianES4_S4_S4_RKNS_13MagneticFieldERNS_12EriWorkspaceEENK3$_0clIRKSA_EENSt3__17complexIdEEOT_mmmmmmm",
+        "image": "giao_integral_benchmark",
+        "samples": 3905
+      },
+      {
+        "symbol": "giao::detail::EriKernel::compute(giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::MagneticField const&, giao::EriWorkspace&)",
+        "image": "giao_integral_benchmark",
+        "samples": 168
+      },
+      {
+        "symbol": "giao::detail::build_hermite_coefficients(unsigned short, unsigned short, double, double, double, double, std::vector<double>&, std::vector<double>&)",
+        "image": "giao_integral_benchmark",
+        "samples": 23
+      },
+      {
+        "symbol": "_platform_memset",
+        "image": "libsystem_platform.dylib",
+        "samples": 13
+      },
+      {
+        "symbol": "giao::EriWorkspace::prepare(std::array<unsigned long, 7ul>, unsigned long, std::array<unsigned long, 4ul>)",
+        "image": "giao_integral_benchmark",
+        "samples": 11
+      },
+      {
+        "symbol": "giao::compute_eri(giao::Shell const&, giao::Shell const&, giao::Shell const&, giao::Shell const&, giao::MagneticField const&, std::span<std::complex<double>, 18446744073709551615ul>, giao::EriWorkspace&)",
+        "image": "giao_integral_benchmark",
+        "samples": 9
+      },
+      {
+        "symbol": "giao::PrimitiveGaussian::PrimitiveGaussian(double, giao::Vec3, giao::CartesianExponent, double, bool)",
+        "image": "giao_integral_benchmark",
+        "samples": 8
+      },
+      {
+        "symbol": "exp",
+        "image": "libsystem_m.dylib",
+        "samples": 7
+      },
+      {
+        "symbol": "giao::gaussian_product(giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::MagneticField const&)",
+        "image": "giao_integral_benchmark",
+        "samples": 5
+      }
+    ]
+  },
+  {
+    "case": "after_zero",
+    "tool": "/usr/bin/sample",
+    "duration_seconds": 5,
+    "interval_ms": 1,
+    "total_samples": 4174,
+    "top_of_stack_minimum_count": 5,
+    "top_of_stack": [
+      {
+        "symbol": "giao::detail::EriKernel::compute(giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::GaussianPairData const&, giao::GaussianPairData const&, bool, giao::EriWorkspace&)",
+        "image": "giao_integral_benchmark",
+        "samples": 3003
+      },
+      {
+        "symbol": "giao::detail::build_hermite_coefficients(unsigned short, unsigned short, double, double, double, double, std::vector<double>&, std::vector<double>&)",
+        "image": "giao_integral_benchmark",
+        "samples": 282
+      },
+      {
+        "symbol": "giao::compute_eri(giao::Shell const&, giao::Shell const&, giao::Shell const&, giao::Shell const&, giao::MagneticField const&, std::span<std::complex<double>, 18446744073709551615ul>, giao::EriWorkspace&)",
+        "image": "giao_integral_benchmark",
+        "samples": 204
+      },
+      {
+        "symbol": "_platform_memset",
+        "image": "libsystem_platform.dylib",
+        "samples": 194
+      },
+      {
+        "symbol": "giao::PrimitiveGaussian::PrimitiveGaussian(double, giao::Vec3, giao::CartesianExponent, double, bool)",
+        "image": "giao_integral_benchmark",
+        "samples": 120
+      },
+      {
+        "symbol": "giao::EriWorkspace::prepare(std::array<unsigned long, 7ul>, unsigned long, std::array<unsigned long, 4ul>)",
+        "image": "giao_integral_benchmark",
+        "samples": 95
+      },
+      {
+        "symbol": "giao::(anonymous namespace)::validate_finite(giao::Vec3, char const*)",
+        "image": "giao_integral_benchmark",
+        "samples": 93
+      },
+      {
+        "symbol": "_platform_memmove",
+        "image": "libsystem_platform.dylib",
+        "samples": 66
+      },
+      {
+        "symbol": "DYLD-STUB$$bzero",
+        "image": "giao_integral_benchmark",
+        "samples": 62
+      },
+      {
+        "symbol": "__bzero",
+        "image": "libsystem_platform.dylib",
+        "samples": 24
+      },
+      {
+        "symbol": "DYLD-STUB$$memmove",
+        "image": "giao_integral_benchmark",
+        "samples": 17
+      },
+      {
+        "symbol": "std::vector<double>::__append(unsigned long)",
+        "image": "giao_integral_benchmark",
+        "samples": 10
+      }
+    ]
+  },
+  {
+    "case": "after_finite",
+    "tool": "/usr/bin/sample",
+    "duration_seconds": 5,
+    "interval_ms": 1,
+    "total_samples": 4172,
+    "top_of_stack_minimum_count": 5,
+    "top_of_stack": [
+      {
+        "symbol": "giao::detail::EriKernel::compute(giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::PrimitiveGaussian const&, giao::GaussianPairData const&, giao::GaussianPairData const&, bool, giao::EriWorkspace&)",
+        "image": "giao_integral_benchmark",
+        "samples": 3878
+      },
+      {
+        "symbol": "giao::detail::build_hermite_coefficients(unsigned short, unsigned short, double, double, double, double, std::vector<double>&, std::vector<double>&)",
+        "image": "giao_integral_benchmark",
+        "samples": 66
+      },
+      {
+        "symbol": "giao::compute_eri(giao::Shell const&, giao::Shell const&, giao::Shell const&, giao::Shell const&, giao::MagneticField const&, std::span<std::complex<double>, 18446744073709551615ul>, giao::EriWorkspace&)",
+        "image": "giao_integral_benchmark",
+        "samples": 50
+      },
+      {
+        "symbol": "_platform_memset",
+        "image": "libsystem_platform.dylib",
+        "samples": 45
+      },
+      {
+        "symbol": "giao::PrimitiveGaussian::PrimitiveGaussian(double, giao::Vec3, giao::CartesianExponent, double, bool)",
+        "image": "giao_integral_benchmark",
+        "samples": 42
+      },
+      {
+        "symbol": "giao::EriWorkspace::prepare(std::array<unsigned long, 7ul>, unsigned long, std::array<unsigned long, 4ul>)",
+        "image": "giao_integral_benchmark",
+        "samples": 29
+      },
+      {
+        "symbol": "DYLD-STUB$$bzero",
+        "image": "giao_integral_benchmark",
+        "samples": 22
+      },
+      {
+        "symbol": "giao::(anonymous namespace)::validate_finite(giao::Vec3, char const*)",
+        "image": "giao_integral_benchmark",
+        "samples": 22
+      },
+      {
+        "symbol": "_platform_memmove",
+        "image": "libsystem_platform.dylib",
+        "samples": 8
+      },
+      {
+        "symbol": "DYLD-STUB$$memmove",
+        "image": "giao_integral_benchmark",
+        "samples": 6
+      }
+    ]
+  }
+]

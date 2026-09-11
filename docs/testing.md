@@ -215,3 +215,19 @@ Each milestone PR or review record states:
 5. maximum angular momentum and numerical domain tested;
 6. failures, error envelopes, and unresolved issues;
 7. benchmark change, if optimization occurred.
+
+## Milestone 9 optimization checks
+
+`tests/data/eri_recursive_m8.jsonl` freezes 192 primitive values from the M8
+recursive kernel at commit `2d5b3b13c85fb1258788d698bff551bebbde4b93`.
+The 96 fixed-seed quartets cover Cartesian powers through g on each center,
+signed coefficients, normalized and unnormalized primitives, and zero and
+finite fields. The iterative-only phase passed these checks before adding
+the real path; the final implementation runs the same regression test.
+The independent 80-digit OS comparisons remain unchanged.
+
+C++ tests compare 128 randomized zero-field quartets with the general complex
+path, reuse one workspace across both paths, and check signed zero,
+nonzero gauge origins, tiny fields on all axes, and the smallest positive
+subnormal field. Warmed zero-field and finite-field shell calls must allocate
+no heap memory. The release, ASan/UBSan, and OpenMP builds run these checks.

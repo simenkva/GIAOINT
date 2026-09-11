@@ -132,6 +132,7 @@ void run_eri_case(const giao::Shell& a, const giao::Shell& b,
 
 int main(int argc, char** argv) {
     double minimum_seconds = 0.25;
+    const std::string mode = argc == 2 ? argv[1] : "";
     if (argc == 2 && std::string(argv[1]) == "--quick") {
         minimum_seconds = 0.02;
     }
@@ -151,6 +152,33 @@ int main(int argc, char** argv) {
                                       {0.2, 0.1, -0.3})}};
 
     for (const auto& [field_name, field] : fields) {
+        // Four distinct, non-aligned centers; two primitives on every shell.
+        // --profile isolates this matrix for before/after stack sampling.
+        if (mode == "--profile" || mode == "--sample-zero" ||
+            mode == "--sample-finite") {
+            const bool sampling = mode != "--profile";
+            if (sampling && mode != "--sample-" + field_name) {
+                continue;
+            }
+            for (std::uint16_t angular = 0; angular <= 2; ++angular) {
+                if (sampling && angular != 2U) {
+                    continue;
+                }
+                const giao::Shell a({-0.3, 0.2, 0.5}, angular,
+                                     {2.1, 0.55}, {0.3, 0.8});
+                const giao::Shell b({0.6, -0.4, 0.1}, angular,
+                                     {1.7, 0.42}, {-0.2, 0.9});
+                const giao::Shell c({0.2, 0.7, -0.6}, angular,
+                                     {2.1, 0.55}, {0.3, 0.8});
+                const giao::Shell d({-0.5, -0.1, 0.4}, angular,
+                                     {1.7, 0.42}, {-0.2, 0.9});
+                const std::array<std::string, 3> classes{
+                    "profile-s-s-s-s", "profile-p-p-p-p", "profile-d-d-d-d"};
+                run_eri_case(a, b, c, d, classes[angular], "2x2x2x2",
+                             field, field_name, sampling ? 10.0 : minimum_seconds);
+            }
+            continue;
+        }
         run_pair_cases(s_a, p_b, "s-p", "2x2", field, field_name,
                        minimum_seconds);
         run_pair_cases(d_a, d_b, "d-d", "3x3", field, field_name,

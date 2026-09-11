@@ -1,6 +1,13 @@
 # Milestone 9 implementation plan: ERI performance
 
-Status: planned, not started.
+Status: complete, 2026-09-11 (unreleased).
+
+The final implementation uses a lexicographic topological fill with contiguous
+Boys orders, a collapsed real table at exact zero field, and Gaussian-pair
+reuse outside Cartesian loops. Screening and threading defaults remain
+unchanged. See [the measured report](../benchmarks/results/m9_macos_arm64.md)
+for the final data and validation; the planning observations and rollout below
+remain as the historical rationale.
 
 This document is the detailed implementation plan for Milestone 9. It exists
 separately from `docs/implementation_plan.md` because it needs to carry
@@ -9,6 +16,19 @@ per-milestone summary. `docs/implementation_plan.md` links here rather than
 repeating this content.
 
 ## 1. Motivation and measured baseline
+
+### Final measured outcome
+
+On the Apple M2 Pro / AppleClang 21 development machine, the reproducible
+four-center, two-primitive dddd workload improved from 5.47 to 89.37 blocks/s
+at zero field (16.34x), and from 5.48 to 23.24 blocks/s at finite field
+(4.24x). The full water/cc-pVDZ ERI call improved from 691.7 to 238.8 ms
+(2.90x). The final report archives the matched before/after JSONL, stage
+measurements, and new stack profiles. The original planning microbenchmark
+did not record its exact geometry; final comparisons use the fixed geometry
+now checked into `benchmarks/integral_benchmark.cpp`.
+
+### Historical planning baseline
 
 Milestone 6 recorded ERI throughput but did not profile it. STATUS.md
 documents the qualitative limitation ("ERIs remain correctness-first and
@@ -48,10 +68,9 @@ Single-core rate for the same shell geometry at increasing angular momentum
 
 The call count grows 81x then 16x between steps, but the measured rate drops
 294x then 130x. Each individual `primitive_eri` call is *also* getting more
-expensive as L grows, not just more numerous — consistent with a recursion
-tree whose node count grows faster than the requested tensor size, which is
-the expected cost profile of a top-down memoized recursion versus an
-iterative bottom-up fill.
+expensive as L grows, not just more numerous — consistent with increasing auxiliary work and indexing/call overhead.
+Because the old recursion is memoized, these timings alone do not establish
+that it evaluates more unique tensor entries than a bottom-up fill.
 
 ### Finding 3: zero field does not currently cost less than finite field
 
@@ -212,3 +231,36 @@ paragraph style used for Milestones 1-8.
   `benchmarks/results/`.
 - Phase 9.4's default-change decision (if any) is recorded explicitly in
   `docs/compatibility.md` and `CHANGELOG.md`.
+
+## 7. Completion record
+
+Phase 9.1 passed 115 ERI tests, including 192 frozen values captured from the
+recursive implementation before editing it and the independent high-precision
+OS oracle. The recursive implementation was then removed. The final fill
+uses lexicographic angular order instead of explicit degree buckets: every
+lowered coordinate precedes the current entry, so both `n` and `n+1`
+dependencies are ready. Boys orders are contiguous within each entry.
+
+Phase 9.2 passed the same regression suite and 128 randomized C++ comparisons
+against the general path at zero field. Tiny and subnormal nonzero fields
+select the complex path. The real path retains the original six-index
+admission limit while allocating its smaller real table. Both paths reuse
+scratch without allocations after warm-up.
+
+Phase 9.3 moved bra pair construction outside ket primitive loops and ket pair
+construction outside Cartesian loops. A direct ssss seed avoids unnecessary
+angular-table setup. Neither change alters primitive accumulation order.
+
+Phase 9.4 retains `screening_threshold=0.0` and `threads=1`; the decision is in
+`compatibility.md` and `../CHANGELOG.md`. The performance example now accepts
+explicit threading/screening options. New OpenMP measurements reach 5.86x
+scaling at eight threads on the 76-quartet finite-field p-shell workload.
+
+Phase 9.5 passed 376 Python tests, release/ASan/UBSan/OpenMP C++ checks,
+Ruff/Black, and the standalone PySCF/libcint check with maximum ERI error
+`1.704e-14`. Frozen finite-field results match bit for bit on this machine;
+zero-field differences reach at most `1.73e-18`. No tolerance was loosened.
+The before/after report includes shell throughput, basis-scale timings,
+stack-sampling counts, compiler/CPU provenance, and remaining costs. The
+zero-field dddd improvement meets the order-of-magnitude target; finite-field
+improvement is 4.24x, with the general kernel still the main cost.

@@ -4,7 +4,7 @@
 atomic-orbital integrals over complex gauge-including atomic orbitals (GIAOs),
 also called London atomic orbitals.
 
-Milestone 8 is complete; Milestone 9 (ERI performance) is planned, see
+Milestone 9 (ERI performance) is complete; see
 `docs/eri_performance_plan.md`. The repository contains the mathematical
 specification, independent pure-Python overlap/property references, and a
 production C++20 MD/Hermite engine with a NumPy API. Implemented operators are

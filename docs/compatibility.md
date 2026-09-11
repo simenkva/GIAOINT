@@ -39,3 +39,12 @@ Release CI covers CPython 3.11--3.14 on current GitHub-hosted Linux and macOS
 runners. The C++ core requires a C++20 compiler and CMake 3.20 or newer. Native
 Windows is not currently a supported release platform. PySCF/libcint checks are
 optional external-oracle tests and are not runtime dependencies.
+
+## Milestone 9 performance defaults
+
+Milestone 9 keeps Python `eri()` defaults at `screening_threshold=0.0` and
+`threads=1`. Callers opt into approximation and parallel execution. Faster
+shell kernels do not establish a suitable error threshold or thread budget
+for all applications. Exact-zero-field dispatch changes the internal
+algorithm while preserving the documented numerical tolerance, complex output
+dtype, shapes, and conventions.

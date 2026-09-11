@@ -289,8 +289,8 @@ an explicitly separate, unimplemented transformation layer.
 
 ## Milestone 9: ERI performance
 
-Status: planned, not started. See `docs/eri_performance_plan.md` for the
-detailed plan, measured baseline, and staged rollout.
+Status: complete, 2026-09-11 (unreleased). See `docs/eri_performance_plan.md`
+for the detailed plan, staged validation, and measured results.
 
 ### Scope
 
@@ -317,6 +317,14 @@ detailed plan, measured baseline, and staged rollout.
   with compiler/CPU/thread-count provenance;
 - any Python default change is recorded in `docs/compatibility.md` and
   `CHANGELOG.md`, not made silently.
+
+Exit gate passed with 376 Python tests, release/ASan/UBSan/OpenMP C++ checks,
+Ruff/Black, the unchanged independent OS and PySCF/libcint comparisons,
+192 frozen recursive values, and 128 randomized real/general cross-checks.
+The matched Apple M2 Pro runs show 16.34x zero-field and 4.24x finite-field
+dddd speedups; water/cc-pVDZ improves 2.90x. The report and raw measurements
+are in `benchmarks/results/m9_macos_arm64.md`. Screening and threading remain
+opt-in; no public numerical convention or output shape changed.
 
 ## Highest-risk issues
 
@@ -373,11 +381,10 @@ performance replacement rather than an open correctness dependency.
 - Unscreened ERIs before any complex screening optimization.
 - Streaming/direct ERI consumption as the default architecture.
 - BSD-3-Clause licensing and Linux/macOS as the initial release matrix.
-- Next optimized ERI backend (was an unresolved decision through Milestone 8):
+- Optimized ERI backend (resolved and implemented in Milestone 9):
   stack-sampling profiling of the production MD path (Milestone 9 planning,
   see `docs/eri_performance_plan.md`) found 99.6% of ERI time inside the
   six-index R-tensor recursion in `src/eri.cpp`, not in the Boys function or
-  in `gaussian_product`. The decision is to rewrite that recursion
-  iteratively and add a collapsed real-arithmetic zero-field path, not to
-  replace MD with the benchmark-only OS/HGP prototype, which does not
-  address the measured architectural bottleneck.
+  in `gaussian_product`. Milestone 9 implemented an iterative MD recurrence
+  and a collapsed real-arithmetic zero-field path. The OS/HGP prototype
+  remains benchmark-only.

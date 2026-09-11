@@ -42,8 +42,7 @@ class EriWorkspace {
     BoysScaling boys_scaling_{BoysScaling::unscaled};
     std::size_t boys_maximum_order_{};
     std::vector<Complex> auxiliary_;
-    std::vector<std::uint32_t> auxiliary_generation_tags_;
-    std::uint32_t auxiliary_generation_{};
+    std::vector<double> real_auxiliary_;
 };
 
 struct ShellQuartetIndex {

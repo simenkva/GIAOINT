@@ -121,6 +121,15 @@
   clean-wheel example smoke tests, an installed-package downstream CMake
   consumer, and unchanged PySCF 2.8.0/libcint zero-field agreement.
 
+- Milestone 9 iterative six-index ERI auxiliaries, collapsed real arithmetic
+  at exact zero field, a direct ssss seed, and Gaussian-pair reuse outside
+  Cartesian loops. The general path retains the finite-field recurrence and
+  primitive accumulation order; screening/threading defaults remain unchanged.
+- Milestone 9 validation with 376 Python tests, release/ASan/UBSan/OpenMP C++
+  checks, Ruff/Black, 192 frozen recursive values, 128 randomized real/general
+  comparisons, and PySCF/libcint agreement with maximum ERI error `1.704e-14`.
+  This work is unreleased; the package version remains 0.8.0.
+
 ## Current limitations
 
 - The reference engine supports one segmented contraction per shell, while
@@ -136,14 +145,13 @@
   the conservative positive asymptotic sector are rejected diagnostically.
 - The correctness-first adaptive Boys quadrature is not yet performance-tuned;
   an exponential-sum implementation remains a possible future backend.
-- ERIs remain correctness-first and scalar within each shell block. Screening
-  and shell-block OpenMP are opt-in; the default remains unscreened and serial.
-  The full
-  six-index auxiliary has a 4,000,000-entry workspace cap; combined Cartesian
-  order above 32 is rejected. Stack-sampling profiling done for Milestone 9
-  planning found 99.6% of ERI wall time inside the six-index recursion in
-  `src/eri.cpp`, not the Boys function; see `docs/eri_performance_plan.md`
-  for the measurement and the planned iterative/zero-field-fast-path rewrite.
+- ERIs use an iterative complex six-index kernel at finite field and a
+  collapsed real kernel at exact zero field. Work within each block remains
+  serial; screening and shell-block OpenMP are opt-in. Both paths retain the
+  original 4,000,000-entry six-index admission cap and combined order 32
+  limit. The optimized general kernel still accounts for 93% of finite-field
+  dddd top-of-stack samples; see `benchmarks/results/m9_macos_arm64.md`.
+  Basis-scale zero-field ERIs remain slower than libcint.
 - Derivative shell drivers are correctness-first compositions of shifted
   production kernels. They are serial, do not yet use derivative screening,
   and may repeat primitive setup.
@@ -215,11 +223,19 @@ p--p--p--p ERI throughput improved from 580.4 to 706.6 blocks/s at zero field
 are in `benchmarks/results/m6_macos_arm64.md`. These remain informational,
 machine-specific baselines rather than noisy CI thresholds.
 
+Milestone 9 records matched before/after runs on Apple M2 Pro, macOS 26.6.2,
+AppleClang 21, Release, one thread, screening disabled. The dddd workload
+improved from 5.47 to 89.37 blocks/s at zero field (16.34x), and 5.48 to
+23.24 blocks/s at finite field (4.24x). The water/cc-pVDZ ERI call improved
+from 691.7 to 238.8 ms (2.90x). New OpenMP runs reach 5.86x at eight threads
+on the 76-quartet finite-field p-shell batch. Raw JSONL, profiling counts,
+intermediate measurements, and the basis-scale comparison are in
+`benchmarks/results/m9_macos_arm64.md`. These are local measurements without
+CPU pinning, not portable performance guarantees.
+
 ## Next milestone
 
-The planned Milestone 0--8 sequence is complete. Milestone 9, ERI
-performance, is planned but not started; `docs/eri_performance_plan.md`
-records the profiling baseline, staged rollout, and exit gate. A separately
-validated spherical transformation layer and preparation of a 1.0 API freeze
-remain candidate work after Milestone 9. Mixed nuclear/magnetic derivatives
-remain deferred.
+Milestones 0--9 are complete. A separately validated spherical transformation
+layer and preparation of a 1.0 API freeze remain candidate work. Mixed
+nuclear/magnetic derivatives remain deferred. Further finite-field ERI work
+can use the remaining costs recorded in `docs/eri_performance_plan.md`.

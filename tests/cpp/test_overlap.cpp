@@ -4,6 +4,7 @@
 #include "giao_integrals/nuclear.hpp"
 #include "giao_integrals/overlap.hpp"
 #include "giao_integrals/property.hpp"
+#include "../../src/eri_kernel.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -12,6 +13,8 @@
 #include <iostream>
 #include <new>
 #include <numbers>
+#include <limits>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -388,6 +391,11 @@ void test_electron_repulsion() {
                       workspace);
     check(allocation_count == allocations_before_reuse,
           "warmed ERI shell kernel performs no heap allocations");
+    giao::compute_eri(shell_a, shell_b, shell_a, shell_b, {}, block, workspace);
+    const auto real_allocations_before_reuse = allocation_count;
+    giao::compute_eri(shell_a, shell_b, shell_a, shell_b, {}, block, workspace);
+    check(allocation_count == real_allocations_before_reuse,
+          "warmed zero-field ERI shell kernel performs no heap allocations");
 
     const giao::Basis basis({shell_b});
     const std::array<giao::ShellQuartetIndex, 1> quartets{{{0, 0, 0, 0}}};
@@ -544,6 +552,64 @@ void test_analytic_derivatives() {
           "derivative shell block has leading center and axis dimensions");
 }
 
+void test_eri_zero_field_dispatch() {
+    using giao::detail::EriKernel;
+    check(EriKernel::use_real_path(giao::MagneticField{}), "exact zero uses real ERI");
+    check(EriKernel::use_real_path(giao::MagneticField({-0.0, 0.0, -0.0},
+                                                       {1.0, -2.0, 3.0})),
+          "signed zero and arbitrary gauge use real ERI");
+    for (std::size_t axis = 0; axis < 3; ++axis) {
+        for (const double tiny : {1.0e-14, -1.0e-14,
+                                  std::numeric_limits<double>::denorm_min()}) {
+            const giao::Vec3 field{axis == 0U ? tiny : 0.0,
+                                   axis == 1U ? tiny : 0.0,
+                                   axis == 2U ? tiny : 0.0};
+            check(!EriKernel::use_real_path(giao::MagneticField(field)),
+                  "every nonzero field component uses complex ERI");
+        }
+    }
+
+    std::mt19937 random(9002);
+    std::uniform_real_distribution<double> coordinate(-0.8, 0.8);
+    std::uniform_real_distribution<double> exponent(0.4, 2.0);
+    giao::EriWorkspace workspace;
+    for (std::size_t trial = 0; trial < 128; ++trial) {
+        std::vector<giao::PrimitiveGaussian> primitives;
+        for (std::size_t center = 0; center < 4; ++center) {
+            const auto components = giao::cartesian_components(
+                static_cast<std::uint16_t>(random() % 5U));
+            primitives.emplace_back(
+                exponent(random), giao::Vec3{coordinate(random), coordinate(random),
+                                             coordinate(random)},
+                components[random() % components.size()], coordinate(random),
+                trial % 2U == 0U);
+        }
+        const auto& a = primitives[0];
+        const auto& b = primitives[1];
+        const auto& c = primitives[2];
+        const auto& d = primitives[3];
+        const giao::MagneticField zero({}, {coordinate(random), coordinate(random),
+                                            coordinate(random)});
+        const auto real = giao::primitive_eri(a, b, c, d, zero, workspace);
+        const auto general = EriKernel::compute(
+            a, b, c, d, giao::gaussian_product(a, b, zero),
+            giao::gaussian_product(c, d, zero), false, workspace);
+        check(std::isfinite(real.real()) && std::isfinite(general.real()),
+              "real/general cross-check values are finite");
+        check_close(real, general, "collapsed real versus general zero-field ERI",
+                    5.0e-14);
+        check(real.imag() == 0.0, "zero-field ERI is exactly real");
+        const giao::MagneticField tiny({1.0e-14, -2.0e-14, 3.0e-14});
+        const auto finite = giao::primitive_eri(a, b, c, d, tiny, workspace);
+        const auto forced = EriKernel::compute(
+            a, b, c, d, giao::gaussian_product(a, b, tiny),
+            giao::gaussian_product(c, d, tiny), false, workspace);
+        check(finite == forced, "tiny-field public dispatch equals general path");
+        check_close(giao::primitive_eri(a, b, c, d, zero, workspace), real,
+                    "workspace reuse across real and complex paths");
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -556,6 +622,7 @@ int main() {
     test_one_electron_properties();
     test_boys_and_nuclear_attraction();
     test_electron_repulsion();
+    test_eri_zero_field_dispatch();
     test_eri_screening_and_parallel_driver();
     test_analytic_derivatives();
     if (failures != 0) {

@@ -45,3 +45,36 @@ cmake -S . -B build-openmp \
 ```
 
 Other compilers use CMake's normal `FindOpenMP` discovery.
+
+## Milestone 9 ERI measurements
+
+`giao_integral_benchmark --profile` runs ssss, pppp, and dddd blocks with
+two primitives per shell at four distinct centers. The source fixes the
+centers, exponents, coefficients, and finite field for reproducibility.
+`--sample-zero` and `--sample-finite` keep the dddd case running long enough
+for a stack sampler. For example, in a second terminal on macOS:
+
+```console
+sample <benchmark-pid> 5 1 -file profile.txt
+```
+
+Use the same benchmark source against the before and after libraries. Run
+timings separately from compilation, tests, and profiling. The
+`results/m9_macos_arm64.md` report links the archived JSONL and records the
+compiler, machine, source baseline, and commands.
+
+For basis-scale timings, run:
+
+```console
+python examples/performance_comparison.py
+python examples/performance_comparison.py --basis cc-pVDZ --threads 4 --screening-threshold 1e-10
+```
+
+The second command requires an OpenMP build. The example includes Schwarz
+bound construction in each timed `eri()` call. Screening may cost more than
+it saves for small or dense bases. Choose a threshold by checking the error
+in your target observable; it bounds omitted AO integrals, not an accumulated
+energy error. Python `eri_batches()` shares bound setup across its chunks;
+C++ callers can reuse `EriSchwarzBounds` for the same basis and field. Benchmark thread counts for your workload and avoid
+oversubscribing an outer parallel calculation. The defaults remain serial
+and unscreened.

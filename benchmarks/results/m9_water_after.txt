@@ -1,0 +1,20 @@
+Extension: build/m9-python/_giao_integrals.cpython-313-darwin.so
+giao-integrals 0.8.0 vs PySCF 2.8.0
+threads=1; screening_threshold=0
+Best-of timings on the water geometry from basis_set_exchange_comparison.py.
+Ratio is giao_integrals / PySCF wall time (>1x means giao_integrals is slower).
+
+basis       AOs  operator           giao_integrals        PySCF     ratio
+-------------------------------------------------------------------------
+STO-3G        7  overlap                  0.033 ms     0.046 ms      0.7x
+STO-3G        7  kinetic                  0.458 ms     0.063 ms      7.3x
+STO-3G        7  nuclear attraction       0.817 ms     0.061 ms     13.4x
+STO-3G        7  ERI                     14.178 ms     2.241 ms      6.3x
+6-31G        13  overlap                  0.072 ms     0.053 ms      1.4x
+6-31G        13  kinetic                  0.949 ms     0.078 ms     12.2x
+6-31G        13  nuclear attraction       1.853 ms     0.088 ms     20.9x
+6-31G        13  ERI                     66.120 ms     9.788 ms      6.8x
+cc-pVDZ      25  overlap                  0.123 ms     0.059 ms      2.1x
+cc-pVDZ      25  kinetic                  1.966 ms     0.090 ms     21.9x
+cc-pVDZ      25  nuclear attraction       3.633 ms     0.110 ms     33.1x
+cc-pVDZ      25  ERI                    238.796 ms    24.715 ms      9.7x
