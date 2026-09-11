@@ -1,5 +1,11 @@
 # Public API
 
+For XYZ geometries and named, Gaussian94, NWChem, or BSE JSON bases, start with
+[`Molecule`](molecule_api.md). It provides matrix and ERI methods and exposes
+its `basis`, `nuclei`, and `field` for the lower-level functions below.
+The molecule reader accepts ångström input by default and converts to bohr;
+the lower-level API below takes atomic units throughout.
+
 The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 

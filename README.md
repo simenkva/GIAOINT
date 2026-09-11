@@ -14,6 +14,26 @@ unscreened four-center electron repulsion. The complex Boys implementation
 returns orders 0 through 32 with region and error diagnostics plus a
 cancellation-safe scaled path.
 
+To compute integrals from an XYZ molecule and a named or standard-format basis:
+
+```console
+python -m pip install '.[molecule]'
+```
+
+```python
+import giao_integrals as gi
+
+mol = gi.Molecule.from_xyz("water.xyz", basis="cc-pVDZ")
+S = mol.overlap()
+H = mol.core_hamiltonian()
+eri = mol.eri()  # Full Cartesian tensor, with a default 512 MiB output limit.
+```
+
+You can also pass Gaussian94 (`.gbs`), NWChem (`.nw`), or BSE JSON basis files.
+XYZ coordinates default to ångström; integral outputs use atomic units.
+See the [molecule quick start](docs/molecule_api.md) and
+[runnable example](examples/molecular_integrals.py).
+
 Install a development build and run the tests with Python 3.11--3.14:
 
 ```console
@@ -49,6 +69,7 @@ Start with:
 - [Mathematical specification](docs/mathematical_specification.md)
 - [Algorithm choices](docs/algorithms.md)
 - [C++ and Python API](docs/api.md)
+- [Molecule and basis-file wrapper](docs/molecule_api.md)
 - [Verification strategy](docs/testing.md)
 - [Implementation plan](docs/implementation_plan.md)
 - [Repository assessment](docs/repository_assessment.md)

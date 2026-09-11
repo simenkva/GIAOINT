@@ -130,6 +130,16 @@
   comparisons, and PySCF/libcint agreement with maximum ERI error `1.704e-14`.
   This work is unreleased; the package version remains 0.8.0.
 
+- Molecule wrapper for XYZ files/text, named BSE bases, Gaussian94/NWChem
+  files, and BSE JSON. It handles ångström-to-bohr conversion, normalized
+  Cartesian basis construction, and shell-to-atom ownership, with matrix,
+  physical core-Hamiltonian, and bounded full/streamed ERI methods.
+- Wrapper validation with 410 Python tests, Ruff/Black, and independent
+  PySCF checks for STO-3G, 6-31G, and cc-pVDZ plus three cc-pVDZ file formats.
+  Maximum ERI difference in those checks is `4.352e-14`. See
+  `docs/molecule_api.md`; the optional `molecule` extra needs no runtime
+  network access.
+
 ## Current limitations
 
 - The reference engine supports one segmented contraction per shell, while
@@ -155,9 +165,9 @@
 - Derivative shell drivers are correctness-first compositions of shifted
   production kernels. They are serial, do not yet use derivative screening,
   and may repeat primitive setup.
-- `Basis` has no atom-to-shell ownership map. Basis-center and attraction
-  potential-center derivatives are therefore returned separately for callers
-  to assemble into atom derivatives.
+- The low-level `Basis` has no atom-to-shell ownership map. `Molecule` tracks
+  ownership in `shell_atoms`; derivative APIs still return basis-center and
+  attraction-potential-center contributions separately for callers to assemble.
 - Mixed nuclear/magnetic derivatives and derivatives of the general
   moment/gradient/momentum property APIs are not yet exposed.
 - Cartesian functions only are planned for the initial engine.

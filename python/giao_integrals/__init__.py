@@ -71,6 +71,7 @@ from ._giao_integrals import (
     primitive_overlap_magnetic_derivatives,
 )
 from .eri import EriBatch, eri, eri_batches, eri_schwarz_bounds
+from .molecule import MolecularIntegrals, Molecule
 
 __all__ = [
     "Basis",
@@ -79,6 +80,8 @@ __all__ = [
     "CartesianExponent",
     "EriBatch",
     "MagneticField",
+    "MolecularIntegrals",
+    "Molecule",
     "Nucleus",
     "PrimitiveGaussian",
     "Shell",

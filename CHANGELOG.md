@@ -1,9 +1,17 @@
 # Changelog
 
-## Unreleased — Milestone 9
+## Unreleased
 
-Replaced the recursive ERI auxiliary with an iterative six-index fill and
-added a collapsed real-arithmetic path for exact zero field. Shell evaluation
+Added `Molecule.from_xyz()` and `MolecularIntegrals` for computing integrals
+from XYZ files/text and named, Gaussian94, NWChem, or BSE JSON bases. The
+optional `molecule` extra supplies Basis Set Exchange's local database and
+format readers. The wrapper handles coordinate conversion and shell ownership,
+provides a physical core Hamiltonian, and offers full ERIs with a 512 MiB
+default output limit or streaming batches. All output remains Cartesian;
+unsupported ECP data raises an error. See `docs/molecule_api.md`.
+
+Milestone 9 replaced the recursive ERI auxiliary with an iterative six-index
+fill and added a collapsed real-arithmetic path for exact zero field. Shell evaluation
 reuses Gaussian-pair data across Cartesian components; ssss evaluation uses
 the Boys seed directly. Public numerical conventions, output shapes, and
 angular/workspace admission limits remain unchanged.

@@ -26,6 +26,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
 ]
 
+[project.optional-dependencies]
+molecule = ["basis-set-exchange>=0.11"]
+
 [project.urls]
 Documentation = "https://github.com/simenkva/GIAO-integrals/tree/main/docs"
 Issues = "https://github.com/simenkva/GIAO-integrals/issues"

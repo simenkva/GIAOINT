@@ -231,3 +231,22 @@ path, reuse one workspace across both paths, and check signed zero,
 nonzero gauge origins, tiny fields on all axes, and the smallest positive
 subnormal field. Warmed zero-field and finite-field shell calls must allocate
 no heap memory. The release, ASan/UBSan, and OpenMP builds run these checks.
+
+## Molecule and basis-format wrapper checks
+
+`tests/python/test_molecule.py` checks XYZ paths/text, atom counts and symbols,
+ångström/bohr conversion, finite coordinates, shell ownership and ordering,
+general contractions and SP splitting, standard basis-file round trips,
+optional-dependency errors, ECP rejection, and full/streamed ERI limits.
+Zero- and finite-field matrices are compared with separately constructed
+low-level bases and nuclei. The JSON tests block the BSE import to verify that
+this path works without the optional extra. Development dependencies include
+BSE so the format-reader tests run in CI.
+
+Run `python tests/external/molecule_pyscf.py` with PySCF installed for an
+independent end-to-end check. It compares water/STO-3G, 6-31G, and cc-pVDZ,
+then cc-pVDZ read from Gaussian94, NWChem, and JSON files. It accounts for
+PySCF's Cartesian normalization and supplies bohr coordinates after conversion
+to avoid differences between physical-constant versions. The local PySCF
+2.8.0 / BSE 0.11 run agreed to at most `4.352e-14` for ERIs; the Python suite
+also passed with BSE 0.12.
