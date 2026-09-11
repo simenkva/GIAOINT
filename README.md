@@ -1,24 +1,47 @@
-# giao-integrals
+# GIAOINT
 
-`giao-integrals` is a C++20/pybind11 library for Cartesian
-atomic-orbital integrals over complex gauge-including atomic orbitals (GIAOs),
-also called London atomic orbitals.
+GIAOINT computes Cartesian atomic-orbital integrals over complex
+gauge-including atomic orbitals (GIAOs), also called London atomic orbitals.
+It targets finite-magnetic-field quantum chemistry: NMR shielding, magnetic
+susceptibility, and other properties that need gauge-origin-independent
+orbitals rather than the zero-field integrals most packages provide.
+
+The C++20 core evaluates arbitrary-angular-momentum shells with a
+McMurchie-Davidson/Hermite recurrence and a production complex Boys-function
+implementation (orders 0 through 32, with region and error diagnostics). A
+pybind11 layer exposes it to Python as `giao-integrals`, with NumPy arrays in
+and out and the GIL released during evaluation.
+
+## What's implemented
+
+- Overlap, Cartesian moments, gradient, canonical momentum, canonical kinetic
+  energy, and the full physical magnetic kinetic energy.
+- Nuclear attraction and unscreened four-center electron repulsion (ERI).
+- Analytic first derivatives of the baseline Hamiltonian integrals and ERI
+  shell quartets, with respect to basis centers, attraction-potential
+  centers, and magnetic-field components.
+- Optional complex Schwarz screening and OpenMP shell-quartet parallelism
+  for ERIs; both stay off by default, so the unscreened baseline stays
+  fixed unless you opt in.
+- A `Molecule` wrapper that loads an XYZ geometry plus a named basis
+  (`cc-pVDZ`, `STO-3G`, ...) or a Gaussian94/NWChem/BSE-JSON file and returns
+  ready-to-use matrices.
 
 Milestone 9 (ERI performance) is complete; see
-`docs/eri_performance_plan.md`. The repository contains the mathematical
-specification, independent pure-Python overlap/property references, and a
-production C++20 MD/Hermite engine with a NumPy API. Implemented operators are
-overlap, Cartesian moments, gradient, canonical momentum, canonical kinetic
-energy, the full physical magnetic kinetic energy, nuclear attraction, and
-unscreened four-center electron repulsion. The complex Boys implementation
-returns orders 0 through 32 with region and error diagnostics plus a
-cancellation-safe scaled path.
+[`docs/eri_performance_plan.md`](docs/eri_performance_plan.md) and
+[`STATUS.md`](STATUS.md) for what's done and what isn't yet.
 
-To compute integrals from an XYZ molecule and a named or standard-format basis:
+## Install
 
 ```console
 python -m pip install '.[molecule]'
 ```
+
+The `molecule` extra adds Basis Set Exchange for named basis sets and
+Gaussian94/NWChem parsing. Skip it if you only need the low-level `Basis`
+API or BSE JSON input.
+
+## Quick example
 
 ```python
 import giao_integrals as gi
@@ -26,15 +49,26 @@ import giao_integrals as gi
 mol = gi.Molecule.from_xyz("water.xyz", basis="cc-pVDZ")
 S = mol.overlap()
 H = mol.core_hamiltonian()
-eri = mol.eri()  # Full Cartesian tensor, with a default 512 MiB output limit.
+eri = mol.eri()  # full Cartesian tensor, 512 MiB default output limit
 ```
 
-You can also pass Gaussian94 (`.gbs`), NWChem (`.nw`), or BSE JSON basis files.
-XYZ coordinates default to ångström; integral outputs use atomic units.
-See the [molecule quick start](docs/molecule_api.md) and
-[runnable example](examples/molecular_integrals.py).
+XYZ coordinates default to ångström; every integral output uses atomic
+units. Read the [user manual](docs/user_manual.md) for a full walkthrough,
+or run [`examples/molecular_integrals.py`](examples/molecular_integrals.py)
+directly.
 
-Install a development build and run the tests with Python 3.11--3.14:
+## Conventions worth knowing up front
+
+The public data types are `PrimitiveGaussian`, `Shell`, `Basis`,
+`MagneticField`, and `Nucleus`. Each operator has primitive, shell, and
+basis-level entry points where applicable. Results are C-contiguous
+`complex128` arrays, even at zero field, because GIAOINT integrals stay
+complex in general; shell blocks use `(ao_a, ao_b)` ordering, and basis
+matrices follow input shell order. ERIs default to packed canonical
+shell-quartet batches; request the full `(nao,)*4` tensor explicitly with a
+byte limit.
+
+## Development
 
 ```console
 python3 -m venv .venv
@@ -43,29 +77,16 @@ python3 -m venv .venv
 .venv/bin/pytest -q
 ```
 
-With the project conda environment, replace the first line with
-`conda activate pyscf` and use `python` in the remaining commands. The C++20
-core can be built independently with `cmake --preset release`,
-`cmake --build --preset release`, and `ctest --preset release`; the presets
-require Ninja.
+Tests run on Python 3.11 through 3.14. With the project's conda
+environment, run `conda activate pyscf` instead and drop `.venv/bin/` from
+the remaining commands. Build and test the C++ core on its own with
+`cmake --preset release`, `cmake --build --preset release`, and
+`ctest --preset release` (these presets need Ninja).
 
-The public Python data types are `PrimitiveGaussian`, `Shell`, `Basis`,
-`MagneticField`, and `Nucleus`. Each operator has primitive, shell, and
-basis-level entry points where applicable. Result arrays are C-contiguous `complex128`; shell
-blocks use `(ao_a, ao_b)` ordering, and basis matrices use input shell order.
-ERIs default to packed canonical shell-quartet batches; a full `(nao,)*4`
-tensor is opt-in and requires an explicit byte limit.
-Optional, threshold-controlled complex Schwarz screening and OpenMP
-shell-quartet parallelism are available without changing the unscreened
-default.
-Analytic first derivatives with respect to basis centers, attraction-potential
-centers, and magnetic-field components are available for the baseline
-Hamiltonian integrals and ERI shell quartets. Basis and potential-center
-responses remain separate because the basis model does not assume atom-to-shell
-ownership.
+## Documentation
 
-Start with:
-
+- [User manual](docs/user_manual.md): installation, basic usage, and the
+  `Molecule` interface.
 - [Mathematical specification](docs/mathematical_specification.md)
 - [Algorithm choices](docs/algorithms.md)
 - [C++ and Python API](docs/api.md)
@@ -82,7 +103,7 @@ Start with:
 - [Benchmark suite](benchmarks/README.md)
 - [Pure-Python reference guide](reference/README.md)
 
-Runnable examples are in [`examples/`](examples). The project is distributed
+Runnable examples live in [`examples/`](examples). GIAOINT is distributed
 under the [BSD-3-Clause license](LICENSE).
 
 The original project brief remains in
