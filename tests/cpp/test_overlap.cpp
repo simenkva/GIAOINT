@@ -310,7 +310,8 @@ void test_boys_and_nuclear_attraction() {
     const auto allocations_before_reuse = allocation_count;
     giao::compute_nuclear_attraction(shell, shell, nuclei, field, block,
                                      workspace);
-    check(allocation_count == allocations_before_reuse,
+    const auto allocations_after_reuse = allocation_count;
+    check(allocations_after_reuse == allocations_before_reuse,
           "warmed nuclear-attraction shell kernel performs no heap allocations");
 }
 
@@ -389,12 +390,14 @@ void test_electron_repulsion() {
     const auto allocations_before_reuse = allocation_count;
     giao::compute_eri(shell_a, shell_b, shell_a, shell_b, field, block,
                       workspace);
-    check(allocation_count == allocations_before_reuse,
+    const auto allocations_after_reuse = allocation_count;
+    check(allocations_after_reuse == allocations_before_reuse,
           "warmed ERI shell kernel performs no heap allocations");
     giao::compute_eri(shell_a, shell_b, shell_a, shell_b, {}, block, workspace);
     const auto real_allocations_before_reuse = allocation_count;
     giao::compute_eri(shell_a, shell_b, shell_a, shell_b, {}, block, workspace);
-    check(allocation_count == real_allocations_before_reuse,
+    const auto real_allocations_after_reuse = allocation_count;
+    check(real_allocations_after_reuse == real_allocations_before_reuse,
           "warmed zero-field ERI shell kernel performs no heap allocations");
 
     const giao::Basis basis({shell_b});
