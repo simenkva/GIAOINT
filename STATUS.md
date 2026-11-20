@@ -7,8 +7,10 @@ dynamic ERI scheduling, repaired wheel builds, per-tag trusted-publication
 approval, and expanded equality/install tests are implemented. See
 [installation](docs/installation.md) and the
 [validation report](docs/release_0_9_report.md). The complete fix-branch CI and
-release-wheel matrix have passed. PyPI publication remains pending confirmation of
-publisher/protected-environment setup and explicit maintainer approval.
+release-wheel matrix have passed. The maintainer approved release 0.9.0 on
+20 November 2026 and reported registering the PyPI trusted publisher. The
+GitHub `pypi` environment has a required reviewer and a `v*` tag rule.
+Publication proceeds through the tagged build and environment approval.
 
 macOS conda source builds now select the target interpreter's OpenMP runtime
 and headers before Homebrew. The conda/OpenMP OpenBLAS regression, full CI,

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 — release candidate (not yet published)
+## 0.9.0 — 20 November 2026
 
 Fixed macOS conda source builds to prefer the target interpreter's OpenMP
 runtime and headers ahead of Homebrew, avoiding duplicate-runtime aborts with
