@@ -95,7 +95,17 @@ chol = mol.cholesky_eri(threshold=1e-8)  # streamed; no full ERI allocation
 XYZ coordinates default to ångström; every integral output uses atomic
 units. Read the [user manual](docs/user_manual.md) for a full walkthrough,
 or run [`examples/molecular_integrals.py`](examples/molecular_integrals.py)
-directly.
+directly. To time atom Cholesky generation across thread counts:
+
+```console
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
+  python examples/atom_cholesky_timing.py --threads 1 2 4
+```
+
+The [atom timing example](examples/atom_cholesky_timing.py) defaults to Ne/cc-pVDZ
+and reports wall time, speedup, rank, vector memory and residual, checking
+bitwise agreement between runs. Use `--help` for atom, basis, field, threshold,
+and uncontracting options.
 
 ## Conventions worth knowing up front
 

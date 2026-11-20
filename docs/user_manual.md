@@ -226,6 +226,33 @@ see [Cholesky conventions](cholesky_eri.md) for the numerical floor and error
 bound. Avoid `chol.reconstruct()` without slices on large systems because that
 helper creates a dense tensor.
 
+### Timing parallel Cholesky for an atom
+
+Run the [atom timing example](../examples/atom_cholesky_timing.py) from the
+checkout. The default Ne/cc-pVDZ case is quick; explicit thread counts require
+an OpenMP build when greater than one:
+
+```console
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
+  python examples/atom_cholesky_timing.py --threads 1 2 4
+```
+
+It reports one wall time per count, speedup relative to the first run, rank,
+M/nao, vector MiB and the measured residual maximum. It checks factor and pivot
+hashes for bitwise agreement and retains only one result at a time. No dense
+ERI tensor is allocated. Small cases may be slower in parallel due to overhead.
+For the larger 152-AO Ne case, which can take minutes per run:
+
+```console
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
+  python examples/atom_cholesky_timing.py --basis aug-cc-pCVQZ \
+  --uncontracted --threads 1 4 8 12
+```
+
+Use `--atom`, `--threshold`, or `--field BX BY BZ` to change the inputs.
+For one atom the common London phase cancels from pair densities, so the ERIs
+are field-independent even when a finite field is supplied.
+
 ### Dropping to the lower-level engine
 
 `mol.basis`, `mol.nuclei`, and `mol.field` expose the same objects the
