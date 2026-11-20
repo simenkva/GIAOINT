@@ -1,5 +1,14 @@
 # Status
 
+## 0.9.0 release preparation
+
+AUTO OpenMP discovery, Python default-thread policy and build diagnostics,
+dynamic ERI scheduling, repaired wheel builds, per-tag trusted-publication
+approval, and expanded equality/install tests are implemented. See
+[installation](docs/installation.md) and the
+[validation report](docs/release_0_9_report.md). PyPI publication is pending
+explicit maintainer approval and successful release CI on each target.
+
 ## Completed
 
 - Milestone 0 repository assessment.
@@ -78,8 +87,9 @@
 - Proved complex Coulomb-space Schwarz screening with cached shell-pair bounds,
   an explicit threshold, conservative floating margin, screening statistics,
   and an exact threshold-zero path.
-- Optional OpenMP shell-quartet evaluation with static scheduling, thread-local
-  workspaces, input-ordered serial callbacks, and runtime capability queries.
+- Milestone 6 introduced opt-in OpenMP shell-quartet evaluation with static
+  scheduling, thread-local workspaces, input-ordered callbacks, and capability
+  queries. Version 0.9 uses dynamic scheduling and AUTO/default parallelism.
 - Reproducible JSON-lines benchmarks for all baseline operators, ERI backend
   comparison, and thread scaling, with a checked-in AppleClang arm64 report.
 - Benchmark-only direct Cartesian OS prototype agreeing with MD within
@@ -128,17 +138,29 @@
 - Milestone 9 validation with 376 Python tests, release/ASan/UBSan/OpenMP C++
   checks, Ruff/Black, 192 frozen recursive values, 128 randomized real/general
   comparisons, and PySCF/libcint agreement with maximum ERI error `1.704e-14`.
-  This work is unreleased; the package version remains 0.8.0.
+  Those measurements used version 0.8.0; the changes are included in the
+  current 0.9.0 release candidate, which is not yet published.
 
 - Molecule wrapper for XYZ files/text, named BSE bases, Gaussian94/NWChem
   files, and BSE JSON. It handles ångström-to-bohr conversion, normalized
   Cartesian basis construction, and shell-to-atom ownership, with matrix,
-  physical core-Hamiltonian, and bounded full/streamed ERI methods.
+  physical core-Hamiltonian, streamed ERIs, and full ERIs with an optional
+  output cap (`None` by default).
 - Wrapper validation with 410 Python tests, Ruff/Black, and independent
   PySCF checks for STO-3G, 6-31G, and cc-pVDZ plus three cc-pVDZ file formats.
   Maximum ERI difference in those checks is `4.352e-14`. See
   `docs/molecule_api.md`; the optional `molecule` extra needs no runtime
   network access.
+
+- Streamed pivoted Cholesky of the Hermitian ordered-pair Coulomb matrix,
+  returning complex128 factors, AO-pair pivots and measured residuals without
+  a dense AO tensor. Zero-field factors are real symmetric; conventions and
+  Be benchmark results are in `docs/cholesky_eri.md`.
+- Version 0.9 validation with 458 Python tests in each of serial, OpenMP, and
+  ASan/UBSan builds, plus all three C++ suites, bitwise thread-equality checks,
+  clean source/editable/sdist installs, and a repaired arm64 cp313 wheel smoke
+  test. Other release-wheel platforms and Python versions await remote CI;
+  see `docs/release_0_9_report.md`.
 
 ## Current limitations
 
@@ -157,7 +179,8 @@
   an exponential-sum implementation remains a possible future backend.
 - ERIs use an iterative complex six-index kernel at finite field and a
   collapsed real kernel at exact zero field. Work within each block remains
-  serial; screening and shell-block OpenMP are opt-in. Both paths retain the
+  serial; screening is opt-in and shell-block OpenMP is automatic when
+  available (`threads=1` explicitly selects serial). Both paths retain the
   original 4,000,000-entry six-index admission cap and combined order 32
   limit. The optimized general kernel still accounts for 93% of finite-field
   dddd top-of-stack samples; see `benchmarks/results/m9_macos_arm64.md`.
@@ -170,7 +193,8 @@
   attraction-potential-center contributions separately for callers to assemble.
 - Mixed nuclear/magnetic derivatives and derivatives of the general
   moment/gradient/momentum property APIs are not yet exposed.
-- Cartesian functions only are planned for the initial engine.
+- Production functions are Cartesian only. Spherical transformation is a
+  documented future design, not an implemented API.
 
 ## Maximum tested angular momentum
 
@@ -243,9 +267,14 @@ intermediate measurements, and the basis-scale comparison are in
 `benchmarks/results/m9_macos_arm64.md`. These are local measurements without
 CPU pinning, not portable performance guarantees.
 
+For the 0.9 Ne Cholesky profile, dynamic scheduling results, and bitwise
+thread comparisons, see [the validation report](docs/release_0_9_report.md).
+
 ## Next milestone
 
-Milestones 0--9 are complete. A separately validated spherical transformation
-layer and preparation of a 1.0 API freeze remain candidate work. Mixed
+Milestones 0--9 and the Cholesky API are implemented. The immediate release
+gates are cross-platform wheel CI, PyPI project/publisher setup, and explicit
+publication approval; see `docs/release_checklist.md`. A separately validated
+spherical transformation layer and preparation of a 1.0 API freeze remain candidate work. Mixed
 nuclear/magnetic derivatives remain deferred. Further finite-field ERI work
 can use the remaining costs recorded in `docs/eri_performance_plan.md`.

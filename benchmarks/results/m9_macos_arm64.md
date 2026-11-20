@@ -1,5 +1,9 @@
 # Milestone 9 benchmark report: macOS arm64
 
+Historical benchmark snapshot: values, versions and default-policy statements
+below describe that milestone. Current configuration is documented in
+[installation and threading](../../docs/installation.md).
+
 Measured 2026-09-11 on an Apple M2 Pro MacBook Pro (12 cores: 8 performance,
 4 efficiency; 32 GB), macOS 26.6.2 (25G83), AppleClang 21.0.0
 (`clang-2100.1.1.101`), CMake 4.1.2, Ninja, Release (`-O3 -DNDEBUG`).

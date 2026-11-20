@@ -1,5 +1,9 @@
 # Codex Master Prompt: Fast AO Integral Library for Complex GIAO/London Gaussian Orbitals
 
+> Historical project brief, preserved as the initial requirements. For the
+> implemented 0.9 API and current release status, see [README](README.md),
+> [STATUS](STATUS.md), and [the API overview](docs/api.md).
+
 ## Role and objective
 
 Act as a senior scientific-computing developer and quantum-chemistry

@@ -35,16 +35,25 @@ deprecation period.
 
 ## Supported platforms
 
-Release CI covers CPython 3.11--3.14 on current GitHub-hosted Linux and macOS
-runners. The C++ core requires a C++20 compiler and CMake 3.20 or newer. Native
-Windows is not currently a supported release platform. PySCF/libcint checks are
+Configured release CI targets CPython 3.11–3.14 manylinux_2_28 x86_64/aarch64
+and macOS 15+ arm64/x86_64. Local 0.9 validation covers CPython 3.13 on
+macOS arm64; other wheel targets await remote CI. See
+[release validation](release_0_9_report.md). The C++ core requires a C++20
+compiler and CMake 3.20 or newer. Native Windows is not currently a supported release platform. PySCF/libcint checks are
 optional external-oracle tests and are not runtime dependencies.
 
-## Milestone 9 performance defaults
+## Version 0.9 performance defaults
 
-Milestone 9 keeps Python `eri()` defaults at `screening_threshold=0.0` and
-`threads=1`. Callers opt into approximation and parallel execution. Faster
-shell kernels do not establish a suitable error threshold or thread budget
-for all applications. Exact-zero-field dispatch changes the internal
-algorithm while preserving the documented numerical tolerance, complex output
-dtype, shapes, and conventions.
+Version 0.9 deliberately changes ERI threading from opt-in `threads=1` to
+`threads=None`, resolved through the process override, GIAO_NUM_THREADS,
+OMP_NUM_THREADS, and physical cores. Screening remains `0.0`. Explicit
+`threads=1` preserves serial execution. Every threaded Python entry point is
+checked for bitwise equality at one, two, and the runtime maximum thread
+count, with/without screening and with/without a field. Cholesky vectors and
+pivots are compared exactly. Primitive reduction order, AO conventions,
+normalization, dtype, and shapes are unchanged.
+
+CMake OpenMP support defaults to AUTO, with explicit ON and OFF available.
+See [installation](installation.md) for fallback warnings, runtime conflicts,
+and independent BLAS thread settings. C++ `EriEvaluationOptions` retains its
+explicit `thread_count` field and serial default; `None` is a Python policy.

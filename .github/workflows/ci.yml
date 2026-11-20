@@ -9,62 +9,110 @@ on:
 permissions:
   contents: read
 
+env:
+  VECLIB_MAXIMUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+
 jobs:
   python:
-    name: Python ${{ matrix.python }} / ${{ matrix.os }}
+    name: Python ${{ matrix.python }} / ${{ matrix.os }} / OpenMP ${{ matrix.openmp }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-15]
         python: ["3.11", "3.12", "3.13", "3.14"]
+        openmp: ["OFF", "ON"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: python -m pip install --upgrade pip
+      - if: runner.os == 'macOS' && matrix.openmp == 'ON'
+        run: brew install libomp
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m pip install --no-build-isolation -e .
+      - run: python -m pip install -e . -Ccmake.define.GIAO_ENABLE_OPENMP=${{ matrix.openmp }}
+      - run: python -c 'import giao_integrals as gi; print(gi.build_info())'
       - run: python -m pytest -q
-      - run: python -m ruff check python reference tests examples benchmarks/compare_results.py
-      - run: python -m black --check python reference tests examples benchmarks/compare_results.py
+      - run: python -m ruff check python reference tests examples benchmarks/compare_results.py benchmarks/cholesky_threads.py
+      - run: python -m black --check python reference tests examples benchmarks/compare_results.py benchmarks/cholesky_threads.py
 
   native:
-    name: Native ${{ matrix.preset }}
-    runs-on: ubuntu-latest
+    name: Native / OpenMP ${{ matrix.openmp }}
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        preset: [release, sanitizers]
+        openmp: ["OFF", "ON"]
     steps:
       - uses: actions/checkout@v7
-      - run: cmake --preset ${{ matrix.preset }}
-      - run: cmake --build --preset ${{ matrix.preset }} --parallel 2
-      - run: ctest --preset ${{ matrix.preset }}
+      - run: >-
+          cmake -S . -B build/native -G Ninja
+          -DCMAKE_BUILD_TYPE=Release -DGIAO_BUILD_PYTHON=OFF
+          -DGIAO_ENABLE_OPENMP=${{ matrix.openmp }}
+      - run: cmake --build build/native --parallel 2
+      - run: ctest --test-dir build/native --output-on-failure
+
+  sanitizers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -r requirements-dev.txt
+      - run: >-
+          python -m pip install -e .
+          -Ccmake.build-type=Debug
+          -Ccmake.define.CMAKE_CXX_FLAGS_DEBUG="-g -O1"
+          -Ccmake.define.GIAO_ENABLE_OPENMP=ON
+          -Ccmake.define.GIAO_ENABLE_SANITIZERS=ON
+      - run: |
+          export LD_PRELOAD="$(gcc -print-file-name=libasan.so)"
+          export ASAN_OPTIONS=detect_leaks=0
+          python -m pytest -q
+      - run: >-
+          cmake -S . -B build/sanitizers -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug -DGIAO_BUILD_PYTHON=OFF
+          -DCMAKE_CXX_FLAGS_DEBUG="-g -O1"
+          -DGIAO_ENABLE_OPENMP=ON -DGIAO_ENABLE_SANITIZERS=ON
+      - run: cmake --build build/sanitizers --parallel 2
+      - run: ctest --test-dir build/sanitizers --output-on-failure
+
+  source-install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - if: runner.os == 'macOS'
+        run: brew install libomp
+      - run: |
+          python -m venv /tmp/source-check
+          /tmp/source-check/bin/python -m pip install .
+          /tmp/source-check/bin/python tests/wheel_smoke.py
+          python -m venv /tmp/editable-check
+          /tmp/editable-check/bin/python -m pip install -e .
+          /tmp/editable-check/bin/python tests/wheel_smoke.py
+      - name: AUTO fallback and strict ON without a discoverable runtime
+        run: |
+          cmake -S . -B build/no-omp -DGIAO_BUILD_PYTHON=OFF -DCMAKE_DISABLE_FIND_PACKAGE_OpenMP=TRUE
+          if cmake -S . -B build/on-missing -DGIAO_BUILD_PYTHON=OFF -DGIAO_ENABLE_OPENMP=ON -DCMAKE_DISABLE_FIND_PACKAGE_OpenMP=TRUE; then
+            echo 'ON incorrectly accepted a missing runtime'
+            exit 1
+          fi
 
   static-analysis:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y clang-tidy ninja-build
       - run: >-
           cmake -S . -B build/static -G Ninja
-          -DCMAKE_BUILD_TYPE=Debug
-          -DGIAO_BUILD_PYTHON=OFF
-          -DGIAO_BUILD_TESTS=ON
-          -DGIAO_ENABLE_CLANG_TIDY=ON
+          -DCMAKE_BUILD_TYPE=Debug -DGIAO_BUILD_PYTHON=OFF
+          -DGIAO_ENABLE_OPENMP=OFF -DGIAO_ENABLE_CLANG_TIDY=ON
       - run: cmake --build build/static --parallel 2
-
-  openmp:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: >-
-          cmake -S . -B build/openmp -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DGIAO_BUILD_PYTHON=OFF
-          -DGIAO_BUILD_TESTS=ON
-          -DGIAO_ENABLE_OPENMP=ON
-      - run: cmake --build build/openmp --parallel 2
-      - run: ctest --test-dir build/openmp --output-on-failure

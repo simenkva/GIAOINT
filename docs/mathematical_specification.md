@@ -1,7 +1,9 @@
 # Mathematical specification
 
-Status: frozen for Milestones 1 and 2. Any later change requires a documented
-compatibility decision, revised analytic tests, and an entry in `STATUS.md`.
+The foundational units, phase and normalization conventions have been frozen
+since Milestones 1 and 2. The specification also covers the implemented
+Coulomb, derivative and ordered-pair Cholesky APIs through 0.9. Changes to the
+conventions require a compatibility decision, revised tests, and a STATUS entry.
 
 ## 1. Units, charge, and vector potential
 
@@ -57,9 +59,9 @@ exponents and non-finite coordinates.
 ## 3. Shells, contractions, and ordering
 
 A Cartesian shell has one center, total angular momentum \(L\), a shared list
-of primitive exponents, and one or more coefficient rows. The initial kernels
-may accept one contraction row, but storage uses a two-dimensional
-`(n_contraction, n_primitive)` layout from the start.
+of primitive exponents, and one or more coefficient rows. Production storage
+uses a two-dimensional `(n_contraction, n_primitive)` layout; the pure-Python
+reference shell supports a single segmented contraction.
 
 Input coefficients multiply normalized primitives. With raw coefficients
 \(d_j\), contracted component \(\mathbf a\) is
@@ -280,8 +282,8 @@ real axis to pass through \(P'\). Therefore
 \]
 
 The three-dimensional overlap is the product of these one-dimensional sums
-times the pair prefactor and primitive normalizations. This formula will be
-the first Python oracle because it does not reuse the production Hermite
+times the pair prefactor and primitive normalizations. This formula is the
+independent Python overlap oracle; it does not reuse the production Hermite
 recurrence.
 
 For two s primitives it reduces to
@@ -514,6 +516,49 @@ Every AO integral in shell quartet \(ABCD\) is therefore bounded by
 \(Q_{AB}Q_{CD}\). Production screening may omit the complete quartet when
 that product is below an explicit threshold. This is an elementwise integral
 bound, not a bound on an accumulated energy or Fock-matrix error.
+
+### 8.2 Ordered-pair Cholesky
+
+The ordered-pair matrix \(V_{(ab),(cd)}=(ab|cd)\) is complex symmetric,
+not generally Hermitian. The positive semidefinite Hermitian matrix is
+
+\[
+W_{(ab),(cd)}=(ba|cd)=\langle\rho_{ab},\rho_{cd}\rangle_C.
+\]
+
+Its diagonal is real and non-negative. The implementation uses all
+\(N_{\mathrm{AO}}^2\) ordered pairs and stores conjugated Cholesky columns
+as one tensor \(L_{Pab}\), so
+
+\[
+W_{(ab),(cd)}\simeq\sum_P L_{Pab}^{*}L_{Pcd},\qquad
+\boxed{(ab|cd)\simeq\sum_P L_{Pab}L_{Pdc}^{*}}.
+\]
+
+This fixes both the conjugation and the reversed indices in reconstruction.
+At zero field the factors are real symmetric and reduce to conventional
+real-arithmetic Coulomb Cholesky vectors.
+
+For the exact-arithmetic residual \(R=W-\widetilde W\succeq0\), let
+\(D_I=R_{II}\). Then
+
+\[
+|R_{IJ}|\le\sqrt{D_I D_J}\le\max_K D_K.
+\]
+
+Stopping at \(\max D\le\tau\) therefore bounds every reconstructed ERI
+error by \(\tau\). Separately comparing either symmetry relation of a
+truncated finite-field reconstruction can differ by up to \(2\tau\);
+individual finite-field factors need not be Hermitian. Numerical exhaustion
+recovers the full ERI symmetries to roundoff.
+
+Production uses a numerical stopping floor of
+`64*eps*max(initial diagonal)` and reports the achieved residual maximum.
+Schwarz bounds may conservatively bound small initial diagonal blocks, but
+column entries are not screened. Storage is O(M*nao²) plus a streamed quartet
+batch and worker scratch, without a full tensor or pair matrix. See
+[the API](api.md#61-streamed-cholesky) and
+[implementation and validation](cholesky_eri.md).
 
 ## 9. Translation covariance
 

@@ -2,7 +2,14 @@
 
 Configure a release build with `-DGIAO_BUILD_BENCHMARKS=ON`. The executables
 write one JSON object per line so results can be archived or compared without
-parsing presentation-oriented text.
+parsing presentation-oriented text. The native benchmark preset disables Python
+bindings and requires Ninja:
+
+```console
+cmake --preset benchmarks
+cmake --build --preset benchmarks
+build/presets/benchmarks/giao_integral_benchmark --quick
+```
 
 - `giao_integral_benchmark` covers overlap, canonical kinetic energy, nuclear
   attraction, and ERI shell blocks at zero and finite field for low and
@@ -10,7 +17,8 @@ parsing presentation-oriented text.
 - `giao_eri_backend_benchmark` compares the production MD primitive with a
   benchmark-only direct Cartesian OS prototype and checks their values.
 - `giao_eri_parallel_benchmark` measures complete canonical p-shell batches at
-  1, 2, 4, and 8 threads. It is built only with `GIAO_ENABLE_OPENMP=ON`.
+  1, 2, 4, and 8 threads. It is built when OpenMP is enabled, whether by AUTO
+  detection or explicit ON.
 - `giao_overlap_benchmark` preserves the original Milestone 2 f--f overlap
   baseline.
 
@@ -32,11 +40,13 @@ failing. Archive the raw JSONL alongside the compiler, CPU, operating system,
 thread count, and build options rather than treating cross-machine ratios as
 meaningful.
 
-On AppleClang with the conda `llvm-openmp` package, an explicit configuration
-is needed:
+CMake defaults to AUTO detection, including Homebrew libomp on macOS. Use
+ON to require OpenMP and OFF for a serial build. For a conda `llvm-openmp`
+runtime that is not found automatically, an explicit configuration is:
 
 ```console
 cmake -S . -B build-openmp \
+  -DCMAKE_BUILD_TYPE=Release -DGIAO_BUILD_PYTHON=OFF \
   -DGIAO_BUILD_BENCHMARKS=ON -DGIAO_ENABLE_OPENMP=ON \
   '-DOpenMP_CXX_FLAGS=-Xpreprocessor -fopenmp' \
   -DOpenMP_CXX_LIB_NAMES=omp \
@@ -75,6 +85,29 @@ bound construction in each timed `eri()` call. Screening may cost more than
 it saves for small or dense bases. Choose a threshold by checking the error
 in your target observable; it bounds omitted AO integrals, not an accumulated
 energy error. Python `eri_batches()` shares bound setup across its chunks;
-C++ callers can reuse `EriSchwarzBounds` for the same basis and field. Benchmark thread counts for your workload and avoid
-oversubscribing an outer parallel calculation. The defaults remain serial
-and unscreened.
+C++ callers can reuse `EriSchwarzBounds` for the same basis and field.
+Benchmark thread counts for your workload and avoid oversubscribing an outer
+parallel calculation. The performance-comparison CLI explicitly defaults to
+one thread and no screening; the library default since 0.9 is `threads=None`
+with screening disabled. See [thread configuration](../docs/installation.md).
+
+## Streamed Cholesky benchmarks
+
+`cholesky_eri.py` measures Be aug-cc-pCVQZ rank, time and peak RSS. To
+reproduce the serial budget used in [the Be report](../docs/cholesky_eri.md):
+
+```console
+GIAO_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 python benchmarks/cholesky_eri.py 1e-8
+```
+
+`cholesky_threads.py` measures the BSE-uncontracted Ne case at explicit thread
+counts and emits vector/pivot SHA256 hashes. Its optional `--profile` measures
+update lines and adds profiling overhead:
+
+```console
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python benchmarks/cholesky_threads.py --threads 1 4 8 12
+```
+
+The [0.9 report](../docs/release_0_9_report.md) separates profiled/unprofiled
+measurements and records the overlapping validation jobs. Do not treat those
+workstation samples as isolated or portable performance guarantees.

@@ -1,6 +1,28 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — release candidate (not yet published)
+
+OpenMP now defaults to AUTO at build time, including automatic Homebrew libomp
+lookup on macOS, with a visible serial fallback and strict ON/OFF overrides.
+Python ERI, batching, molecular-integral, and Cholesky calls now default to
+`threads=None`, resolving `set_num_threads`, GIAO_NUM_THREADS, OMP_NUM_THREADS,
+then physical cores. `build_info()` exposes compiler, version, loaded OpenMP
+runtime, and default threads. Explicit unsupported parallel requests raise;
+unavailable parallel defaults warn and run serially.
+
+This intentionally reverses the old opt-in threading policy. Tests check
+bitwise equality across entry points, screening and field settings, including
+Cholesky pivots and vectors, at 1, 2, and the runtime maximum thread count.
+The Ne profile locates the bottleneck in native ERI batches, not NumPy updates;
+dynamic shell-block scheduling improves load balance without changing any
+primitive reduction order. BLAS remains outside OpenMP regions.
+
+Prepared CPython 3.11–3.14 wheels for Linux x86_64/aarch64 and macOS arm64/x86_64,
+with repaired/bundled OpenMP runtimes and install smoke tests, plus a source
+archive. Trusted publication is gated by explicit approval for each version
+tag. Windows wheels remain out of scope. See docs/installation.md and the
+0.9 validation report. Source and editable installs use standard pip build
+isolation; C++ editable changes require reinstalling.
 
 Added streamed pivoted Coulomb Cholesky via `Molecule.cholesky_eri()` and
 `cholesky_eri(basis, ...)`, with complex ordered-pair factors, residual and
@@ -23,9 +45,10 @@ reuses Gaussian-pair data across Cartesian components; ssss evaluation uses
 the Boys seed directly. Public numerical conventions, output shapes, and
 angular/workspace admission limits remain unchanged.
 
-Screening and threading stay opt-in: `screening_threshold=0.0`, `threads=1`.
-The performance example accepts both options and sets the same requested
-thread count for PySCF. Before/after measurements, randomized cross-checks,
+Milestone 9 originally kept both screening and threading opt-in. Version 0.9
+retains `screening_threshold=0.0` but changes the Python thread default to
+`None`, as described above. The performance-comparison CLI still explicitly
+defaults to one thread and sets the same requested count for PySCF. Before/after measurements, randomized cross-checks,
 and profiling results are in `benchmarks/results/m9_macos_arm64.md`.
 
 ## 0.8.0 — 2026-09-10

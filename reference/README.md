@@ -48,12 +48,17 @@ value = primitive_overlap(bra, ket, field)
 ```console
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/pytest -q
+.venv/bin/pytest -q tests/reference
 .venv/bin/ruff check reference/python tests/reference
 .venv/bin/black --check reference/python tests/reference
 ```
 
-When PySCF is installed, run the separate zero-field production comparison
+These commands exercise only the reference engine and do not need a compiled
+production extension. For the full suite, first build the editable production
+package as described in [CONTRIBUTING](../CONTRIBUTING.md).
+
+When PySCF and the production package are installed, run the separate
+zero-field production comparison
 with `python tests/external/pyscf_zero_field.py`.
 
 `pyproject.toml` adds `reference/python` to pytest's import path. The reference

@@ -1,7 +1,7 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-if(@GIAO_ENABLE_OPENMP@)
+if(@GIAO_OPENMP_ENABLED@)
     find_dependency(OpenMP COMPONENTS CXX)
 endif()
 

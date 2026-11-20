@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.8.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.9.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -14,7 +14,7 @@ option(GIAO_BUILD_PYTHON "Build the pybind11 extension" ON)
 option(GIAO_BUILD_TESTS "Build the C++ unit tests" ON)
 option(GIAO_BUILD_BENCHMARKS "Build the integral benchmark suite" OFF)
 option(GIAO_ENABLE_SANITIZERS "Enable address and undefined-behavior sanitizers" OFF)
-option(GIAO_ENABLE_OPENMP "Enable OpenMP shell-block parallelism" OFF)
+include(cmake/GiaoOpenMP.cmake)
 option(GIAO_ENABLE_CLANG_TIDY "Run clang-tidy while compiling" OFF)
 
 if(GIAO_ENABLE_CLANG_TIDY)
@@ -59,8 +59,7 @@ if(GIAO_ENABLE_SANITIZERS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     )
 endif()
 
-if(GIAO_ENABLE_OPENMP)
-    find_package(OpenMP REQUIRED COMPONENTS CXX)
+if(GIAO_OPENMP_ENABLED)
     target_link_libraries(giao_integrals_core PUBLIC OpenMP::OpenMP_CXX)
     target_compile_definitions(giao_integrals_core PUBLIC GIAO_HAS_OPENMP=1)
 endif()
@@ -70,7 +69,9 @@ if(GIAO_BUILD_PYTHON)
     find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
     find_package(pybind11 CONFIG REQUIRED)
     pybind11_add_module(_giao_integrals src/bindings.cpp)
-    target_link_libraries(_giao_integrals PRIVATE giao_integrals::core)
+    target_link_libraries(_giao_integrals PRIVATE giao_integrals::core ${CMAKE_DL_LIBS})
+    target_compile_definitions(_giao_integrals PRIVATE
+        GIAO_COMPILER="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
     target_compile_features(_giao_integrals PRIVATE cxx_std_20)
     install(TARGETS _giao_integrals LIBRARY DESTINATION giao_integrals)
 endif()
@@ -91,7 +92,7 @@ if(GIAO_BUILD_BENCHMARKS)
         benchmarks/eri_backend_benchmark.cpp)
     target_link_libraries(giao_eri_backend_benchmark
         PRIVATE giao_integrals::core)
-    if(GIAO_ENABLE_OPENMP)
+    if(GIAO_OPENMP_ENABLED)
         add_executable(giao_eri_parallel_benchmark
             benchmarks/eri_parallel_benchmark.cpp)
         target_link_libraries(giao_eri_parallel_benchmark

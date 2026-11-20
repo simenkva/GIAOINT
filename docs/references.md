@@ -1,7 +1,10 @@
 # References and use notes
 
-Only bibliographic facts and equations were consulted. No external source code
-has been copied into this repository.
+The numerical implementation uses the bibliographic facts and equations below;
+no external numerical source code has been copied into the core. Repaired
+wheels also bundle an OpenMP runtime, with separate upstream notices under
+[the runtime licenses](../python/giao_integrals/_licenses/README.txt). Those
+notices and dependencies are distinct from these mathematical references.
 
 1. F. London, “Théorie quantique des courants interatomiques dans les
    combinaisons aromatiques,” *Journal de Physique et le Radium* **8**,

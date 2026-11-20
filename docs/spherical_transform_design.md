@@ -5,9 +5,11 @@ a separate linear-transformation layer over completed Cartesian shell blocks;
 it will not enter primitive recurrences, Boys evaluation, screening bounds, or
 workspace sizing.
 
-For a shell of angular momentum \(L\), let \(C_L\) map the repository's
-\((L+1)(L+2)/2\) Cartesian components to \(2L+1\) spherical components. A
-one-electron block transforms as
+For a shell of angular momentum \(L\), define \(C_L\) with shape
+\((L+1)(L+2)/2 \times (2L+1)\). Each column is one spherical AO expanded
+in the repository's Cartesian components: Cartesian expansion coefficients
+are \(c_{\mathrm{cart}}=C_Lc_{\mathrm{sph}}\). A one-electron block
+therefore transforms as
 
 \[
   I^{\mathrm{sph}}_{AB} = C_A^\dagger I^{\mathrm{cart}}_{AB} C_B,

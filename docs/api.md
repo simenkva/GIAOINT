@@ -9,17 +9,20 @@ the lower-level API below takes atomic units throughout.
 The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 
-The primitive, shell, basis, magnetic-field, one-electron, electron-repulsion,
-batch-consumer, screening, parallel, and derivative interfaces documented below
-are implemented in version 0.8.0.
+This overview describes the 0.9.0 release candidate, including streamed
+Cholesky and configured Python thread defaults. Signatures below are condensed;
+installed headers and Python docstrings give individual overload details.
+Publication and cross-platform wheel verification are still pending; see
+[release validation](release_0_9_report.md).
 
 All positions, Gaussian exponents, moment origins, magnetic fields, energies,
-and derivatives use atomic units. Coefficients multiply normalized primitives
-unless shell normalization is disabled explicitly. Cartesian components are
-ordered by descending x power and then descending y power; contraction index
-is outermost. Inputs are copied into owning model objects. Returned arrays own
-their storage unless the caller supplies `out=`, in which case that exact array
-is filled and returned.
+and derivatives use atomic units. Shell coefficients multiply normalized
+primitives; disabling shell normalization disables only the contraction factor.
+Cartesian components are ordered by descending x power and then descending y
+power; contraction index is outermost. Model objects own copies of their input
+data. Results manage their array-storage lifetimes; `EriBatch.block()` returns
+a view into its packed buffer. With `out=`, that exact array is filled and
+returned.
 
 | Quantity | Unit |
 |---|---|
@@ -36,7 +39,8 @@ is filled and returned.
 
 The installed C++ declarations are in `giao_integrals/types.hpp`,
 `giao_integrals/overlap.hpp`, `giao_integrals/boys.hpp`,
-`giao_integrals/nuclear.hpp`, `giao_integrals/eri.hpp`, and
+`giao_integrals/nuclear.hpp`, `giao_integrals/property.hpp`,
+`giao_integrals/eri.hpp`, and
 `giao_integrals/derivatives.hpp`. The following
 condensed declarations describe the value-type interface.
 
@@ -76,7 +80,7 @@ public:
           std::uint16_t angular_momentum,
           std::vector<double> exponents,
           std::vector<double> coefficients,
-          std::size_t contraction_count,
+          std::size_t contraction_count = 1,
           ContractionNormalization normalization =
               ContractionNormalization::normalize);
 
@@ -116,9 +120,8 @@ views and a reusable workspace. `MagneticField` remains a small value type;
 the basis driver may cache one London wave vector per shell for a field.
 
 Coefficients form a row-major matrix with shape
-`(contraction_count, primitive_count)`. Milestones 1 and 2 may validate that
-`contraction_count == 1`, but the data layout will not need replacement for
-general contractions. `PrimitiveGaussian` supports reference tests and expert
+`(contraction_count, primitive_count)`. Production shells support multiple
+contraction rows; only the pure-Python reference shell is segmented. `PrimitiveGaussian` supports reference tests and expert
 primitive calls; production basis drivers use shells to avoid duplicating
 centers, angular momentum, and exponents for each Cartesian component.
 
@@ -136,7 +139,7 @@ class EriWorkspace;
 
 [[nodiscard]] std::size_t shell_quartet_size(
     const Shell& a, const Shell& b,
-    const Shell& c, const Shell& d) noexcept;
+    const Shell& c, const Shell& d);
 
 void compute_overlap(
     const Shell& a, const Shell& b,
@@ -286,8 +289,8 @@ struct ShellQuartetBlockView {
 };
 
 struct EriEvaluationOptions {
-    double screening_threshold;
-    std::size_t thread_count;
+    double screening_threshold{};
+    std::size_t thread_count{1U};
 };
 
 struct EriStatistics {
@@ -372,13 +375,15 @@ The original `for_each_eri_shell_quartet` is the serial, unscreened
 compatibility entry point. `evaluate_eri_shell_quartets` adds explicit
 screening and thread options and returns counts. Positive screening requires
 bounds built for the same basis and field. `thread_count > 1` requires a build
-configured with `GIAO_ENABLE_OPENMP=ON`; `openmp_enabled()` and
+with OpenMP enabled (AUTO discovery or explicit ON); `openmp_enabled()` and
 `openmp_max_threads()` report runtime capability.
 
 ## 4. Python data model
 
 ```python
 from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -402,7 +407,7 @@ class Basis:
 class MagneticField:
     def __init__(
         self,
-        B: npt.ArrayLike,
+        B: npt.ArrayLike = (0.0, 0.0, 0.0),
         gauge_origin: npt.ArrayLike = (0.0, 0.0, 0.0),
     ) -> None: ...
 
@@ -539,17 +544,17 @@ def eri(
     max_bytes: int | None = None,
     target_bytes: int = 64 * 1024**2,
     screening_threshold: float = 0.0,
-    threads: int = 1,
+    threads: int | None = None,
 ): ...
 
 def eri_batches(
     basis: Basis,
     *,
     field: MagneticField | None = None,
-    quartets: npt.ArrayLike | None = None,
+    quartets: Iterable[Sequence[int]] | None = None,
     target_bytes: int = 64 * 1024**2,
     screening_threshold: float = 0.0,
-    threads: int = 1,
+    threads: int | None = None,
 ): ...
 
 def eri_schwarz_bounds(
@@ -559,7 +564,9 @@ def eri_schwarz_bounds(
 
 `storage="full"` returns a C-contiguous complex tensor with shape
 `(nao, nao, nao, nao)` only after checking the requested allocation against
-`max_bytes`. The default `storage="blocks"` returns a batch iterator. Each
+`max_bytes`, which must be an explicit non-negative integer for this low-level
+full-output call. By contrast, `Molecule.eri(max_bytes=None)` allows uncapped
+full output. The default low-level `storage="blocks"` returns a batch iterator. Each
 batch contains quartet indices, block offsets and one packed complex buffer,
 which limits Python crossings and supports heterogeneous shell shapes.
 `EriBatch.block(i)` returns a shaped view of its packed buffer. With no
@@ -569,11 +576,70 @@ Every requested quartet is evaluated: Milestone 5 applies no screening.
 Milestone 6 retains that behavior at the default `screening_threshold=0.0`.
 Positive thresholds use cached complex Schwarz factors. Batches expose
 `requested_count` and `screened_count`; their packed quartet arrays contain
-only computed blocks. `threads` applies within each batch.
+only computed blocks. `threads` applies within each batch. Its default is
+`None`; `set_num_threads(n)` overrides environment/core defaults, and
+`build_info()` reports the effective budget and loaded OpenMP runtime.
+See [thread configuration](installation.md).
 
 The long-term production path is a C++ consumer interface for direct J/K and
 post-Hartree-Fock contractions. Python callbacks are an expert convenience,
 not the inner-loop architecture.
+
+### 6.1 Streamed Cholesky
+
+```python
+def cholesky_eri(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    threshold: float = 1e-8,
+    screening_threshold: float = 0.0,
+    threads: int | None = None,
+    max_bytes: int | None = None,
+) -> CholeskyERI: ...
+
+class CholeskyERI:
+    vectors: npt.NDArray[np.complex128]  # (M, nao, nao)
+    pivots: npt.NDArray[np.int64]        # (M, 2), ordered AO index pairs
+    threshold: float
+    max_residual_diagonal: float
+
+    def reconstruct(
+        self, slices: tuple[slice, slice, slice, slice] | None = None
+    ) -> npt.NDArray[np.complex128]: ...
+```
+
+`Molecule.cholesky_eri()` exposes the same keyword arguments except `field`,
+which comes from the molecule. The exact factor convention is
+`ERI[mu,nu,lam,sig] ≈ sum_P L[P,mu,nu] * conj(L[P,sig,lam])`.
+The Hermitian matrix being factored is
+`W[(mu,nu),(lam,sig)] = ERI[nu,mu,lam,sig]`, using all ordered AO pairs.
+Neither the full AO tensor nor a full pair matrix is formed.
+
+The largest residual diagonal bounds every ERI error in exact arithmetic.
+Roundoff imposes a stopping floor of `64*eps*max(initial diagonal)`; the result
+reports the achieved residual, including when `threshold=0` requests numerical
+exhaustion. `max_bytes=None` means no cap; otherwise it bounds vectors plus
+pivot indices, not process memory. `reconstruct()` without slices allocates a
+full tensor; four slices limit output to that block. See
+[Cholesky details](cholesky_eri.md) and the
+[mathematical convention](mathematical_specification.md#82-ordered-pair-cholesky).
+
+### 6.2 Build and thread diagnostics
+
+```python
+def build_info() -> dict: ...
+def set_num_threads(n: int | None) -> None: ...
+```
+
+`build_info()` returns `version`, `compiler`, `openmp_enabled`,
+`openmp_runtime_path` (None in serial builds), `default_threads`, and
+`physical_cores`. `set_num_threads(None)` clears the process override.
+Explicit `threads=n` takes precedence over that override, then defaults use
+GIAO_NUM_THREADS, OMP_NUM_THREADS, and physical cores. Explicit unsupported
+parallel requests raise; unsupported parallel defaults warn once and use one
+thread. One-electron and derivative APIs remain serial. See
+[installation and runtime policy](installation.md) for complete behavior.
 
 ## 7. Analytic derivative API
 
@@ -607,7 +673,8 @@ a molecular atom derivative.
 All shell and basis derivative functions support strict `out=` buffers and
 release the GIL. ERI derivatives are shell-quartet only; the API does not
 allocate an automatic derivative of the full fourth-rank AO tensor. Mixed
-nuclear/magnetic derivatives are not included in version 0.8.0.
+nuclear/magnetic derivatives and derivatives of Cholesky vectors are not exposed
+in 0.9.
 
 ## 8. Errors and reproducibility
 
@@ -617,10 +684,12 @@ special-function domain or convergence failures raise `BoysNumericalError` in
 both C++ and Python. Successful calls expose their region and estimated error
 through `BoysDiagnostics` or `boys_with_diagnostics`.
 
-Serial drivers accumulate primitives and nuclei in input order. Parallel
-drivers document their reduction order and offer a deterministic mode when
-bitwise repeatability matters. Public functions never read mutable global
-field or screening state.
+Serial drivers accumulate primitives and nuclei in input order. Parallel ERI
+drivers assign complete blocks dynamically but retain the same per-block
+reduction order and input-ordered output. Bitwise equality is tested across
+thread counts; there is no separate deterministic-mode switch. Field and
+screening choices are per call. The Python default thread budget uses the
+process override/environment policy described above; BLAS settings are separate.
 
 The compatibility boundary and staged warning mechanism are specified in
 [`compatibility.md`](compatibility.md). In particular, changes to units,

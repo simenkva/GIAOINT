@@ -13,6 +13,12 @@
 #include <pybind11/stl.h>
 
 #include <cstdint>
+#ifdef GIAO_HAS_OPENMP
+#include <omp.h>
+#if defined(__unix__) || defined(__APPLE__)
+#include <dlfcn.h>
+#endif
+#endif
 #include <limits>
 #include <optional>
 #include <span>
@@ -23,6 +29,11 @@
 namespace py = pybind11;
 
 namespace {
+
+std::size_t threads_from_python(const py::object& value) {
+    return py::module_::import("giao_integrals._threads")
+        .attr("resolve_num_threads")(value).cast<std::size_t>();
+}
 
 giao::Vec3 vec3_from_python(const py::handle& value, const char* name) {
     py::array array = py::array::ensure(value);
@@ -625,7 +636,8 @@ PYBIND11_MODULE(_giao_integrals, module) {
     module.def(
         "_eri_full",
         [](const giao::Basis& basis, const py::object& field,
-           double screening_threshold, std::size_t threads) {
+           double screening_threshold, const py::object& thread_request) {
+            const auto threads = threads_from_python(thread_request);
             const auto count = basis.ao_count();
             py::array_t<giao::Complex> result(
                 {static_cast<py::ssize_t>(count),
@@ -651,14 +663,15 @@ PYBIND11_MODULE(_giao_integrals, module) {
             return result;
         },
         py::arg("basis"), py::kw_only(), py::arg("field") = py::none(),
-        py::arg("screening_threshold") = 0.0, py::arg("threads") = 1U);
+        py::arg("screening_threshold") = 0.0, py::arg("threads") = py::none());
 
     module.def(
         "_eri_batch",
         [](const giao::Basis& basis,
            const std::vector<std::array<std::uint32_t, 4>>& quartet_arrays,
            const py::object& field, double screening_threshold,
-           std::size_t threads, const giao::EriSchwarzBounds* bounds) {
+           const py::object& thread_request, const giao::EriSchwarzBounds* bounds) {
+            const auto threads = threads_from_python(thread_request);
             std::vector<giao::ShellQuartetIndex> quartets;
             quartets.reserve(quartet_arrays.size());
             for (const auto& value : quartet_arrays) {
@@ -710,7 +723,7 @@ PYBIND11_MODULE(_giao_integrals, module) {
         },
         py::arg("basis"), py::arg("quartets"), py::kw_only(),
         py::arg("field") = py::none(),
-        py::arg("screening_threshold") = 0.0, py::arg("threads") = 1U,
+        py::arg("screening_threshold") = 0.0, py::arg("threads") = py::none(),
         py::arg("bounds") = py::none());
 
     module.def(
@@ -724,6 +737,24 @@ PYBIND11_MODULE(_giao_integrals, module) {
                 canonical.conjugate);
         },
         py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"));
+
+    module.def("_build_info", []() {
+        py::dict result;
+        result["version"] = giao::version;
+        result["compiler"] = GIAO_COMPILER;
+        result["openmp_enabled"] = giao::openmp_enabled();
+        result["openmp_runtime_path"] = py::none();
+#ifdef GIAO_HAS_OPENMP
+#if defined(__unix__) || defined(__APPLE__)
+        Dl_info info{};
+        if (dladdr(reinterpret_cast<const void*>(&omp_get_max_threads), &info)
+            != 0 && info.dli_fname != nullptr) {
+            result["openmp_runtime_path"] = std::string(info.dli_fname);
+        }
+#endif
+#endif
+        return result;
+    });
 
     module.def("openmp_enabled", &giao::openmp_enabled);
     module.def("openmp_max_threads", &giao::openmp_max_threads);

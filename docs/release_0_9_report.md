@@ -1,0 +1,124 @@
+# 0.9.0 installation and threading validation
+
+Prepared on 20 November 2026, macOS 26.6.2 arm64, AppleClang
+21.0.0.21000401, CPython 3.13.3. Profiles use NumPy 2.5.3/Accelerate;
+fresh installation environments resolved NumPy 2.5.5. Publication has **not** been performed.
+
+## Installs and diagnostics
+
+Verified locally in separate fresh virtual environments:
+
+| Artifact/path | Result |
+| --- | --- |
+| Plain `pip install .` | Builds with isolation, finds Homebrew libomp automatically |
+| Plain `pip install -e .` | Same; Python edits are live, native changes require reinstall |
+| sdist, isolated pip install | Builds and passes installed ERI/Cholesky smoke test |
+| delocate-repaired arm64 cp313 wheel | Installs and passes smoke; runtime is bundled in `.dylibs` |
+| AUTO with discovery disabled | Installs serial; warns on an unavailable parallel default |
+| ON with discovery disabled | Fails configuration with a clear missing-runtime error |
+| Explicit threads=2 on serial build | Raises ValueError |
+
+The unavailable-runtime case simulates missing discovery rather than removing
+Homebrew from this Mac. The installed repaired wheel was built on macOS 26
+and tagged accordingly; release CI separately targets macOS 15.
+
+Actual source-install `gi.build_info()` outside the restricted tool sandbox:
+
+```python
+{'version': '0.9.0',
+ 'compiler': 'AppleClang 21.0.0.21000401',
+ 'openmp_enabled': True,
+ 'openmp_runtime_path': '/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib',
+ 'default_threads': 12,
+ 'physical_cores': 12}
+```
+
+The repaired wheel instead reports its venv's
+`site-packages/giao_integrals/.dylibs/libomp.dylib`. A simulated serial install
+reports OpenMP False, runtime None and effective default 1, with a RuntimeWarning.
+The tool sandbox denies sysctl, so benchmark metadata collected there reports
+a conservative physical/default count of 1; all measured budgets below were
+passed explicitly and are unaffected by that detection restriction.
+
+## Tests and numerical equality
+
+| Build | Full Python suite | Full C++ suite |
+| --- | --- | --- |
+| Serial OFF, Release | 458 passed | Passed |
+| OpenMP AUTO/ON, Release | 458 passed | Passed |
+| OpenMP with ASan/UBSan, -O1 + debug symbols | 458 passed | Passed |
+
+`test_threading.py` covers each threaded ERI entry point, including Molecule
+integrals, streamed batches, native bindings and Cholesky factors/pivots.
+Results are compared with `assert_array_equal` at 1, 2 and the runtime maximum
+(12 here), with and without screening and with zero/finite magnetic field.
+The full suite also retains the reconstruction, gauge, normalization and memory
+checks. A distant center ensures screened equality tests actually discard
+quartets, while a close pair retains nonzero complex finite-field integrals.
+The GIL test completion timeout was raised from 5 to 60 seconds to accommodate
+sanitizer overhead in any build; its separate GIL-release assertion is unchanged.
+Maximum-thread testing is explicit even inside the restricted sandbox.
+
+## Ne Cholesky profile and timings
+
+Basis Set Exchange aug-cc-pCVQZ for Ne, with uncontract_general,
+uncontract_segmented and uncontract_spdf all True: 152 Cartesian AOs.
+B=(0,0,0.1), tau=1e-8, M=1052. Accelerate BLAS is limited to one thread.
+No full AO ERI or pair matrix is constructed.
+
+A cProfile run, with timers around the existing update blocks, gives:
+
+| Threads | Before/static seconds | After/dynamic seconds | Vector update before/after | Residual update before/after |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 664.72 | 636.94 | 4.29 / 4.40 | 0.087 / 0.075 |
+| 12 | 154.27 | 106.86 | 3.93 / 4.07 | 0.072 / 0.073 |
+
+At 12 threads, `_eri_batch` accounts for 141.75/154.27 seconds before the
+change (91.9%) and 94.10/106.86 afterward. The vector and residual updates
+combined account for only 2.6% before the change. Moving those updates to C++
+would at best recover a few percent and risks changing the BLAS reduction
+path, so the conditional native-update rewrite is **not warranted by this
+profile**. Instead, dynamic assignment balances heterogeneous shell quartets;
+each block still has its original primitive reduction order and output slot.
+The measured profiled 12-thread improvement is about 31% in elapsed time.
+
+Unprofiled runs of the new reproducible benchmark:
+
+| Threads | Seconds |
+| ---: | ---: |
+| 4 | 181.09 |
+| 8 | 112.43 |
+| 12 | 97.36 |
+
+The 4/8/12-thread vector SHA256 is
+`eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527`,
+and pivot SHA256 is
+`c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853`.
+The measured residual maximum is 7.4813e-9. Measurements overlapped other
+validation/build jobs on this workstation and are not isolated performance
+claims. In particular the serial wall times differ from the user's supplied
+424 s baseline; those supplied VICE figures must not be mixed into a controlled
+speedup comparison. Re-run on a quiet machine using:
+
+```sh
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
+  python benchmarks/cholesky_threads.py --threads 1 4 8 12 --profile
+```
+
+Raw [benchmark records](../benchmarks/results/threading_0_9_macos_arm64.json)
+include the measured hashes and build metadata.
+
+## Distribution decisions and remaining release gates
+
+The prepared workflow builds CPython 3.11–3.14 manylinux_2_28 x86_64/aarch64,
+macOS arm64 and Intel x86_64 (macOS 15 baseline). Windows/musllinux wheels are
+omitted for 0.9. Runtime repair, license notices, installed smoke tests and
+sdist installation are required CI gates. No running Docker daemon is available
+on this Mac, so Linux, Intel macOS, other Python-version wheels and their
+bundling remain **pending remote CI**, not claimed as locally tested.
+
+The distribution name stays `giao-integrals`; confirm PyPI ownership before
+release. Configure the trusted publisher and protected pypi environment as in
+[installation](installation.md). Publication requires explicit maintainer
+approval of the exact `v0.9.0` tag and successful CI. Neither a tag nor a PyPI
+upload has been performed during this task.

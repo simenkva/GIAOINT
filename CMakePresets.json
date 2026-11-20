@@ -23,7 +23,8 @@
       "inherits": "release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "GIAO_ENABLE_SANITIZERS": "ON"
+        "GIAO_ENABLE_SANITIZERS": "ON",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -O1"
       }
     },
     {

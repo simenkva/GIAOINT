@@ -9,11 +9,14 @@ the [docs index](../README.md#documentation).
 
 ## 1. Installation
 
-GIAOINT requires Python 3.11 through 3.14 and NumPy. The compiled core ships
-as a prebuilt wheel dependency (`pybind11`) plus a C++20 extension module, so
-installing from source needs a C++20 compiler and CMake.
+GIAOINT supports CPython 3.11–3.14 and depends on NumPy. Its compiled core is
+a C++20 extension built with pybind11; pybind11 is a build dependency, not
+a prebuilt GIAOINT core. Source installation requires a C++20 compiler; normal
+pip build isolation installs the Python build dependencies and any required
+CMake frontend. Version 0.9.0 publication is pending approval and release CI.
+See [installation and threading](installation.md) for platform details.
 
-### Standard install
+### Install from a repository checkout
 
 ```console
 python -m pip install '.[molecule]'
@@ -29,7 +32,7 @@ API or BSE JSON basis input; those work without it.
 ```console
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python -m pip install --no-build-isolation -e .
+.venv/bin/python -m pip install -e .
 .venv/bin/pytest -q
 ```
 
@@ -45,7 +48,10 @@ ctest --preset release
 ```
 
 These presets require Ninja and build the C++ library and its test suite
-without the Python bindings.
+without the Python bindings. OpenMP defaults to AUTO; on macOS, `brew install
+libomp` enables automatic runtime discovery. Require OpenMP with
+`-DGIAO_ENABLE_OPENMP=ON` or select serial with `OFF`. Verify Python installs
+with `gi.build_info()`; editable installs require reinstalling after C++ edits.
 
 ## 2. Basic usage
 
@@ -78,9 +84,9 @@ overlap = gi.overlap(basis, field=field)
 kinetic = gi.magnetic_kinetic(basis, field=field)
 ```
 
-`B` and the gauge origin are in atomic units. Every function in the package
-accepts `field=None` (the default) for an exact zero field and zero gauge
-origin.
+`B` and the gauge origin are in atomic units. Low-level integral functions
+accept `field=None` (the default) for exact zero field and zero gauge origin.
+`Molecule` integral methods use the field stored on the molecule.
 
 Compute nuclear attraction and electron-repulsion integrals with `Nucleus`
 objects and the `nuclear_attraction`/`eri` functions:
@@ -187,10 +193,10 @@ Neither includes spin coupling or nuclear repulsion.
 
 ### Large ERI tensors
 
-`mol.eri()` allocates a full `(nao, nao, nao, nao)` tensor, guarded by a
-default 512 MiB limit that raises `MemoryError` before allocation if
-`16 * nao**4` would exceed it. Raise or lower that limit with
-`mol.eri(max_bytes=...)`. For larger systems, stream canonical shell-quartet
+`mol.eri()` allocates a full `(nao, nao, nao, nao)` tensor, with no default
+output cap (`max_bytes=None`). Set an explicit byte limit
+with `mol.eri(max_bytes=...)` to raise `MemoryError` before an allocation
+exceeding that limit. For larger systems, stream canonical shell-quartet
 blocks instead:
 
 ```python
@@ -200,8 +206,25 @@ for batch in mol.eri_batches(target_bytes=16 * 1024**2):
 
 `eri()`, `eri_batches()`, and `integrals(eri=True)` all accept
 `screening_threshold=` for complex Schwarz screening and `threads=` for
-OpenMP shell-quartet parallelism; both default off, so the unscreened,
-serial baseline never changes underneath you.
+OpenMP shell-quartet parallelism. Screening remains off. Since 0.9,
+`threads=None` uses the configured parallel default; `threads=1` stays serial.
+See [installation and thread policy](installation.md).
+
+For a low-rank representation, use streamed Cholesky without allocating the
+full AO tensor:
+
+```python
+chol = mol.cholesky_eri(threshold=1e-8)
+L = chol.vectors  # complex128, (M, nao, nao)
+# ERI[mu,nu,lam,sig] ≈ sum_P L[P,mu,nu] * conj(L[P,sig,lam])
+print(chol.pivots, chol.max_residual_diagonal)
+```
+
+`max_bytes` optionally bounds the vector and pivot output. The threshold is
+on the largest residual diagonal of the Hermitian ordered-pair Coulomb matrix;
+see [Cholesky conventions](cholesky_eri.md) for the numerical floor and error
+bound. Avoid `chol.reconstruct()` without slices on large systems because that
+helper creates a dense tensor.
 
 ### Dropping to the lower-level engine
 
@@ -218,9 +241,9 @@ zero-based owner atom.
 
 ## 4. Where to go next
 
-- [Runnable examples](../examples/): five scripts covering direct-basis
+- [Runnable examples](../examples/): scripts covering direct-basis
   matrices, batched ERIs, the molecule wrapper, and a PySCF cross-check.
-- [`docs/api.md`](api.md): the complete C++ and Python function reference.
+- [`docs/api.md`](api.md): the C++ and Python API overview and conventions.
 - [`docs/molecule_api.md`](molecule_api.md): the full `Molecule` reference
   this manual summarizes.
 - [`docs/mathematical_specification.md`](mathematical_specification.md):
