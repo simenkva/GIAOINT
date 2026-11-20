@@ -143,6 +143,14 @@ matrices follow input shell order. ERIs default to packed canonical
 shell-quartet batches; request the full `(nao,)*4` tensor explicitly with a
 byte limit.
 
+**Coordinate conversion and PySCF comparisons:** GIAOINT uses
+1 bohr = 0.529177210544 Å from
+[CODATA 2022](https://physics.nist.gov/cuu/pdf/wall_2022.pdf).
+PySCF 2.8.0 uses 0.52917721092 Å, a relative difference of about
+7.1 × 10⁻¹⁰. Converting the same ångström geometry separately can therefore
+affect integral comparisons at tight tolerances. Convert the geometry once
+and supply identical coordinates to both codes with `unit="bohr"`.
+
 ## Development
 
 ```console
