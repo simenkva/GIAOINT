@@ -6,8 +6,9 @@ AUTO OpenMP discovery, Python default-thread policy and build diagnostics,
 dynamic ERI scheduling, repaired wheel builds, per-tag trusted-publication
 approval, and expanded equality/install tests are implemented. See
 [installation](docs/installation.md) and the
-[validation report](docs/release_0_9_report.md). PyPI publication is pending
-explicit maintainer approval and successful release CI on each target.
+[validation report](docs/release_0_9_report.md). The complete fix-branch CI and
+release-wheel matrix have passed. PyPI publication remains pending confirmation of
+publisher/protected-environment setup and explicit maintainer approval.
 
 ## Completed
 
@@ -159,7 +160,8 @@ explicit maintainer approval and successful release CI on each target.
 - Version 0.9 validation with 458 Python tests in each of serial, OpenMP, and
   ASan/UBSan builds, plus all three C++ suites, bitwise thread-equality checks,
   clean source/editable/sdist installs, and a repaired arm64 cp313 wheel smoke
-  test. Other release-wheel platforms and Python versions await remote CI;
+  test. Remote release-wheel CI has also passed for every configured platform and
+  Python version;
   see `docs/release_0_9_report.md`.
 
 ## Current limitations

@@ -70,8 +70,8 @@ The current CI configuration runs the full Python suite on CPython 3.11–3.14
 under Linux and macOS with both OpenMP OFF and ON. Separate native OFF/ON and
 ASan/UBSan jobs cover C++; the sanitizer job also runs Python with the ASan
 runtime preloaded. clang-tidy provides static-analysis coverage. The
-[0.9 report](release_0_9_report.md) distinguishes completed local checks from
-remote release-wheel verification that is still pending. Optional PySCF/libcint
+[0.9 report](release_0_9_report.md) records completed local checks and the
+successful remote release-wheel matrix. Optional PySCF/libcint
 validation remains a release check because it is not a runtime dependency.
 
 ## 2. Invariant and covariance tests
@@ -283,9 +283,23 @@ workflow also installs the sdist in an isolated fresh environment. Source and
 editable-install CI checks AUTO, missing-runtime fallback and strict ON failure.
 
 The sanitizer preset uses ASan/UBSan with -O1 and debug symbols. Python needs
-that compiler's ASan runtime preloaded (LD_PRELOAD on Linux; on macOS launch
-the actual interpreter binary with DYLD_INSERT_LIBRARIES, since launch wrappers
-may strip it). Leak detection is disabled for the Python host, but address and
+that compiler's ASan runtime preloaded. With GCC on Linux, both libasan and
+libstdc++ must be in the startup library list, with libasan first:
+
+```sh
+export LD_PRELOAD="$(g++ -print-file-name=libasan.so):$(g++ -print-file-name=libstdc++.so.6)"
+export ASAN_OPTIONS=detect_leaks=0:halt_on_error=1
+export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
+python -m pytest -q -s
+```
+
+Use the same C++ compiler for the build and runtime discovery. Preloading only
+libasan can leave its `__cxa_throw` interceptor unresolved at startup; a later
+C++ exception from the extension can then terminate the process ([upstream sanitizer issue](https://github.com/google/sanitizers/issues/934)).
+CI exercises an exception-path test before the full suite and disables pytest
+FD capture so native failures remain visible. On macOS launch the actual
+interpreter binary with DYLD_INSERT_LIBRARIES, since launch wrappers may strip
+it. Leak detection is disabled for the Python host, but address and
 undefined-behavior checks remain enabled. The GIL test has a 60-second
 completion timeout to accommodate instrumentation; its GIL-release assertion
 is separate from that timeout. See the [release checklist](release_checklist.md)

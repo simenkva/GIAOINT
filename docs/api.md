@@ -12,8 +12,8 @@ pair loops, and complex-center machinery remain private.
 This overview describes the 0.9.0 release candidate, including streamed
 Cholesky and configured Python thread defaults. Signatures below are condensed;
 installed headers and Python docstrings give individual overload details.
-Publication and cross-platform wheel verification are still pending; see
-[release validation](release_0_9_report.md).
+Cross-platform wheel validation has passed; publication remains pending.
+See [release validation](release_0_9_report.md).
 
 All positions, Gaussian exponents, moment origins, magnetic fields, energies,
 and derivatives use atomic units. Shell coefficients multiply normalized

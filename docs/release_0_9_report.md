@@ -59,6 +59,21 @@ The GIL test completion timeout was raised from 5 to 60 seconds to accommodate
 sanitizer overhead in any build; its separate GIL-release assertion is unchanged.
 Maximum-thread testing is explicit even inside the restricted sandbox.
 
+## Completed remote CI and Linux sanitizer correction
+
+[CI run 44716434345](https://github.com/simenkva/GIAOINT/actions/runs/44716434345)
+passed all jobs on the sanitizer-fix branch at `710d425`, including the
+Linux/macOS Python 3.11–3.14 OFF/ON matrix, source installs, native C++ tests,
+static analysis, and Linux ASan/UBSan Python and C++ checks.
+
+The original Linux sanitizer run exited during an expected C++ exception.
+GCC's ASan runtime needs libstdc++ present at startup to resolve its exception
+interceptor. CI now pins CXX=g++, preloads that driver's libasan followed by
+libstdc++, exercises the exception path before the full suite, and leaves
+native diagnostics uncaptured. ASan and UBSan halt on reported errors; leak
+detection remains disabled for the Python host as before. This is a sanitizer
+bootstrap correction; no numerical kernel or integral convention changed.
+
 ## Ne Cholesky profile and timings
 
 Basis Set Exchange aug-cc-pCVQZ for Ne, with uncontract_general,
@@ -114,8 +129,12 @@ The prepared workflow builds CPython 3.11–3.14 manylinux_2_28 x86_64/aarch64,
 macOS arm64 and Intel x86_64 (macOS 15 baseline). Windows/musllinux wheels are
 omitted for 0.9. Runtime repair, license notices, installed smoke tests and
 sdist installation are required CI gates. No running Docker daemon is available
-on this Mac, so Linux, Intel macOS, other Python-version wheels and their
-bundling remain **pending remote CI**, not claimed as locally tested.
+on this Mac, so those platforms were validated remotely rather than locally.
+[Wheel run 44715246114](https://github.com/simenkva/GIAOINT/actions/runs/44715246114)
+passed the sdist job and all four wheel jobs at commit `45ab1a2`, covering
+CPython 3.11–3.14 on the configured Linux and macOS architectures. The publish
+job was skipped. This verifies runtime repair and installed smoke tests without
+publishing or creating a release tag.
 
 The distribution name stays `giao-integrals`; confirm PyPI ownership before
 release. Configure the trusted publisher and protected pypi environment as in
