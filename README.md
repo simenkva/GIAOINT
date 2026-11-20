@@ -79,8 +79,8 @@ to avoid loading a second Homebrew copy. See the
 [conda runtime guidance](docs/installation.md#macos-conda-source-installs-and-error-15). Avoid
 `--no-build-isolation` unless you installed `requirements-dev.txt` first.
 
-Version 0.9.0 has prepared wheel/release workflows; PyPI publication awaits
-maintainer approval. See [installation and threading](docs/installation.md)
+Version 0.9.0 is approved for release through the wheel/release workflow.
+See [installation and threading](docs/installation.md)
 for wheel platforms, bundled runtime conflicts, and release setup.
 
 ## Quick example
