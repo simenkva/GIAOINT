@@ -2,7 +2,24 @@
 
 Prepared on 20 November 2026, macOS 26.6.2 arm64, AppleClang
 21.0.0.21000401, CPython 3.13.3. Profiles use NumPy 2.5.3/Accelerate;
-fresh installation environments resolved NumPy 2.5.5. Publication has **not** been performed.
+fresh installation environments resolved NumPy 2.5.5. Version 0.9.0 was published
+on PyPI on 20 November 2026; final verification is recorded below.
+
+## Published release verification
+
+The maintainer approved release 0.9.0 and the protected `pypi` deployment.
+[Release run 44745102947](https://github.com/simenkva/GIAOINT/actions/runs/44745102947)
+passed all wheel/sdist jobs and trusted publication for tag `v0.9.0` at commit
+`0003bb3`. [PyPI](https://pypi.org/project/giao-integrals/0.9.0/) lists all
+16 CPython 3.11–3.14 Linux/macOS wheels and the source archive.
+
+A fresh CPython 3.13 macOS arm64 venv installed
+`giao-integrals[molecule]==0.9.0` directly from PyPI. The installed wheel reports
+its bundled OpenMP runtime and passes `tests/wheel_smoke.py`, including exact
+serial/parallel equality and finite-field ERI reconstruction. The atom timing
+example passes at 1/2/4 threads with bitwise-identical factors and pivots
+(M=94, max residual 4.183e-11). Timings were 0.417/0.227/0.186 seconds on this
+host, with BLAS limited to one thread.
 
 ## Installs and diagnostics
 
@@ -149,7 +166,7 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
 Raw [benchmark records](../benchmarks/results/threading_0_9_macos_arm64.json)
 include the measured hashes and build metadata.
 
-## Distribution decisions and remaining release gates
+## Distribution decisions and release gates
 
 The prepared workflow builds CPython 3.11–3.14 manylinux_2_28 x86_64/aarch64,
 macOS arm64 and Intel x86_64 (macOS 15 baseline). Windows/musllinux wheels are
@@ -162,8 +179,7 @@ CPython 3.11–3.14 on the configured Linux and macOS architectures. The publish
 job was skipped. This verifies runtime repair and installed smoke tests without
 publishing or creating a release tag.
 
-The distribution name stays `giao-integrals`; confirm PyPI ownership before
-release. Configure the trusted publisher and protected pypi environment as in
-[installation](installation.md). Publication requires explicit maintainer
-approval of the exact `v0.9.0` tag and successful CI. Neither a tag nor a PyPI
-upload has been performed during this task.
+The distribution name is `giao-integrals`. The trusted publisher and protected
+pypi environment are configured as in [installation](installation.md).
+Publication required explicit maintainer approval of the exact `v0.9.0` tag,
+successful CI, and environment review; it has completed as recorded above.

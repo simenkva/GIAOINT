@@ -35,6 +35,16 @@ Milestone 9 (ERI performance) is complete; see
 
 ## Install
 
+From [PyPI](https://pypi.org/project/giao-integrals/0.9.0/):
+
+```console
+python -m pip install 'giao-integrals[molecule]'
+```
+
+Wheels are available for CPython 3.11–3.14 on Linux x86_64/aarch64 and
+macOS 15+ arm64/x86_64. For macOS conda environments, use a source install
+as described below to share the environment's OpenMP runtime.
+
 From a repository checkout:
 
 ```console
@@ -79,7 +89,7 @@ to avoid loading a second Homebrew copy. See the
 [conda runtime guidance](docs/installation.md#macos-conda-source-installs-and-error-15). Avoid
 `--no-build-isolation` unless you installed `requirements-dev.txt` first.
 
-Version 0.9.0 is approved for release through the wheel/release workflow.
+Version 0.9.0 is published on PyPI.
 See [installation and threading](docs/installation.md)
 for wheel platforms, bundled runtime conflicts, and release setup.
 

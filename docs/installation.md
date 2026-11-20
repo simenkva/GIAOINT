@@ -1,5 +1,18 @@
 # Installation, threading, and binary releases (0.9)
 
+## Install from PyPI
+
+Version 0.9.0 is available on [PyPI](https://pypi.org/project/giao-integrals/0.9.0/):
+
+```console
+python -m pip install 'giao-integrals[molecule]'
+```
+
+The `molecule` extra adds Basis Set Exchange; omit it for the low-level API.
+Wheels include OpenMP for CPython 3.11–3.14 on Linux x86_64/aarch64 and
+macOS 15+ arm64/x86_64. For macOS conda environments, prefer a source install
+to share conda's runtime; see [conda guidance](#macos-conda-source-installs-and-error-15).
+
 ## Source and editable installs
 
 Use Python 3.11–3.14 with a C++20 compiler, for example AppleClang 21 or GCC.
@@ -156,7 +169,7 @@ version tag. Configure the GitHub `pypi` environment with required reviewers;
 register PyPI's trusted publisher for owner `simenkva`, repository `GIAOINT`,
 workflow `wheels.yml`, environment `pypi`, project `giao-integrals`.
 
-Before approving `v0.9.0`, verify ownership/availability of that PyPI project
+Before approving a release tag, verify ownership/availability of that PyPI project
 name, all target CI jobs, and the repaired artifacts. Set the approved-tag
 variable only after explicit maintainer approval, then push or rerun the tag
 workflow and approve the protected environment. New versions need a new exact
