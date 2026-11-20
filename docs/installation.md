@@ -99,7 +99,7 @@ must report OpenMP, resolve a bundled runtime path, and pass ERI and Cholesky
 serial/parallel smoke checks. An sdist is also built and installed in a clean
 venv with isolated pip. The ordinary CI tests OFF and ON Python/C++ builds,
 ASan/UBSan, AUTO source and editable installation, and missing-runtime fallback.
-Local validation and outstanding CI platforms are recorded in the
+Local and completed cross-platform CI validation are recorded in the
 [0.9 report](release_0_9_report.md).
 
 A process that loads multiple independently bundled OpenMP runtimes (for

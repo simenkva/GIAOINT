@@ -37,8 +37,8 @@ deprecation period.
 
 Configured release CI targets CPython 3.11–3.14 manylinux_2_28 x86_64/aarch64
 and macOS 15+ arm64/x86_64. Local 0.9 validation covers CPython 3.13 on
-macOS arm64; other wheel targets await remote CI. See
-[release validation](release_0_9_report.md). The C++ core requires a C++20
+macOS arm64. Remote wheel CI has passed for every configured platform and
+Python version; see [release validation](release_0_9_report.md). The C++ core requires a C++20
 compiler and CMake 3.20 or newer. Native Windows is not currently a supported release platform. PySCF/libcint checks are
 optional external-oracle tests and are not runtime dependencies.
 

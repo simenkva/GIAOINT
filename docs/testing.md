@@ -70,8 +70,8 @@ The current CI configuration runs the full Python suite on CPython 3.11–3.14
 under Linux and macOS with both OpenMP OFF and ON. Separate native OFF/ON and
 ASan/UBSan jobs cover C++; the sanitizer job also runs Python with the ASan
 runtime preloaded. clang-tidy provides static-analysis coverage. The
-[0.9 report](release_0_9_report.md) distinguishes completed local checks from
-remote release-wheel verification that is still pending. Optional PySCF/libcint
+[0.9 report](release_0_9_report.md) records completed local checks and the
+successful remote release-wheel matrix. Optional PySCF/libcint
 validation remains a release check because it is not a runtime dependency.
 
 ## 2. Invariant and covariance tests
@@ -294,9 +294,8 @@ python -m pytest -q -s
 ```
 
 Use the same C++ compiler for the build and runtime discovery. Preloading only
-libasan can leave its `__cxa_throw` interceptor unresolved until Python dlopens
-the C++ extension, causing the first expected C++ exception to terminate the
-process ([upstream sanitizer issue](https://github.com/google/sanitizers/issues/934)).
+libasan can leave its `__cxa_throw` interceptor unresolved at startup; a later
+C++ exception from the extension can then terminate the process ([upstream sanitizer issue](https://github.com/google/sanitizers/issues/934)).
 CI exercises an exception-path test before the full suite and disables pytest
 FD capture so native failures remain visible. On macOS launch the actual
 interpreter binary with DYLD_INSERT_LIBRARIES, since launch wrappers may strip
