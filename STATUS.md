@@ -10,6 +10,11 @@ approval, and expanded equality/install tests are implemented. See
 release-wheel matrix have passed. PyPI publication remains pending confirmation of
 publisher/protected-environment setup and explicit maintainer approval.
 
+macOS conda source builds now select the target interpreter's OpenMP runtime
+and headers before Homebrew. The conda/OpenMP OpenBLAS regression, full CI,
+and repaired-wheel matrix pass for that correction; local conda validation
+passes 459 Python tests and the atom timing example at 1/2/4 threads.
+
 ## Completed
 
 - Milestone 0 repository assessment.

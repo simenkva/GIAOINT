@@ -91,7 +91,13 @@ The ordinary pip/Accelerate build retains Homebrew selection and passes 52
 focused Cholesky/thread/example tests, and a repaired wheel still passes its
 installed smoke test with a bundled runtime. Missing conda headers, strict ON,
 explicit root overrides, and OFF configuration paths have been checked.
-A dedicated conda/OpenMP OpenBLAS job has been added to CI; see
+The dedicated conda/OpenMP OpenBLAS job and the full CI matrix pass in
+[run 44735169843](https://github.com/simenkva/GIAOINT/actions/runs/44735169843)
+at commit `cae1782`. The repaired wheel/sdist matrix also passes in
+[run 44735175295](https://github.com/simenkva/GIAOINT/actions/runs/44735175295),
+including both macOS architectures and Linux x86_64/aarch64; publication was
+skipped. Subsequent suites include the atom timing smoke test, bringing the
+Python test count from the initial 458 above to 459. See
 [conda setup and recovery](installation.md#macos-conda-source-installs-and-error-15).
 
 ## Ne Cholesky profile and timings
