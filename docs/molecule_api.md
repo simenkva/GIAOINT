@@ -147,7 +147,8 @@ and nuclear repulsion are not included in the one-electron Hamiltonian.
 
 ## ERI size, screening, and threads
 
-`mol.eri()` returns a full tensor with a default 512 MiB output limit.
+`mol.eri()` returns a full tensor with an optional `max_bytes` output limit
+(default `None`, without a cap).
 It raises `MemoryError` before allocating the tensor if `16 * nao**4` exceeds
 the limit. The limit covers the output tensor, not total process memory.
 Change it with `mol.eri(max_bytes=...)` or
@@ -166,7 +167,41 @@ unscreened and serial; more than one thread requires an OpenMP build.
 
 The low-level `gi.eri(basis, ...)` continues to default to streamed blocks
 and requires an explicit byte limit for full output. The molecule wrapper's
-bounded full-tensor convenience does not change that API.
+full-tensor convenience does not change that API.
+
+## Cholesky ERIs without a dense tensor
+
+```python
+chol = mol.cholesky_eri(threshold=1e-8, max_bytes=None, threads=1)
+L = chol.vectors  # complex128, shape (M, nao, nao)
+print(chol.pivots, chol.max_residual_diagonal)
+```
+
+The reconstruction convention is
+`ERI[mu,nu,lam,sig] ≈ sum_P L[P,mu,nu] * conj(L[P,sig,lam])`.
+This factors the Hermitian positive semidefinite matrix
+`W[(mu,nu),(lam,sig)] = ERI[nu,mu,lam,sig]`, using all ordered AO pairs.
+At zero field, each vector is real symmetric. At finite field, truncated
+reconstructions obey the two ERI symmetries to within the approximation error;
+individual vectors need not be Hermitian or gauge-origin independent.
+
+The largest residual diagonal is the stopping criterion and bounds the
+elementwise ERI error, up to numerical roundoff. `threshold=0` requests
+numerical exhaustion; the numerical floor is `64*eps*max(initial diagonal)`.
+Inspect `max_residual_diagonal` for the achieved tolerance.
+`chol.reconstruct((slice(...), slice(...), slice(...), slice(...)))` builds
+only the selected four-index block. Calling it without slices builds a full
+tensor and should be reserved for small tests.
+
+`max_bytes` bounds vectors and pivot indices, with no hidden default cap.
+Workspace uses O(M*nao²) memory plus a streamed shell-quartet batch, rather
+than a dense AO tensor or pair matrix. Column batches cache up to eight
+candidates from the pivot shell pair. Schwarz screening, when requested,
+only skips initial diagonal blocks with a conservative bound below the
+stopping threshold; columns remain exact to retain the PSD residual bound.
+`threads` uses the same OpenMP backend as `eri_batches()`.
+The low-level equivalent is `gi.cholesky_eri(basis, field=..., ...)`.
+See [benchmark notes](cholesky_eri.md) for validation and measured memory/timing.
 
 ## Access to the rest of the engine
 

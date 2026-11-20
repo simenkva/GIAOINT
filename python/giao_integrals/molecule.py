@@ -14,13 +14,14 @@ import numpy as np
 import numpy.typing as npt
 
 from . import _giao_integrals as core
+from .cholesky import CholeskyERI
+from .cholesky import cholesky_eri as compute_cholesky_eri
 from .eri import EriBatch
 from .eri import eri as compute_eri
 from .eri import eri_batches as compute_eri_batches
 
 # CODATA 2022, https://physics.nist.gov/cuu/pdf/wall_2022.pdf
 BOHR_IN_ANGSTROM = 0.529177210544
-_DEFAULT_ERI_BYTES = 512 * 1024**2
 _SYMBOLS = (
     "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni "
     "Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe "
@@ -387,12 +388,13 @@ class Molecule:
     def eri(
         self,
         *,
-        max_bytes: int = _DEFAULT_ERI_BYTES,
+        max_bytes: int | None = None,
         screening_threshold: float = 0.0,
         threads: int = 1,
     ) -> Matrix:
-        """Return a full (nao, nao, nao, nao) tensor, capped at 512 MiB by default.
+        """Return a full (nao, nao, nao, nao) tensor, with an optional byte cap.
 
+        ``max_bytes=None`` (the default) disables the output cap.
         Use ``eri_batches()`` for streaming larger calculations. Screening
         and parallelism are opt-in, as in the low-level API.
         """
@@ -400,9 +402,31 @@ class Molecule:
             self.basis,
             field=self.field,
             storage="full",
-            max_bytes=max_bytes,
+            max_bytes=(self.ao_count**4 * 16 if max_bytes is None else max_bytes),
             screening_threshold=screening_threshold,
             threads=threads,
+        )
+
+    def cholesky_eri(
+        self,
+        *,
+        threshold: float = 1e-8,
+        screening_threshold: float = 0.0,
+        threads: int = 1,
+        max_bytes: int | None = None,
+    ) -> CholeskyERI:
+        """Stream Coulomb Cholesky factors; see :func:`cholesky_eri` for conventions.
+
+        ERI[mu,nu,lambda,sigma] = sum_P vectors[P,mu,nu] *
+        conj(vectors[P,sigma,lambda]), to the requested diagonal tolerance.
+        """
+        return compute_cholesky_eri(
+            self.basis,
+            field=self.field,
+            threshold=threshold,
+            screening_threshold=screening_threshold,
+            threads=threads,
+            max_bytes=max_bytes,
         )
 
     def eri_batches(
@@ -425,7 +449,7 @@ class Molecule:
         self,
         *,
         eri: bool = False,
-        max_eri_bytes: int = _DEFAULT_ERI_BYTES,
+        max_eri_bytes: int | None = None,
         screening_threshold: float = 0.0,
         threads: int = 1,
     ) -> MolecularIntegrals:

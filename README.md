@@ -49,7 +49,8 @@ import giao_integrals as gi
 mol = gi.Molecule.from_xyz("water.xyz", basis="cc-pVDZ")
 S = mol.overlap()
 H = mol.core_hamiltonian()
-eri = mol.eri()  # full Cartesian tensor, 512 MiB default output limit
+eri = mol.eri(max_bytes=512 * 1024**2)  # optional full-tensor output limit
+chol = mol.cholesky_eri(threshold=1e-8)  # streamed; no full ERI allocation
 ```
 
 XYZ coordinates default to ångström; every integral output uses atomic

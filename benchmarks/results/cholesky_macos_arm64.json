@@ -1,0 +1,26 @@
+[
+  {
+    "threshold": 1e-06,
+    "nao": 152,
+    "rank": 815,
+    "rank_per_ao": 5.3618421052631575,
+    "seconds": 468.75151720806025,
+    "vectors_bytes": 301276160,
+    "peak_rss_bytes": 540164096,
+    "max_residual_diagonal": 9.007714873870219e-07,
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "openmp": false
+  },
+  {
+    "threshold": 1e-08,
+    "nao": 152,
+    "rank": 1016,
+    "rank_per_ao": 6.684210526315789,
+    "seconds": 533.0102051660651,
+    "vectors_bytes": 375578624,
+    "peak_rss_bytes": 661192704,
+    "max_residual_diagonal": 9.260818244538079e-09,
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "openmp": false
+  }
+]

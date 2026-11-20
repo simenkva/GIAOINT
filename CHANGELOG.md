@@ -2,12 +2,19 @@
 
 ## Unreleased
 
+Added streamed pivoted Coulomb Cholesky via `Molecule.cholesky_eri()` and
+`cholesky_eri(basis, ...)`, with complex ordered-pair factors, residual and
+pivot metadata, block reconstruction, and an optional output cap. No dense
+AO ERI tensor or pair matrix is allocated. `Molecule.eri()` and
+`integrals(eri=True)` now default to no output cap (`None`); explicit caps
+remain supported. See `docs/cholesky_eri.md` for conventions and benchmarks.
+
 Added `Molecule.from_xyz()` and `MolecularIntegrals` for computing integrals
 from XYZ files/text and named, Gaussian94, NWChem, or BSE JSON bases. The
 optional `molecule` extra supplies Basis Set Exchange's local database and
 format readers. The wrapper handles coordinate conversion and shell ownership,
-provides a physical core Hamiltonian, and offers full ERIs with a 512 MiB
-default output limit or streaming batches. All output remains Cartesian;
+provides a physical core Hamiltonian, and offers full ERIs with an optional
+output limit or streaming batches. All output remains Cartesian;
 unsupported ECP data raises an error. See `docs/molecule_api.md`.
 
 Milestone 9 replaced the recursive ERI auxiliary with an iterative six-index
