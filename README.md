@@ -98,17 +98,39 @@ chol = mol.cholesky_eri(threshold=1e-8)  # streamed; no full ERI allocation
 XYZ coordinates default to ångström; every integral output uses atomic
 units. Read the [user manual](docs/user_manual.md) for a full walkthrough,
 or run [`examples/molecular_integrals.py`](examples/molecular_integrals.py)
-directly. To time atom Cholesky generation across thread counts:
+directly.
+
+## Parallel atom Cholesky timing
+
+From the repository root, install into your active Python environment, then run
+the [atom timing example](examples/atom_cholesky_timing.py):
 
 ```console
+python -m pip install '.[molecule]'
 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
   python examples/atom_cholesky_timing.py --threads 1 2 4
 ```
 
-The [atom timing example](examples/atom_cholesky_timing.py) defaults to Ne/cc-pVDZ
-and reports wall time, speedup, rank, vector memory and residual, checking
-bitwise agreement between runs. Use `--help` for atom, basis, field, threshold,
-and uncontracting options.
+The default is Ne/cc-pVDZ (15 Cartesian AOs), with B=(0, 0, 0.1) and a
+Cholesky threshold of 1e-8. The script times streamed integral generation and
+factorization without forming the full ERI tensor. It reports wall time,
+speedup relative to the first run, rank M, M/nao, vector memory, and the largest
+residual diagonal. It also checks that factors and pivots are bitwise identical
+across thread counts. Basis loading and result checks are outside the timing.
+
+For the larger uncontracted Ne/aug-cc-pCVQZ case (152 Cartesian AOs):
+
+```console
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
+  python examples/atom_cholesky_timing.py --basis aug-cc-pCVQZ \
+  --uncontracted --threads 1 4 8 12
+```
+
+Large cases can take minutes per run; small cases may show little speedup
+because of parallel overhead. Explicit thread counts above one require an
+OpenMP build. For a single atom, the London phases cancel in each pair density,
+so these ERIs are independent of the supplied field. Use `--help` for atom,
+basis, field, threshold, and uncontracting options.
 
 ## Conventions worth knowing up front
 
