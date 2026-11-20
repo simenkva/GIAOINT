@@ -1,6 +1,10 @@
 # Milestone 9 implementation plan: ERI performance
 
-Status: complete, 2026-09-11 (unreleased).
+Status: completed 2026-09-11; historical Milestone 9 plan and measurements.
+The work is included in the 0.9.0 release candidate (publication pending).
+The defaults recorded below describe Milestone 9; 0.9 supersedes its threading
+policy with AUTO OpenMP and `threads=None`. See [installation](installation.md)
+and [the current validation report](release_0_9_report.md).
 
 The final implementation uses a lexicographic topological fill with contiguous
 Boys orders, a collapsed real table at exact zero field, and Gaussian-pair
@@ -251,8 +255,9 @@ Phase 9.3 moved bra pair construction outside ket primitive loops and ket pair
 construction outside Cartesian loops. A direct ssss seed avoids unnecessary
 angular-table setup. Neither change alters primitive accumulation order.
 
-Phase 9.4 retains `screening_threshold=0.0` and `threads=1`; the decision is in
-`compatibility.md` and `../CHANGELOG.md`. The performance example now accepts
+Phase 9.4 retained `screening_threshold=0.0` and `threads=1` at the time.
+Version 0.9 changes the Python threading default to `None`; see
+[compatibility policy](compatibility.md) and [the changelog](../CHANGELOG.md). The performance example now accepts
 explicit threading/screening options. New OpenMP measurements reach 5.86x
 scaling at eight threads on the 76-quartet finite-field p-shell workload.
 

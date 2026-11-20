@@ -390,13 +390,13 @@ class Molecule:
         *,
         max_bytes: int | None = None,
         screening_threshold: float = 0.0,
-        threads: int = 1,
+        threads: int | None = None,
     ) -> Matrix:
         """Return a full (nao, nao, nao, nao) tensor, with an optional byte cap.
 
         ``max_bytes=None`` (the default) disables the output cap.
         Use ``eri_batches()`` for streaming larger calculations. Screening
-        and parallelism are opt-in, as in the low-level API.
+        is opt-in. ``threads=None`` uses the configured default; 1 is serial.
         """
         return compute_eri(
             self.basis,
@@ -412,7 +412,7 @@ class Molecule:
         *,
         threshold: float = 1e-8,
         screening_threshold: float = 0.0,
-        threads: int = 1,
+        threads: int | None = None,
         max_bytes: int | None = None,
     ) -> CholeskyERI:
         """Stream Coulomb Cholesky factors; see :func:`cholesky_eri` for conventions.
@@ -434,7 +434,7 @@ class Molecule:
         *,
         target_bytes: int = 64 * 1024**2,
         screening_threshold: float = 0.0,
-        threads: int = 1,
+        threads: int | None = None,
     ) -> Iterable[EriBatch]:
         """Stream canonical shell-quartet batches with the molecule's field."""
         return compute_eri_batches(
@@ -451,7 +451,7 @@ class Molecule:
         eri: bool = False,
         max_eri_bytes: int | None = None,
         screening_threshold: float = 0.0,
-        threads: int = 1,
+        threads: int | None = None,
     ) -> MolecularIntegrals:
         """Compute S, canonical T, V, and physical Hcore; optionally full ERIs."""
         overlap = self.overlap()

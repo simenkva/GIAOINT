@@ -1,5 +1,9 @@
 # Milestone 6 benchmark report: macOS arm64
 
+Historical benchmark snapshot: values, versions and default-policy statements
+below describe that milestone. Current configuration is documented in
+[installation and threading](../../docs/installation.md).
+
 Environment: macOS 26.6.2 arm64, AppleClang 21.0.0, CMake 4.1.2, release
 build. Results are single runs of the adaptive benchmark harness and should be
 read as an engineering baseline, not as portable acceptance thresholds.

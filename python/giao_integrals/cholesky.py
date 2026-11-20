@@ -7,7 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from ._giao_integrals import Basis, MagneticField, openmp_enabled
+from ._giao_integrals import Basis, MagneticField
+from ._threads import resolve_num_threads
 from .eri import eri_batches, eri_schwarz_bounds
 
 
@@ -61,7 +62,7 @@ def cholesky_eri(
     field: MagneticField | None = None,
     threshold: float = 1e-8,
     screening_threshold: float = 0.0,
-    threads: int = 1,
+    threads: int | None = None,
     max_bytes: int | None = None,
 ) -> CholeskyERI:
     """Factor ERIs without forming a full AO tensor or ordered-pair matrix.
@@ -78,7 +79,8 @@ def cholesky_eri(
     Up to eight candidate columns from the pivot shell pair are cached together.
     Storage is O(rank*nao**2) plus one bounded shell-quartet batch (at most
     8 MiB unless a single quartet is larger). ``threads`` controls the existing
-    ERI batch backend. NumPy/BLAS has its own thread settings.
+    ERI batch backend. None selects the configured default; 1 is serial.
+    NumPy/BLAS has its own thread settings and runs outside OpenMP regions.
 
     ``screening_threshold`` enables existing Schwarz bounds only to skip initial
     diagonal blocks whose bound is already <= threshold. These use conservative
@@ -95,14 +97,7 @@ def cholesky_eri(
     ):
         if not np.isfinite(value) or value < 0:
             raise ValueError(f"{name} must be finite and non-negative")
-    if (
-        isinstance(threads, (bool, np.bool_))
-        or not isinstance(threads, (int, np.integer))
-        or threads < 1
-    ):
-        raise ValueError("threads must be a positive integer")
-    if threads != 1 and not openmp_enabled():
-        raise ValueError("parallel ERI evaluation requires an OpenMP-enabled build")
+    threads = resolve_num_threads(threads)
     if max_bytes is not None and (
         isinstance(max_bytes, (bool, np.bool_))
         or not isinstance(max_bytes, (int, np.integer))

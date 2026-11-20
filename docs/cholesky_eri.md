@@ -11,6 +11,11 @@ chol = mol.cholesky_eri(threshold=1e-8, max_bytes=None)
 L = chol.vectors
 ```
 
+Since 0.9, `threads=None` selects the configured default; `threads=1` remains
+explicitly serial. See [installation and thread policy](installation.md).
+The measurements below predate that default change and explicitly used one
+thread. The current scheduler uses dynamic shell-block assignment.
+
 The Hermitian PSD matrix being factored is
 `W[(mu,nu),(lam,sig)] = (nu mu | lam sig)`, with **nao² ordered pairs**.
 Internally the implementation stores conjugated Cholesky columns, so it
@@ -54,8 +59,10 @@ compare zero-field factors with an independent dense real-arithmetic Cholesky.
 A separate single-center d/f test checks phase cancellation against finite-field
 shell integrals. No derivative or MO-transform API changes are involved.
 
-The full Python suite passes: 438 tests, with only existing BSE deprecation
-warnings. Ruff, Black, and diff whitespace checks pass.
+The original Cholesky validation passed 438 Python tests, with only existing
+BSE deprecation warnings; the 0.9 suite now passes 458 tests in each serial,
+OpenMP and sanitizer build. See [current validation](release_0_9_report.md).
+The measurements below preserve the earlier serial benchmark results.
 An isolated OpenMP build also checks the Cholesky suite, and finite-field
 H2O 6-31G gives identical factors and pivots with one and two ERI threads.
 
@@ -89,8 +96,8 @@ The full complex128 ERI tensor would occupy 8,540,717,056 bytes (7.95 GiB).
 Reproduce each threshold in a separate process:
 
 ```sh
-VECLIB_MAXIMUM_THREADS=1 .venv/bin/python benchmarks/cholesky_eri.py 1e-6
-VECLIB_MAXIMUM_THREADS=1 .venv/bin/python benchmarks/cholesky_eri.py 1e-8
+GIAO_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 .venv/bin/python benchmarks/cholesky_eri.py 1e-6
+GIAO_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 .venv/bin/python benchmarks/cholesky_eri.py 1e-8
 ```
 
 The ERI build used for timing is serial (OpenMP disabled), with one BLAS

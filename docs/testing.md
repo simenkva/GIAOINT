@@ -25,10 +25,11 @@ examples as named regression cases.
 
 ### Level 3: conventional external engines at zero field
 
-An optional test module compares shell blocks with PySCF/libcint and, when
-available, Libint. It converts normalization and Cartesian ordering explicitly.
-External packages remain test dependencies, not runtime dependencies. CI marks
-which reference engine and version produced each result.
+Optional scripts in `tests/external/` compare shell blocks and molecular
+matrices with PySCF/libcint after explicit normalization and Cartesian-order
+conversion. No Libint oracle is currently implemented. These scripts record
+the reference engine/version; external packages remain optional validation
+dependencies rather than runtime or required-CI dependencies.
 
 ### Level 4: high precision
 
@@ -65,10 +66,13 @@ Milestone 8 adds boundary tests for empty bases and empty nucleus lists,
 explicit derivative shapes at zero size, diagnostic failure at the Coulomb
 angular-order boundary, randomized finite-field conjugation of values and
 responses, executable examples, and malformed/missing benchmark-history data.
-CI runs the full Python suite on CPython 3.11--3.14 under Linux and macOS. A
-separate native matrix covers release and ASan/UBSan builds, while clang-tidy
-provides static-analysis coverage. Optional PySCF/libcint validation remains a
-release check because it is not a runtime dependency.
+The current CI configuration runs the full Python suite on CPython 3.11–3.14
+under Linux and macOS with both OpenMP OFF and ON. Separate native OFF/ON and
+ASan/UBSan jobs cover C++; the sanitizer job also runs Python with the ASan
+runtime preloaded. clang-tidy provides static-analysis coverage. The
+[0.9 report](release_0_9_report.md) distinguishes completed local checks from
+remote release-wheel verification that is still pending. Optional PySCF/libcint
+validation remains a release check because it is not a runtime dependency.
 
 ## 2. Invariant and covariance tests
 
@@ -250,3 +254,39 @@ PySCF's Cartesian normalization and supplies bohr coordinates after conversion
 to avoid differences between physical-constant versions. The local PySCF
 2.8.0 / BSE 0.11 run agreed to at most `4.352e-14` for ERIs; the Python suite
 also passed with BSE 0.12.
+
+## 0.9 Cholesky, threading and distribution checks
+
+`tests/python/test_cholesky.py` compares the streamed factors against exact
+small-system ERIs for water STO-3G/6-31G, an O atom and displaced d/f shells,
+at zero and finite field, with off-symmetry gauge origins and thresholds from
+1e-4 through 1e-10 plus numerical exhaustion. It checks residual diagonals,
+ERI symmetry error bounds, gauge independence, real symmetric zero-field
+vectors, independent real Cholesky, output caps and traced memory. A separate
+single-center d/f check verifies finite-field phase cancellation. See
+[Cholesky validation](cholesky_eri.md) for recorded measurements.
+
+`tests/python/test_threading.py` checks policy precedence, invalid values,
+serial fallback warnings, explicit unsupported requests and build diagnostics.
+Each ERI entry point, including Molecule integrals, packed/native APIs and
+Cholesky vectors/pivots, is compared bit for bit at one, two and the runtime
+maximum thread count on OpenMP builds. Zero/finite fields and screening off/on
+are covered. A distant center ensures quartets actually get screened; a close
+pair retains complex finite-field integrals. Serial builds still run the same
+suite and test rejection of explicit parallel requests.
+
+`tests/wheel_smoke.py` runs against the installed artifact, not the checkout.
+For repaired wheels, `GIAO_REQUIRE_BUNDLED_OMP=1` requires the loaded runtime to
+be bundled. The smoke test checks version metadata, OpenMP, serial/parallel
+ERI equality, Cholesky factor/pivot equality, and reconstruction. The release
+workflow also installs the sdist in an isolated fresh environment. Source and
+editable-install CI checks AUTO, missing-runtime fallback and strict ON failure.
+
+The sanitizer preset uses ASan/UBSan with -O1 and debug symbols. Python needs
+that compiler's ASan runtime preloaded (LD_PRELOAD on Linux; on macOS launch
+the actual interpreter binary with DYLD_INSERT_LIBRARIES, since launch wrappers
+may strip it). Leak detection is disabled for the Python host, but address and
+undefined-behavior checks remain enabled. The GIL test has a 60-second
+completion timeout to accommodate instrumentation; its GIL-release assertion
+is separate from that timeout. See the [release checklist](release_checklist.md)
+for the complete publication gate.

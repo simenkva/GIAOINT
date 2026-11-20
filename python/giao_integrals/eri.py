@@ -17,6 +17,7 @@ from ._giao_integrals import (
     _eri_full,
     _EriSchwarzBounds,
 )
+from ._threads import resolve_num_threads
 
 Quartet = tuple[int, int, int, int]
 
@@ -81,13 +82,14 @@ def eri_batches(
     quartets: Iterable[Sequence[int]] | None = None,
     target_bytes: int = 64 * 1024 * 1024,
     screening_threshold: float = 0.0,
-    threads: int = 1,
+    threads: int | None = None,
 ) -> Iterator[EriBatch]:
     """Yield packed shell-quartet batches without allocating an AO tensor.
 
     With no explicit ``quartets``, only canonical representatives under the
     exact finite-field ERI symmetries are emitted. Screening is disabled when
     ``screening_threshold`` is zero, which is the default.
+    ``threads=None`` uses the configured thread policy; ``threads=1`` is serial.
     """
 
     if isinstance(target_bytes, (bool, np.bool_)) or not isinstance(
@@ -99,12 +101,7 @@ def eri_batches(
     screening_threshold = float(screening_threshold)
     if not np.isfinite(screening_threshold) or screening_threshold < 0.0:
         raise ValueError("screening_threshold must be finite and non-negative")
-    if isinstance(threads, (bool, np.bool_)) or not isinstance(
-        threads, (int, np.integer)
-    ):
-        raise ValueError("threads must be a positive integer")
-    if threads <= 0:
-        raise ValueError("threads must be a positive integer")
+    threads = resolve_num_threads(threads)
 
     shells = basis.shells
     bounds = (
@@ -155,19 +152,14 @@ def eri(
     max_bytes: int | None = None,
     target_bytes: int = 64 * 1024 * 1024,
     screening_threshold: float = 0.0,
-    threads: int = 1,
+    threads: int | None = None,
 ) -> Iterator[EriBatch] | npt.NDArray[np.complex128]:
     """Compute ERIs as streamed blocks or an explicitly guarded full tensor."""
 
     screening_threshold = float(screening_threshold)
     if not np.isfinite(screening_threshold) or screening_threshold < 0.0:
         raise ValueError("screening_threshold must be finite and non-negative")
-    if isinstance(threads, (bool, np.bool_)) or not isinstance(
-        threads, (int, np.integer)
-    ):
-        raise ValueError("threads must be a positive integer")
-    if threads <= 0:
-        raise ValueError("threads must be a positive integer")
+    threads = resolve_num_threads(threads)
     if storage == "blocks":
         if max_bytes is not None:
             raise ValueError("max_bytes is only valid with storage='full'")

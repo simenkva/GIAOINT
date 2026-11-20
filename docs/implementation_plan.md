@@ -1,5 +1,11 @@
 # Milestone implementation plan
 
+Milestone sections preserve their original scope and completion records.
+Current 0.9 work also includes the molecule wrapper, streamed Cholesky ERIs,
+AUTO OpenMP, configured Python thread defaults, and prepared release workflows.
+See [current status](../STATUS.md), [the API](api.md), and
+[release validation](release_0_9_report.md) for the current contract.
+
 ## Project rules
 
 Each milestone begins by naming its formulas and ends only after its independent
@@ -289,8 +295,9 @@ an explicitly separate, unimplemented transformation layer.
 
 ## Milestone 9: ERI performance
 
-Status: complete, 2026-09-11 (unreleased). See `docs/eri_performance_plan.md`
-for the detailed plan, staged validation, and measured results.
+Status: completed 2026-09-11; included in the 0.9.0 release candidate
+(publication pending). See [the detailed plan](eri_performance_plan.md)
+for staged validation and measured results.
 
 ### Scope
 
@@ -323,8 +330,10 @@ Ruff/Black, the unchanged independent OS and PySCF/libcint comparisons,
 192 frozen recursive values, and 128 randomized real/general cross-checks.
 The matched Apple M2 Pro runs show 16.34x zero-field and 4.24x finite-field
 dddd speedups; water/cc-pVDZ improves 2.90x. The report and raw measurements
-are in `benchmarks/results/m9_macos_arm64.md`. Screening and threading remain
-opt-in; no public numerical convention or output shape changed.
+are in `benchmarks/results/m9_macos_arm64.md`. At that completion gate,
+screening and threading stayed opt-in. The 0.9 thread-default change is recorded
+separately in [compatibility policy](compatibility.md); numerical conventions
+and output shapes are unchanged.
 
 ## Highest-risk issues
 
@@ -366,9 +375,11 @@ performance replacement rather than an open correctness dependency.
 - London phase \(e^{-i\boldsymbol\kappa_A\cdot r}\) with
   \(\boldsymbol\kappa_A=\tfrac12\boldsymbol{\mathcal B}\times(\mathbf A-\mathbf O)\).
 - Cartesian primitives and the stated component order.
-- Deterministic serial execution remains the default. Optional OpenMP uses an
-  explicit thread count, static scheduling, thread-local workspaces, and
-  input-order callback delivery.
+- Python ERI calls default to configured parallelism (`threads=None`) since
+  0.9; explicit `threads=1` is serial. AUTO discovers OpenMP, dynamic scheduling
+  balances independent blocks, thread-local workspaces isolate scratch, and
+  callbacks retain input order. Fixed per-block primitive reduction order
+  preserves bitwise equality across tested thread counts.
 - Input coefficients multiply normalized primitives; contraction
   normalization is explicit.
 - `complex128` throughout the public integral API.

@@ -20,9 +20,11 @@ and out and the GIL released during evaluation.
 - Analytic first derivatives of the baseline Hamiltonian integrals and ERI
   shell quartets, with respect to basis centers, attraction-potential
   centers, and magnetic-field components.
-- Optional complex Schwarz screening and OpenMP shell-quartet parallelism
-  for ERIs; both stay off by default, so the unscreened baseline stays
-  fixed unless you opt in.
+- Optional complex Schwarz screening and automatic OpenMP shell-quartet
+  parallelism for ERIs. Screening remains off; parallel and serial results
+  are tested for bitwise equality.
+- Streamed pivoted Cholesky ERIs with ordered-pair complex factors and a
+  residual-diagonal stopping criterion, without a dense AO tensor.
 - A `Molecule` wrapper that loads an XYZ geometry plus a named basis
   (`cc-pVDZ`, `STO-3G`, ...) or a Gaussian94/NWChem/BSE-JSON file and returns
   ready-to-use matrices.
@@ -33,6 +35,8 @@ Milestone 9 (ERI performance) is complete; see
 
 ## Install
 
+From a repository checkout:
+
 ```console
 python -m pip install '.[molecule]'
 ```
@@ -40,6 +44,41 @@ python -m pip install '.[molecule]'
 The `molecule` extra adds Basis Set Exchange for named basis sets and
 Gaussian94/NWChem parsing. Skip it if you only need the low-level `Basis`
 API or BSE JSON input.
+
+Source installs require Python 3.11–3.14 and a C++20 compiler (AppleClang,
+GCC, or Clang). pip installs build dependencies in an isolated environment:
+
+```console
+python -m pip install .
+python -m pip install -e .
+```
+
+On macOS, install Xcode Command Line Tools (`xcode-select --install`) and
+`brew install libomp` for OpenMP. CMake defaults to `GIAO_ENABLE_OPENMP=AUTO`:
+it finds Homebrew automatically or reports a serial fallback. Linux GCC
+normally includes OpenMP support. Force a required parallel build with
+`-Ccmake.define.GIAO_ENABLE_OPENMP=ON`, or serial with `OFF`.
+
+```python
+import giao_integrals as gi
+print(gi.build_info())
+gi.set_num_threads(4)  # process-wide default; threads=1 on a call stays serial
+```
+
+`threads=None` resolves `set_num_threads`, `GIAO_NUM_THREADS`, `OMP_NUM_THREADS`,
+then physical cores. A serial-only build warns when a parallel default is
+unavailable; explicit parallel requests raise. GIAO regions finish before
+NumPy/BLAS operations begin. BLAS threads are independent; for controlled
+benchmarks set `OPENBLAS_NUM_THREADS=1` or `VECLIB_MAXIMUM_THREADS=1` before
+starting Python.
+
+Editable installs pick up Python edits, but **do not automatically rebuild C++**.
+Run `python -m pip install -e .` again after C++ changes. Avoid
+`--no-build-isolation` unless you installed `requirements-dev.txt` first.
+
+Version 0.9.0 has prepared wheel/release workflows; PyPI publication awaits
+maintainer approval. See [installation and threading](docs/installation.md)
+for wheel platforms, bundled runtime conflicts, and release setup.
 
 ## Quick example
 
@@ -74,7 +113,7 @@ byte limit.
 ```console
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python -m pip install --no-build-isolation -e .
+.venv/bin/python -m pip install -e .
 .venv/bin/pytest -q
 ```
 
@@ -86,6 +125,9 @@ the remaining commands. Build and test the C++ core on its own with
 
 ## Documentation
 
+- [Installation and thread configuration](docs/installation.md)
+- [0.9 validation and release gates](docs/release_0_9_report.md)
+- [Cholesky conventions and benchmarks](docs/cholesky_eri.md)
 - [User manual](docs/user_manual.md): installation, basic usage, and the
   `Molecule` interface.
 - [Mathematical specification](docs/mathematical_specification.md)
@@ -105,7 +147,8 @@ the remaining commands. Build and test the C++ core on its own with
 - [Pure-Python reference guide](reference/README.md)
 
 Runnable examples live in [`examples/`](examples). GIAOINT is distributed
-under the [BSD-3-Clause license](LICENSE).
+under the [BSD-3-Clause license](LICENSE). Bundled OpenMP runtimes carry
+[separate upstream notices](python/giao_integrals/_licenses/README.txt).
 
 The original project brief remains in
 [`giao_integrals_codex_master_prompt.md`](giao_integrals_codex_master_prompt.md).

@@ -1,7 +1,7 @@
 """Reproducible single-process Be Cholesky timing and peak-RSS benchmark.
 
-Run separately for each threshold, for example:
-    VECLIB_MAXIMUM_THREADS=1 .venv/bin/python benchmarks/cholesky_eri.py 1e-8
+Run separately for each threshold. For the recorded serial budget, use:
+    GIAO_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 python benchmarks/cholesky_eri.py 1e-8
 """
 
 import json

@@ -730,7 +730,7 @@ EriStatistics evaluate_eri_shell_quartets(
 #pragma omp parallel num_threads(requested_threads)
     {
         EriWorkspace workspace;
-#pragma omp for schedule(static)
+#pragma omp for schedule(dynamic, 1)
         for (std::ptrdiff_t signed_index = 0;
              signed_index < static_cast<std::ptrdiff_t>(blocks.size());
              ++signed_index) {

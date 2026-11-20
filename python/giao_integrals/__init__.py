@@ -70,6 +70,7 @@ from ._giao_integrals import (
     primitive_overlap_center_derivatives,
     primitive_overlap_magnetic_derivatives,
 )
+from ._threads import build_info, set_num_threads
 from .cholesky import CholeskyERI, cholesky_eri
 from .eri import EriBatch, eri, eri_batches, eri_schwarz_bounds
 from .molecule import MolecularIntegrals, Molecule
@@ -88,6 +89,8 @@ __all__ = [
     "PrimitiveGaussian",
     "Shell",
     "__version__",
+    "build_info",
+    "set_num_threads",
     "boys",
     "boys_with_diagnostics",
     "cartesian_components",

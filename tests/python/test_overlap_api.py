@@ -132,7 +132,9 @@ def test_expensive_shell_call_releases_the_gil():
     assert entered.wait(timeout=1.0)
     time.sleep(0.05)
     released = not finished.is_set()
-    worker.join(timeout=5.0)
+    # Instrumented builds need longer to complete the high-L workload. The
+    # GIL assertion above is independent of this deadlock/completion timeout.
+    worker.join(timeout=60.0)
     assert not worker.is_alive()
     assert released, "the worker held the GIL for the complete C++ shell call"
 

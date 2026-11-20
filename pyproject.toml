@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "giao-integrals"
-version = "0.8.0"
+version = "0.9.0"
 description = "Cartesian integrals for complex GIAO/London Gaussians"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -30,9 +30,9 @@ classifiers = [
 molecule = ["basis-set-exchange>=0.11"]
 
 [project.urls]
-Documentation = "https://github.com/simenkva/GIAO-integrals/tree/main/docs"
-Issues = "https://github.com/simenkva/GIAO-integrals/issues"
-Repository = "https://github.com/simenkva/GIAO-integrals"
+Documentation = "https://github.com/simenkva/GIAOINT/tree/main/docs"
+Issues = "https://github.com/simenkva/GIAOINT/issues"
+Repository = "https://github.com/simenkva/GIAOINT"
 
 [tool.scikit-build]
 cmake.build-type = "Release"
@@ -45,6 +45,7 @@ sdist.include = [
 ]
 
 [tool.scikit-build.cmake.define]
+GIAO_ENABLE_OPENMP = "AUTO"
 GIAO_BUILD_TESTS = "OFF"
 GIAO_BUILD_BENCHMARKS = "OFF"
 
@@ -63,3 +64,17 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.cibuildwheel]
+build = "cp311-* cp312-* cp313-* cp314-*"
+skip = "*-musllinux_* *-win*"
+test-command = "python {project}/tests/wheel_smoke.py"
+environment = { GIAO_REQUIRE_BUNDLED_OMP = "1" }
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"

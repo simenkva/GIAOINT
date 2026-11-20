@@ -1,0 +1,101 @@
+[
+  {
+    "phase": "before",
+    "threads": 1,
+    "seconds": 664.7227134159766,
+    "rank": 1052,
+    "nao": 152,
+    "profile": {
+      "update": 4.293233308359049,
+      "residual": 0.08683757379185408,
+      "scatter": 0.0
+    }
+  },
+  {
+    "phase": "before",
+    "threads": 12,
+    "seconds": 154.26501350000035,
+    "rank": 1052,
+    "nao": 152,
+    "profile": {
+      "update": 3.9264159724116325,
+      "residual": 0.07211386295966804,
+      "scatter": 0.0
+    }
+  },
+  {
+    "phase": "after",
+    "threads": 1,
+    "seconds": 636.9351806669729,
+    "rank": 1052,
+    "nao": 152,
+    "profile": {
+      "update": 4.398464907193556,
+      "residual": 0.07548818865325302,
+      "scatter": 0.0
+    }
+  },
+  {
+    "phase": "after",
+    "threads": 12,
+    "seconds": 106.85713583393954,
+    "rank": 1052,
+    "nao": 152,
+    "profile": {
+      "update": 4.068655086332001,
+      "residual": 0.07313536945730448,
+      "scatter": 0.0
+    }
+  },
+  {
+    "threads": 4,
+    "seconds": 181.09086224995553,
+    "nao": 152,
+    "rank": 1052,
+    "max_residual_diagonal": 7.481282795580177e-09,
+    "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+    "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+    "build": {
+      "version": "0.9.0",
+      "compiler": "AppleClang 21.0.0.21000401",
+      "openmp_enabled": true,
+      "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+      "default_threads": 1,
+      "physical_cores": 1
+    }
+  },
+  {
+    "threads": 8,
+    "seconds": 112.43110895797145,
+    "nao": 152,
+    "rank": 1052,
+    "max_residual_diagonal": 7.481282795580177e-09,
+    "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+    "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+    "build": {
+      "version": "0.9.0",
+      "compiler": "AppleClang 21.0.0.21000401",
+      "openmp_enabled": true,
+      "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+      "default_threads": 1,
+      "physical_cores": 1
+    }
+  },
+  {
+    "threads": 12,
+    "seconds": 97.35729862505104,
+    "nao": 152,
+    "rank": 1052,
+    "max_residual_diagonal": 7.481282795580177e-09,
+    "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+    "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+    "build": {
+      "version": "0.9.0",
+      "compiler": "AppleClang 21.0.0.21000401",
+      "openmp_enabled": true,
+      "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+      "default_threads": 1,
+      "physical_cores": 1
+    }
+  }
+]

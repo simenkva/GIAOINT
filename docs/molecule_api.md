@@ -162,8 +162,9 @@ for batch in mol.eri_batches(target_bytes=16 * 1024**2):
 ```
 
 `eri()`, `eri_batches()`, and `integrals(eri=True)` accept
-`screening_threshold=...` and `threads=...` for ERI evaluation. Defaults remain
-unscreened and serial; more than one thread requires an OpenMP build.
+`screening_threshold=...` and `threads=...` for ERI evaluation. Screening remains
+off. Since 0.9, `threads=None` uses the configured default; `threads=1` is
+explicitly serial. See [thread policy](installation.md).
 
 The low-level `gi.eri(basis, ...)` continues to default to streamed blocks
 and requires an explicit byte limit for full output. The molecule wrapper's
@@ -172,7 +173,7 @@ full-tensor convenience does not change that API.
 ## Cholesky ERIs without a dense tensor
 
 ```python
-chol = mol.cholesky_eri(threshold=1e-8, max_bytes=None, threads=1)
+chol = mol.cholesky_eri(threshold=1e-8, max_bytes=None)
 L = chol.vectors  # complex128, shape (M, nao, nao)
 print(chol.pivots, chol.max_residual_diagonal)
 ```
@@ -181,9 +182,10 @@ The reconstruction convention is
 `ERI[mu,nu,lam,sig] ≈ sum_P L[P,mu,nu] * conj(L[P,sig,lam])`.
 This factors the Hermitian positive semidefinite matrix
 `W[(mu,nu),(lam,sig)] = ERI[nu,mu,lam,sig]`, using all ordered AO pairs.
-At zero field, each vector is real symmetric. At finite field, truncated
-reconstructions obey the two ERI symmetries to within the approximation error;
-individual vectors need not be Hermitian or gauge-origin independent.
+At zero field, each vector is real symmetric. At finite field, the two ERI
+symmetry relations hold within twice the elementwise reconstruction error
+bound (and to roundoff at numerical exhaustion); individual vectors need not
+be Hermitian or gauge-origin independent.
 
 The largest residual diagonal is the stopping criterion and bounds the
 elementwise ERI error, up to numerical roundoff. `threshold=0` requests

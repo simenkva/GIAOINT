@@ -17,7 +17,7 @@ the fastest final kernel.
 | Family | Fit to London Gaussians | Strengths | Main costs or risks | Decision |
 |---|---|---|---|---|
 | McMurchie-Davidson/Hermite | Direct. Standard field-free Hermite expansion coefficients survive; London dependence moves into Fourier-transformed Hermites and complex Coulomb auxiliaries. | Compact mathematics, arbitrary Cartesian angular momentum, natural moments and derivatives, direct precedent for finite-field London orbitals. | Six-index Coulomb auxiliary tables lose a zero-field dimensional reduction; transforms and temporary storage can cost more than direct Cartesian recurrences. | Initial reference-quality C++ backend and first Coulomb backend. |
-| Obara-Saika (OS) | Valid after complex corrections to product-center terms and complex Boys seeds. | Builds Cartesian integrals directly, avoids an explicit Hermite-to-Cartesian transform, established performance path. | More recurrence branches to audit; field-dependent imaginary shifts make sign errors easy; contraction strategy needs care. | Prototype after the MD ERI oracle passes. |
+| Obara-Saika (OS) | Valid after complex corrections to product-center terms and complex Boys seeds. | Builds Cartesian integrals directly, avoids an explicit Hermite-to-Cartesian transform, established performance path. | More recurrence branches to audit; field-dependent imaginary shifts make sign errors easy; contraction strategy needs care. | Benchmark-only direct-OS prototype exists; production remains MD. |
 | Head-Gordon-Pople (HGP) | Extends OS with recurrence placement that can move work outside contraction loops. | Strong candidate for contracted ERIs and derivatives; known field-free efficiency. | Requires a trusted OS base and recurrence-path planner; complex London symmetry reduces familiar shortcuts. | The Milestone 6 direct-OS prototype was competitive but mixed; a contracted HGP prototype remains future work. |
 | Rys quadrature | Formally extendable, but roots and weights become complex when the Boys argument is complex. | Efficient at higher angular momentum in conventional engines; separable Cartesian factors. | Complex quadrature-root generation, root ordering, and coalescence introduce a second difficult special-function problem. | Defer until complex-root conditioning is demonstrated. |
 | Direct quadrature/Fourier integration | Useful as an independent low-order check. | Different numerical route, simple to reason about for special cases. | Too slow and difficult to bound for production four-center integrals. | Tests only. |
@@ -25,13 +25,12 @@ the fastest final kernel.
 Tellgren, Soncini, and Helgaker derive both MD and OS London recurrences. Their
 MD construction keeps the usual Hermite coefficients and evaluates the London
 factor through Fourier transforms. That gives each equation a short path back
-to the conventional zero-field implementation. It also supports the planned
-property-operator and derivative milestones without separate low-angular-
-momentum formulas.
+to the conventional zero-field implementation. It also supports the implemented
+property and derivative operators without separate low-angular-momentum formulas.
 
 ## 3. Initial MD organization
 
-The engine will separate four layers:
+The engine separates four layers:
 
 1. Build a shell pair: primitive-pair exponents, real product centers, Gaussian
    prefactors, pair wave vectors, and complex phase/damping factors.
@@ -276,9 +275,10 @@ tags for auxiliary readiness. Milestone 9 replaces those tags with a
 bottom-up fill; it keeps the Boys and Hermite caches.
 
 `evaluate_eri_shell_quartets` validates and screens work serially. With an
-OpenMP-enabled build it then assigns independent shell blocks using static
-scheduling and one workspace per thread. Completed blocks are delivered to
-the consumer serially in input order. Consequently scheduling does not change
+OpenMP-enabled build it then assigns independent shell blocks using dynamic
+scheduling and one workspace per thread. Version 0.9 replaces the earlier
+static assignment to balance high-angular-momentum Cholesky batches.
+Completed blocks are delivered to the consumer serially in input order. Consequently scheduling does not change
 primitive reduction order, serial output is deterministic, and parallel output
 is bitwise identical for the tested workload. Output-block storage is bounded
 by the caller's batch size.
@@ -342,3 +342,23 @@ Shell drivers contract derivative values with leading center/field axes, and
 basis drivers scatter shell-center contributions into one matrix per shell and
 Cartesian direction. Quartet derivatives remain shell-block APIs to preserve
 the library's no-mandatory-\(O(N^4)\)-storage policy.
+
+## 11. Streamed Cholesky and current threading policy
+
+The 0.9 Cholesky path factors the Hermitian PSD ordered-pair Coulomb matrix,
+not the complex symmetric ERI matrix. It reads diagonal shell-pair quartets,
+fetches pivot columns through bounded quartet batches, and keeps at most eight
+candidate columns from one pivot shell pair. The global residual maximum
+selects each next pivot. Conservative diagonal screening preserves the
+residual bound; columns remain exact. Single-center London phases cancel
+from pair densities, permitting the real backend even at finite field.
+[Cholesky documentation](cholesky_eri.md) and the
+[mathematical specification](mathematical_specification.md#82-ordered-pair-cholesky)
+define the exact single-tensor reconstruction and numerical stopping floor.
+
+Build-time OpenMP defaults to AUTO. Python ERI calls use `threads=None` and
+the [configured thread policy](installation.md); explicit `threads=1` is
+serial. One-electron and derivative paths remain serial. NumPy/BLAS updates
+run after OpenMP regions finish. The [0.9 profile](release_0_9_report.md)
+found ERI batch evaluation, rather than Cholesky vector updates, to be the
+main cost and motivated dynamic block assignment.
