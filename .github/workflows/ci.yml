@@ -118,6 +118,28 @@ jobs:
             exit 1
           fi
 
+  conda-openmp:
+    runs-on: macos-15
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v7
+      - run: brew install libomp
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          activate-environment: giao-openmp
+          environment-file: .github/conda-openmp.yml
+          channel-priority: strict
+      - name: Build against the conda interpreter's runtime
+        run: python -m pip install . --no-deps
+      - name: Check NumPy and GIAOINT share a runtime in both import orders
+        run: |
+          python tests/conda_openmp_smoke.py numpy-first
+          python tests/conda_openmp_smoke.py giao-first
+          python examples/atom_cholesky_timing.py --threads 1 2 4
+
   static-analysis:
     runs-on: ubuntu-24.04
     steps:

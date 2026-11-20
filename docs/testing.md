@@ -304,3 +304,14 @@ undefined-behavior checks remain enabled. The GIL test has a 60-second
 completion timeout to accommodate instrumentation; its GIL-release assertion
 is separate from that timeout. See the [release checklist](release_checklist.md)
 for the complete publication gate.
+
+## macOS conda OpenMP compatibility
+
+The `conda-openmp` job installs conda NumPy with OpenMP OpenBLAS and llvm-openmp
+while Homebrew libomp is also available. It builds from source with ordinary
+isolated pip, then runs `tests/conda_openmp_smoke.py` in separate processes for
+both import orders. The test initializes BLAS and GIAO, compares serial and
+parallel Cholesky factors/pivots, and checks that dyld loaded exactly one
+OpenMP image inside the target conda prefix. It also runs the atom timing
+example at 1, 2 and 4 threads. This catches the duplicate-runtime abort that a
+pip-only NumPy/Accelerate environment does not exercise.

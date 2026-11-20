@@ -9,8 +9,12 @@ frontend tools. Runtime NumPy is installed as a dependency. Basis Set Exchange
 is optional: `pip install '.[molecule]'` enables named basis loading.
 
 On macOS install Xcode Command Line Tools (`xcode-select --install`). Install
-OpenMP with `brew install libomp`. AUTO finds an explicit `OpenMP_ROOT`, then
-`brew --prefix libomp` or `/opt/homebrew/opt/libomp` and `/usr/local/opt/libomp`.
+OpenMP with `brew install libomp`. On macOS, AUTO first respects explicit
+OpenMP library settings or `OpenMP_ROOT`. For a conda Python it next prefers
+that interpreter's environment runtime and matching `omp.h`, before trying
+`brew --prefix libomp`, `/opt/homebrew/opt/libomp` and `/usr/local/opt/libomp`.
+The interpreter's `sys.prefix` takes precedence over a stale ambient
+`CONDA_PREFIX`; native builds without Python use the active conda prefix.
 On Linux GCC generally supplies OpenMP directly. Other compilers may need their
 OpenMP runtime/development package.
 
@@ -108,6 +112,40 @@ example another package's libomp alongside this wheel) may fail with
 Use a compatible set of binary packages, or build GIAOINT from source against
 the shared runtime used by the application. As a fallback, build with OpenMP
 OFF. Inspect `build_info()` to see which runtime this extension actually uses.
+
+### macOS conda source installs and Error #15
+
+Conda NumPy/OpenBLAS can already load the environment's libomp. A GIAOINT
+extension linked to Homebrew's separate copy then aborts when both initialize,
+even if BLAS is limited to one thread. Thread-count settings do not select or
+unload runtimes. AUTO source builds now prefer the target conda environment's
+runtime and headers, and retain its library directory in the installed macOS
+extension's rpath. If that runtime is present but its header is missing, AUTO
+falls back to serial instead of selecting a conflicting Homebrew copy; ON
+fails with instructions to install llvm-openmp.
+
+From this checkout, inside the intended environment:
+
+```sh
+conda activate pyscf
+python -m pip install --no-cache-dir --no-deps .
+python -c "import giao_integrals as gi; print(gi.build_info())"
+```
+
+`--no-deps` leaves existing conda-managed NumPy/BSE packages untouched; install
+those dependencies separately if missing. To pin a runtime explicitly, use:
+
+```sh
+python -m pip install --no-cache-dir --no-deps . \
+  -Ccmake.define.GIAO_ENABLE_OPENMP=ON \
+  -Ccmake.define.OpenMP_ROOT="$(python -c 'import sys; print(sys.prefix)')"
+```
+
+Restart Python after reinstalling, because an existing interpreter retains
+already loaded dylibs. `openmp_runtime_path` should point into the same conda
+environment, not Homebrew. Do not enable `KMP_DUPLICATE_LIB_OK` or replace
+conda's library files/symlinks. Prebuilt wheels bundle a runtime and can still
+conflict with a conda stack; use a source install to share its runtime.
 
 ## Publication approval
 

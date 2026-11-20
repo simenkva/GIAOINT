@@ -1,0 +1,11 @@
+name: giao-openmp
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - pip
+  - numpy
+  - basis_set_exchange
+  - llvm-openmp
+  - libblas=*=*openblas*
+  - libopenblas=*=*openmp*

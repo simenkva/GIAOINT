@@ -2,6 +2,12 @@
 
 ## 0.9.0 — release candidate (not yet published)
 
+Fixed macOS conda source builds to prefer the target interpreter's OpenMP
+runtime and headers ahead of Homebrew, avoiding duplicate-runtime aborts with
+conda NumPy/OpenBLAS. Explicit runtime overrides remain supported. Added an
+installed-rpath fix and a conda regression job exercising both import orders
+and serial/parallel Cholesky equality with OpenMP OpenBLAS.
+
 Fixed Linux sanitizer CI startup by preloading libasan followed by libstdc++
 from the build compiler, keeping C++ exception interception available when
 Python loads the extension. Native sanitizer output is no longer hidden by

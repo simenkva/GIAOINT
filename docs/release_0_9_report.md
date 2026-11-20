@@ -74,6 +74,26 @@ native diagnostics uncaptured. ASan and UBSan halt on reported errors; leak
 detection remains disabled for the Python host as before. This is a sanitizer
 bootstrap correction; no numerical kernel or integral convention changed.
 
+## macOS conda runtime compatibility correction
+
+A source install in the local `pyscf` conda environment reproduced Error #15:
+NumPy 2.2.6/OpenMP OpenBLAS loaded conda's llvm-openmp 20.1.3 while GIAOINT
+loaded Homebrew libomp 23.1.1. Limiting BLAS threads does not prevent both
+libraries from loading. The source-build configuration now prefers the target
+Python's conda runtime and headers, with an installed rpath for @rpath libraries.
+
+A fresh isolated pip source rebuild (with dependencies unchanged) now reports
+`/opt/anaconda3/envs/pyscf/lib/libomp.dylib`. Both import-order regression checks
+load exactly one runtime and produce identical serial/parallel factors and
+pivots. The user's Ne/cc-pVDZ example succeeds at 1/2/4 threads, and the full
+conda Python suite passes 459 tests; the conda-linked C++ suite also passes.
+The ordinary pip/Accelerate build retains Homebrew selection and passes 52
+focused Cholesky/thread/example tests, and a repaired wheel still passes its
+installed smoke test with a bundled runtime. Missing conda headers, strict ON,
+explicit root overrides, and OFF configuration paths have been checked.
+A dedicated conda/OpenMP OpenBLAS job has been added to CI; see
+[conda setup and recovery](installation.md#macos-conda-source-installs-and-error-15).
+
 ## Ne Cholesky profile and timings
 
 Basis Set Exchange aug-cc-pCVQZ for Ne, with uncontract_general,
