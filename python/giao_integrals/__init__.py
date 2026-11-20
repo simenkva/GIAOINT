@@ -70,6 +70,7 @@ from ._giao_integrals import (
     primitive_overlap_center_derivatives,
     primitive_overlap_magnetic_derivatives,
 )
+from .cholesky import CholeskyERI, cholesky_eri
 from .eri import EriBatch, eri, eri_batches, eri_schwarz_bounds
 from .molecule import MolecularIntegrals, Molecule
 
@@ -78,6 +79,7 @@ __all__ = [
     "BoysNumericalError",
     "BoysRegion",
     "CartesianExponent",
+    "CholeskyERI",
     "EriBatch",
     "MagneticField",
     "MolecularIntegrals",
@@ -89,6 +91,7 @@ __all__ = [
     "boys",
     "boys_with_diagnostics",
     "cartesian_components",
+    "cholesky_eri",
     "eri",
     "eri_batches",
     "eri_shell",
