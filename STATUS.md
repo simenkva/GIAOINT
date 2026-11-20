@@ -1,6 +1,6 @@
 # Status
 
-## 0.9.0 release preparation
+## 0.9.0 release
 
 AUTO OpenMP discovery, Python default-thread policy and build diagnostics,
 dynamic ERI scheduling, repaired wheel builds, per-tag trusted-publication
@@ -10,7 +10,9 @@ approval, and expanded equality/install tests are implemented. See
 release-wheel matrix have passed. The maintainer approved release 0.9.0 on
 20 November 2026 and reported registering the PyPI trusted publisher. The
 GitHub `pypi` environment has a required reviewer and a `v*` tag rule.
-Publication proceeds through the tagged build and environment approval.
+After environment approval, the tagged release workflow published 0.9.0 to
+PyPI: 16 wheels and one source archive. A fresh PyPI wheel installation passes
+the numerical/threading smoke test and the atom example at 1/2/4 threads.
 
 macOS conda source builds now select the target interpreter's OpenMP runtime
 and headers before Homebrew. The conda/OpenMP OpenBLAS regression, full CI,
@@ -147,7 +149,7 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
   checks, Ruff/Black, 192 frozen recursive values, 128 randomized real/general
   comparisons, and PySCF/libcint agreement with maximum ERI error `1.704e-14`.
   Those measurements used version 0.8.0; the changes are included in the
-  current 0.9.0 release candidate, which is not yet published.
+  published 0.9.0 release.
 
 - Molecule wrapper for XYZ files/text, named BSE bases, Gaussian94/NWChem
   files, and BSE JSON. It handles ångström-to-bohr conversion, normalized
@@ -281,9 +283,8 @@ thread comparisons, see [the validation report](docs/release_0_9_report.md).
 
 ## Next milestone
 
-Milestones 0--9 and the Cholesky API are implemented. The immediate release
-gates are cross-platform wheel CI, PyPI project/publisher setup, and explicit
-publication approval; see `docs/release_checklist.md`. A separately validated
+Milestones 0--9 and the Cholesky API are implemented, and 0.9.0 is published
+on PyPI. Future releases follow `docs/release_checklist.md`. A separately validated
 spherical transformation layer and preparation of a 1.0 API freeze remain candidate work. Mixed
 nuclear/magnetic derivatives remain deferred. Further finite-field ERI work
 can use the remaining costs recorded in `docs/eri_performance_plan.md`.
