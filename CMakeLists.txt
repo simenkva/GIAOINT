@@ -14,6 +14,11 @@ option(GIAO_BUILD_PYTHON "Build the pybind11 extension" ON)
 option(GIAO_BUILD_TESTS "Build the C++ unit tests" ON)
 option(GIAO_BUILD_BENCHMARKS "Build the integral benchmark suite" OFF)
 option(GIAO_ENABLE_SANITIZERS "Enable address and undefined-behavior sanitizers" OFF)
+# Resolve the target interpreter before selecting an environment's OpenMP runtime.
+if(GIAO_BUILD_PYTHON)
+    set(PYBIND11_FINDPYTHON ON)
+    find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+endif()
 include(cmake/GiaoOpenMP.cmake)
 option(GIAO_ENABLE_CLANG_TIDY "Run clang-tidy while compiling" OFF)
 
@@ -65,14 +70,17 @@ if(GIAO_OPENMP_ENABLED)
 endif()
 
 if(GIAO_BUILD_PYTHON)
-    set(PYBIND11_FINDPYTHON ON)
-    find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
     find_package(pybind11 CONFIG REQUIRED)
     pybind11_add_module(_giao_integrals src/bindings.cpp)
     target_link_libraries(_giao_integrals PRIVATE giao_integrals::core ${CMAKE_DL_LIBS})
     target_compile_definitions(_giao_integrals PRIVATE
         GIAO_COMPILER="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
     target_compile_features(_giao_integrals PRIVATE cxx_std_20)
+    # Conda runtimes use @rpath install names. Keep source installs importable
+    # without DYLD_LIBRARY_PATH; release wheel repair vendors/relinks the runtime.
+    if(APPLE)
+        set_target_properties(_giao_integrals PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+    endif()
     install(TARGETS _giao_integrals LIBRARY DESTINATION giao_integrals)
 endif()
 

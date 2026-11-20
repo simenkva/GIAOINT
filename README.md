@@ -73,7 +73,10 @@ benchmarks set `OPENBLAS_NUM_THREADS=1` or `VECLIB_MAXIMUM_THREADS=1` before
 starting Python.
 
 Editable installs pick up Python edits, but **do not automatically rebuild C++**.
-Run `python -m pip install -e .` again after C++ changes. Avoid
+Run `python -m pip install -e .` again after C++ changes.
+On macOS conda, source builds prefer that Python environment's OpenMP runtime
+to avoid loading a second Homebrew copy. See the
+[conda runtime guidance](docs/installation.md#macos-conda-source-installs-and-error-15). Avoid
 `--no-build-isolation` unless you installed `requirements-dev.txt` first.
 
 Version 0.9.0 has prepared wheel/release workflows; PyPI publication awaits
