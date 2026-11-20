@@ -2,6 +2,11 @@
 
 ## 0.9.0 — release candidate (not yet published)
 
+Fixed Linux sanitizer CI startup by preloading libasan followed by libstdc++
+from the build compiler, keeping C++ exception interception available when
+Python loads the extension. Native sanitizer output is no longer hidden by
+pytest FD capture; ASan and UBSan both halt on reported errors.
+
 OpenMP now defaults to AUTO at build time, including automatic Homebrew libomp
 lookup on macOS, with a visible serial fallback and strict ON/OFF overrides.
 Python ERI, batching, molecular-integral, and Cholesky calls now default to

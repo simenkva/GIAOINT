@@ -283,9 +283,24 @@ workflow also installs the sdist in an isolated fresh environment. Source and
 editable-install CI checks AUTO, missing-runtime fallback and strict ON failure.
 
 The sanitizer preset uses ASan/UBSan with -O1 and debug symbols. Python needs
-that compiler's ASan runtime preloaded (LD_PRELOAD on Linux; on macOS launch
-the actual interpreter binary with DYLD_INSERT_LIBRARIES, since launch wrappers
-may strip it). Leak detection is disabled for the Python host, but address and
+that compiler's ASan runtime preloaded. With GCC on Linux, both libasan and
+libstdc++ must be in the startup library list, with libasan first:
+
+```sh
+export LD_PRELOAD="$(g++ -print-file-name=libasan.so):$(g++ -print-file-name=libstdc++.so.6)"
+export ASAN_OPTIONS=detect_leaks=0:halt_on_error=1
+export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
+python -m pytest -q -s
+```
+
+Use the same C++ compiler for the build and runtime discovery. Preloading only
+libasan can leave its `__cxa_throw` interceptor unresolved until Python dlopens
+the C++ extension, causing the first expected C++ exception to terminate the
+process ([upstream sanitizer issue](https://github.com/google/sanitizers/issues/934)).
+CI exercises an exception-path test before the full suite and disables pytest
+FD capture so native failures remain visible. On macOS launch the actual
+interpreter binary with DYLD_INSERT_LIBRARIES, since launch wrappers may strip
+it. Leak detection is disabled for the Python host, but address and
 undefined-behavior checks remain enabled. The GIL test has a 60-second
 completion timeout to accommodate instrumentation; its GIL-release assertion
 is separate from that timeout. See the [release checklist](release_checklist.md)

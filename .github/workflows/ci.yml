@@ -55,6 +55,8 @@ jobs:
 
   sanitizers:
     runs-on: ubuntu-24.04
+    env:
+      CXX: g++
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -67,10 +69,20 @@ jobs:
           -Ccmake.define.CMAKE_CXX_FLAGS_DEBUG="-g -O1"
           -Ccmake.define.GIAO_ENABLE_OPENMP=ON
           -Ccmake.define.GIAO_ENABLE_SANITIZERS=ON
-      - run: |
-          export LD_PRELOAD="$(gcc -print-file-name=libasan.so)"
-          export ASAN_OPTIONS=detect_leaks=0
-          python -m pytest -q
+      - name: Run Python with sanitizer and C++ runtimes preloaded
+        run: |
+          giao_asan_runtime="$(g++ -print-file-name=libasan.so)"
+          giao_cxx_runtime="$(g++ -print-file-name=libstdc++.so.6)"
+          test -f "$giao_asan_runtime"
+          test -f "$giao_cxx_runtime"
+          # ASan must be first; libstdc++ must also be present at startup so
+          # GCC ASan can resolve __cxa_throw before Python dlopens the extension.
+          export LD_PRELOAD="$giao_asan_runtime:$giao_cxx_runtime"
+          export ASAN_OPTIONS=detect_leaks=0:halt_on_error=1
+          export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
+          python -m pytest -q -s tests/python/test_boys_production.py::test_outside_verified_sector_fails_diagnostically
+          # FD capture can hide sanitizer reports when the process exits early.
+          python -m pytest -q -s
       - run: >-
           cmake -S . -B build/sanitizers -G Ninja
           -DCMAKE_BUILD_TYPE=Debug -DGIAO_BUILD_PYTHON=OFF
