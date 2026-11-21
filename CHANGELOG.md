@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased (0.11.0 preparation)
+
+### VICE item 3 — deterministic selected-integral Cholesky backend
+
+Profiled the 152-AO Ne case: NumPy vector/residual updates account for under
+1% of serial wall time. Replaced complete-quartet generation and Python
+extraction with native selected diagonal/column evaluation, split into
+deterministic parallel tasks. The underlying ERI kernel, primitive contraction
+order, pivoting and NumPy reductions are retained. Added bitwise comparison
+tests against the unchanged full-shell backend and before/after benchmark tools
+for Ne and Be. Memory remains O(rank*nao²) plus bounded native/column workspace.
+
 ## 0.10.0 — release candidate (not yet published)
 
 ### VICE item 2 — 0.10.0 release preparation

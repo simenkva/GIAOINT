@@ -7,9 +7,9 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from ._giao_integrals import Basis, MagneticField
+from ._giao_integrals import Basis, MagneticField, _cholesky_columns, _cholesky_diagonal
 from ._threads import resolve_num_threads
-from .eri import eri_batches, eri_schwarz_bounds
+from .eri import eri_schwarz_bounds
 
 
 @dataclass(frozen=True)
@@ -77,9 +77,10 @@ def cholesky_eri(
 
     Diagonals come from (MN|NM); columns use (MN|SL) for pivot (L,S).
     Up to eight candidate columns from the pivot shell pair are cached together.
-    Storage is O(rank*nao**2) plus one bounded shell-quartet batch (at most
-    8 MiB unless a single quartet is larger). ``threads`` controls the existing
-    ERI batch backend. None selects the configured default; 1 is serial.
+    Storage is O(rank*nao**2) plus bounded selected-column/native workspace.
+    Only needed diagonal elements and up to eight pivot columns are evaluated;
+    complete shell quartets are not constructed. ``threads`` controls the native
+    selected-integral tasks. None selects the configured default; 1 is serial.
     NumPy/BLAS has its own thread settings and runs outside OpenMP regions.
 
     ``screening_threshold`` enables existing Schwarz bounds only to skip initial
@@ -133,22 +134,18 @@ def cholesky_eri(
             else:
                 quartets.append((a, b, b, a))
 
-    def batches(quartets):
-        return eri_batches(
+    def read_diagonal(quartets):
+        if not quartets:
+            return
+        measured = _cholesky_diagonal(
             basis,
+            [(int(a), int(b)) for a, b, _, _ in quartets],
             field=integral_field,
-            quartets=quartets,
-            target_bytes=8 * 1024**2,
             threads=threads,
         )
-
-    def read_diagonal(quartets):
-        for batch in batches(quartets):
-            for i, (a, b, _, _) in enumerate(batch.quartets):
-                block = batch.block(i)
-                values = np.einsum("ijji->ij", block).real
-                diagonal[spans[a], spans[b]] = values
-                diagonal[spans[b], spans[a]] = values.T
+        for a, b, _, _ in quartets:
+            diagonal[spans[a], spans[b]] = measured[spans[a], spans[b]]
+            diagonal[spans[b], spans[a]] = measured[spans[b], spans[a]]
 
     read_diagonal(quartets)
     residual = diagonal.ravel().copy()
@@ -189,22 +186,12 @@ def cholesky_eri(
             if pivot not in candidates:
                 candidates[-1] = pivot
             cmu, cnu = np.divmod(candidates, n)
-            columns = np.empty((len(candidates), n, n), dtype=dtype)
-            for batch in batches(
-                (m, k, b, a)
-                for m in range(len(shells))
-                for k in range(m if real else 0, len(shells))
-            ):
-                for i, (m, k, _, _) in enumerate(batch.quartets):
-                    block = batch.block(i)
-                    selected = block[:, :, cnu - offsets[b], cmu - offsets[a]]
-                    values = np.moveaxis(selected.real if real else selected, -1, 0)
-                    if real and m == k:
-                        values = (values + values.transpose(0, 2, 1)) * 0.5
-                    columns[:, spans[m], spans[k]] = values
-                    if real and m != k:
-                        columns[:, spans[k], spans[m]] = values.transpose(0, 2, 1)
-            columns = columns.reshape(len(candidates), n * n)
+            columns = _cholesky_columns(
+                basis,
+                list(zip(cmu.tolist(), cnu.tolist(), strict=True)),
+                field=integral_field,
+                threads=threads,
+            )
             match = np.flatnonzero(candidates == pivot)
         column = columns[int(match[0])].copy()
         if rank:

@@ -1,4 +1,5 @@
 #include "giao_integrals/boys.hpp"
+#include "cholesky.hpp"
 #include "giao_integrals/derivatives.hpp"
 #include "giao_integrals/eri.hpp"
 #include "giao_integrals/nuclear.hpp"
@@ -2300,5 +2301,31 @@ the configured policy; native work releases the GIL.
         return py::make_tuple(quartet_result,shape_result,offset_result,values,requested.size(),requested.size()-quartets.size());
     },py::arg("basis"),py::arg("quartets"),py::kw_only(),py::arg("field")=py::none(),
     py::arg("screening_threshold")=0.0,py::arg("threads")=py::none(),py::arg("bounds")=py::none());
+
+    module.def("_cholesky_diagonal",[](const giao::Basis& basis,
+        const std::vector<std::array<std::size_t,2>>& pairs,const py::object& field,const py::object& threads) {
+        const auto f=field_or_zero(field);const auto count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        py::array_t<double> result({n,n});
+        {py::gil_scoped_release release;giao::detail::cholesky_diagonal(basis,pairs,f,
+            {result.mutable_data(),static_cast<std::size_t>(result.size())},count);}
+        return result;
+    },py::arg("basis"),py::arg("pairs"),py::kw_only(),py::arg("field")=py::none(),py::arg("threads")=py::none());
+    module.def("_cholesky_columns",[](const giao::Basis& basis,
+        const std::vector<std::array<std::size_t,2>>& pivots,const py::object& field,const py::object& threads) -> py::array {
+        const auto f=field_or_zero(field);const auto count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        const auto rows=static_cast<py::ssize_t>(pivots.size());
+        if (f.B.x==0.0 && f.B.y==0.0 && f.B.z==0.0) {
+            py::array_t<double> result({rows,n*n});
+            {py::gil_scoped_release release;giao::detail::cholesky_columns(basis,pivots,f,
+                {result.mutable_data(),static_cast<std::size_t>(result.size())},count);}
+            return result;
+        }
+        py::array_t<giao::Complex> result({rows,n*n});
+        {py::gil_scoped_release release;giao::detail::cholesky_columns(basis,pivots,f,
+            {result.mutable_data(),static_cast<std::size_t>(result.size())},count);}
+        return result;
+    },py::arg("basis"),py::arg("pivots"),py::kw_only(),py::arg("field")=py::none(),py::arg("threads")=py::none());
 
 }

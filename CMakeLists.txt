@@ -29,6 +29,7 @@ endif()
 
 add_library(giao_integrals_core
     src/boys.cpp
+    src/cholesky.cpp
     src/derivatives.cpp
     src/eri.cpp
     src/hermite.cpp
