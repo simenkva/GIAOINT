@@ -1,4 +1,6 @@
 #include "giao_integrals/boys.hpp"
+#include "cholesky.hpp"
+#include "assembly.hpp"
 #include "giao_integrals/derivatives.hpp"
 #include "giao_integrals/eri.hpp"
 #include "giao_integrals/nuclear.hpp"
@@ -2300,5 +2302,264 @@ the configured policy; native work releases the GIL.
         return py::make_tuple(quartet_result,shape_result,offset_result,values,requested.size(),requested.size()-quartets.size());
     },py::arg("basis"),py::arg("quartets"),py::kw_only(),py::arg("field")=py::none(),
     py::arg("screening_threshold")=0.0,py::arg("threads")=py::none(),py::arg("bounds")=py::none());
+
+    module.def("_cholesky_diagonal",[](const giao::Basis& basis,
+        const std::vector<std::array<std::size_t,2>>& pairs,const py::object& field,const py::object& threads) {
+        const auto f=field_or_zero(field);const auto count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        py::array_t<double> result({n,n});
+        {py::gil_scoped_release release;giao::detail::cholesky_diagonal(basis,pairs,f,
+            {result.mutable_data(),static_cast<std::size_t>(result.size())},count);}
+        return result;
+    },py::arg("basis"),py::arg("pairs"),py::kw_only(),py::arg("field")=py::none(),py::arg("threads")=py::none());
+    module.def("_cholesky_columns",[](const giao::Basis& basis,
+        const std::vector<std::array<std::size_t,2>>& pivots,const py::object& field,const py::object& threads) -> py::array {
+        const auto f=field_or_zero(field);const auto count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        const auto rows=static_cast<py::ssize_t>(pivots.size());
+        if (f.B.x==0.0 && f.B.y==0.0 && f.B.z==0.0) {
+            py::array_t<double> result({rows,n*n});
+            {py::gil_scoped_release release;giao::detail::cholesky_columns(basis,pivots,f,
+                {result.mutable_data(),static_cast<std::size_t>(result.size())},count);}
+            return result;
+        }
+        py::array_t<giao::Complex> result({rows,n*n});
+        {py::gil_scoped_release release;giao::detail::cholesky_columns(basis,pivots,f,
+            {result.mutable_data(),static_cast<std::size_t>(result.size())},count);}
+        return result;
+    },py::arg("basis"),py::arg("pivots"),py::kw_only(),py::arg("field")=py::none(),py::arg("threads")=py::none());
+    module.def("moment_mixed_derivatives",
+        [](const giao::Basis& basis, const py::object& powers, const py::object& origin,
+           const py::object& field, const py::object& output, const py::object& threads) {
+            const auto moment = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            py::object shell_out = py::none();
+            py::object origin_out = py::none();
+            if (!output.is_none()) {
+                if (!py::isinstance<py::tuple>(output) || py::len(output) != 2) {
+                    throw py::value_error("out must be None or a (shell_out, origin_out) tuple");
+                }
+                shell_out = output[py::int_(0)];
+                origin_out = output[py::int_(1)];
+            }
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            auto centers = validate_or_create_output(shell_out,
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, 3, n, n});
+            auto origins = validate_or_create_output(origin_out, {3, 3, n, n});
+            const auto first = reinterpret_cast<std::uintptr_t>(centers.data());
+            const auto second = reinterpret_cast<std::uintptr_t>(origins.data());
+            if (centers.nbytes() != 0 && origins.nbytes() != 0 &&
+                first < second + static_cast<std::uintptr_t>(origins.nbytes()) &&
+                second < first + static_cast<std::uintptr_t>(centers.nbytes())) {
+                throw py::value_error("shell and origin outputs must not overlap");
+            }
+            { py::gil_scoped_release release;
+              giao::compute_moment_mixed_derivative_matrices(basis, moment, f,
+                  {static_cast<giao::Complex*>(centers.mutable_data()), static_cast<std::size_t>(centers.size())},
+                  {static_cast<giao::Complex*>(origins.mutable_data()), static_cast<std::size_t>(origins.size())}, thread_count); }
+            return py::make_tuple(centers, origins);
+        }, py::arg("basis"), py::arg("powers"), py::kw_only(),
+        py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Return (shell-centre, moment-origin) mixed d2I/dR dB responses.
+
+basis is a Cartesian basis; powers selects (r-origin)^powers. origin defaults
+to zero. field supplies the phase B and fixed magnetic gauge origin.
+Shapes: (nshell,3,3,nao,nao) and (3,3,nao,nao), nuclear/origin axis then B axis.
+Includes full Gaussian/London cross response; the moment operator has no explicit
+B dependence. The moment origin is fixed for the basis response, and its own
+mixed response is returned separately. No force or charge signs.
+out=(shell_out,origin_out), each None or strict nonoverlapping complex128 buffer.
+threads=None follows configured native shell-pair threading; work releases GIL.
+)doc");
+
+    module.def("_atom_one_electron_derivatives",[](const giao::Basis& basis,
+        const std::vector<std::size_t>& atoms,std::size_t natom,const std::vector<giao::Nucleus>& nuclei,
+        const std::string& name,bool mixed,const py::object& powers,const py::object& origin,
+        const py::object& field,const py::object& output,const py::object& threads) -> py::object {
+        giao::detail::AtomOperator op;
+        if(name=="overlap"){op=giao::detail::AtomOperator::overlap;}
+        else if(name=="kinetic"){op=giao::detail::AtomOperator::kinetic;}
+        else if(name=="magnetic_kinetic"){op=giao::detail::AtomOperator::magnetic_kinetic;}
+        else if(name=="nuclear_attraction"){op=giao::detail::AtomOperator::attraction;}
+        else if(name=="moment"){op=giao::detail::AtomOperator::moment;}
+        else{throw py::value_error("unknown atom derivative operator");}
+        const auto moment=moment_from_python(powers,origin);
+        const auto f=field_or_zero(field);const auto count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        std::vector<py::ssize_t> shape{static_cast<py::ssize_t>(natom),3};
+        std::vector<py::ssize_t> origin_shape{3};
+        if(mixed){shape.push_back(3);origin_shape.push_back(3);}
+        shape.insert(shape.end(),{n,n});origin_shape.insert(origin_shape.end(),{n,n});
+        py::object atom_out=output,origin_out=py::none();
+        if(name=="moment" && !output.is_none()){
+            if(!py::isinstance<py::tuple>(output) || py::len(output)!=2){throw py::value_error("moment out must be an (atom_out,origin_out) tuple");}
+            atom_out=output[py::int_(0)];origin_out=output[py::int_(1)];
+        }
+        auto result=validate_or_create_output(atom_out,shape);
+        py::array origin_result;
+        std::span<giao::Complex> origin_values;
+        if(name=="moment"){
+            origin_result=validate_or_create_output(origin_out,origin_shape);
+            const auto first=reinterpret_cast<std::uintptr_t>(result.data());
+            const auto second=reinterpret_cast<std::uintptr_t>(origin_result.data());
+            if(result.nbytes()!=0 && origin_result.nbytes()!=0 && first<second+static_cast<std::uintptr_t>(origin_result.nbytes()) && second<first+static_cast<std::uintptr_t>(result.nbytes())){throw py::value_error("atom and origin outputs must not overlap");}
+            origin_values={static_cast<giao::Complex*>(origin_result.mutable_data()),static_cast<std::size_t>(origin_result.size())};
+        }
+        {py::gil_scoped_release release;giao::detail::atom_one_electron_derivatives(basis,atoms,natom,nuclei,f,op,moment,mixed,
+            {static_cast<giao::Complex*>(result.mutable_data()),static_cast<std::size_t>(result.size())},origin_values,count);}
+        if(name=="moment"){return py::make_tuple(result,origin_result);}
+        return result;
+    },py::arg("basis"),py::arg("shell_atoms"),py::arg("natom"),py::arg("nuclei"),py::arg("name"),
+    py::arg("mixed"),py::arg("powers"),py::arg("origin"),py::kw_only(),py::arg("field")=py::none(),
+    py::arg("out")=py::none(),py::arg("threads")=py::none());
+
+    module.def("_contract_eri_derivative_batch",[](const giao::Basis& basis,
+        const std::vector<std::size_t>& atoms,std::size_t natom,
+        const std::vector<std::array<std::uint32_t,4>>& requested,
+        const std::vector<std::size_t>& offsets,py::array values,
+        const std::vector<std::array<py::array,2>>& coulomb,
+        const std::vector<std::array<py::array,2>>& exchange,const py::object& gamma,
+        py::object output,const py::object& threads){
+        const auto count=threads_from_python(threads);
+        std::vector<giao::ShellQuartetIndex> quartets;
+        for(const auto& q:requested){quartets.push_back({q[0],q[1],q[2],q[3]});}
+        auto result=validate_or_create_output(output,{static_cast<py::ssize_t>(natom),3});
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        auto matrix_span=[&](const py::array& value){
+            if(!value.dtype().is(py::dtype::of<giao::Complex>()) || !(value.flags()&py::array::c_style) || value.ndim()!=2 || value.shape(0)!=n || value.shape(1)!=n){throw py::value_error("density matrices must be C-contiguous complex128 (nao,nao)");}
+            return std::span<const giao::Complex>(static_cast<const giao::Complex*>(value.data()),static_cast<std::size_t>(value.size()));
+        };
+        std::vector<giao::detail::DensityPair> jp,kp;
+        for(const auto& pair:coulomb){jp.push_back({matrix_span(pair[0]),matrix_span(pair[1])});}
+        for(const auto& pair:exchange){kp.push_back({matrix_span(pair[0]),matrix_span(pair[1])});}
+        if(!values.dtype().is(py::dtype::of<giao::Complex>()) || !(values.flags()&py::array::c_style) || values.ndim()!=1){throw py::value_error("derivative values must be contiguous complex128");}
+        std::span<const giao::Complex> complex_gamma;
+        std::span<const double> real_gamma;
+        if(!gamma.is_none()){
+            if(!py::isinstance<py::array>(gamma)){throw py::value_error("gamma must be an ndarray");}
+            const auto array=gamma.cast<py::array>();
+            if(!(array.flags()&py::array::c_style) || array.ndim()!=4){throw py::value_error("gamma must be C-contiguous with four AO axes");}
+            for(py::ssize_t axis=0;axis<4;++axis){if(array.shape(axis)!=n){throw py::value_error("gamma AO shape mismatch");}}
+            if(array.dtype().is(py::dtype::of<giao::Complex>())){complex_gamma={static_cast<const giao::Complex*>(array.data()),static_cast<std::size_t>(array.size())};}
+            else if(array.dtype().is(py::dtype::of<double>())){real_gamma={static_cast<const double*>(array.data()),static_cast<std::size_t>(array.size())};}
+            else{throw py::value_error("gamma dtype must be float64 or complex128");}
+        }
+        {py::gil_scoped_release release;giao::detail::contract_eri_derivatives(basis,atoms,natom,quartets,offsets,
+            {static_cast<const giao::Complex*>(values.data()),static_cast<std::size_t>(values.size())},jp,kp,complex_gamma,real_gamma,
+            {static_cast<giao::Complex*>(result.mutable_data()),static_cast<std::size_t>(result.size())},count);}
+        return result;
+    },py::arg("basis"),py::arg("shell_atoms"),py::arg("natom"),py::arg("quartets"),py::arg("offsets"),
+    py::arg("values"),py::arg("coulomb_pairs"),py::arg("exchange_pairs"),py::arg("gamma"),py::arg("out"),
+    py::kw_only(),py::arg("threads")=py::none());
+
+    module.def("primitive_kinetic_angular_momentum",[](const giao::PrimitiveGaussian& a,const giao::PrimitiveGaussian& b,const std::string& component,const py::object& origin,const py::object& field){
+        const auto f=field_or_zero(field);
+const auto axis=axis_from_python(component);
+        const giao::CartesianMoment validated_origin(vec3_from_python(origin,"origin"),{});
+        const auto g=validated_origin.origin;
+        py::gil_scoped_release release;giao::IntegralWorkspace workspace;
+        return giao::primitive_kinetic_angular_momentum(a,b,axis,g,f,workspace);
+    },py::arg("a"),py::arg("b"),py::arg("component"),py::kw_only(),py::arg("origin")=py::make_tuple(0.0,0.0,0.0),py::arg("field")=py::none(),R"doc(Return complex scalar of [(r-G) cross pi0]_component.
+
+component is x/y/z; origin is the independent operator origin G in bohr,
+default zero. field supplies the fixed London phase field B0 and gauge G0.
+pi0=p+A0, p=-i*gradient, A0=B0 cross (r-G0)/2. Both canonical and vector-
+potential terms are included. G does not change B0, G0 or the London phases.
+Cartesian AO order/normalization and the p+A convention
+match magnetic_kinetic. Native computation releases the GIL.
+)doc");
+
+    module.def("kinetic_angular_momentum_shell",[](const giao::Shell& a,const giao::Shell& b,const std::string& component,const py::object& origin,const py::object& field,py::object output){
+        const auto f=field_or_zero(field);
+const auto axis=axis_from_python(component);
+        const giao::CartesianMoment validated_origin(vec3_from_python(origin,"origin"),{});
+        const auto g=validated_origin.origin;
+        return shell_array(a,b,std::move(output),[&](auto values,auto& workspace){
+            giao::compute_kinetic_angular_momentum(a,b,axis,g,f,values,workspace);
+        });
+    },py::arg("a"),py::arg("b"),py::arg("component"),py::kw_only(),py::arg("origin")=py::make_tuple(0.0,0.0,0.0),py::arg("field")=py::none(),py::arg("out")=py::none(),R"doc(Return complex128 (na,nb) shell block of [(r-G) cross pi0]_component.
+
+component is x/y/z; origin is the independent operator origin G in bohr,
+default zero. field supplies the fixed London phase field B0 and gauge G0.
+pi0=p+A0, p=-i*gradient, A0=B0 cross (r-G0)/2. Both canonical and vector-
+potential terms are included. G does not change B0, G0 or the London phases.
+Cartesian AO order/normalization and the p+A convention
+match magnetic_kinetic. Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
+
+    module.def("kinetic_angular_momentum",[](const giao::Basis& basis,const std::string& component,const py::object& origin,const py::object& field,py::object output,const py::object& threads){
+        const auto f=field_or_zero(field);
+const auto axis=axis_from_python(component);
+        const giao::CartesianMoment validated_origin(vec3_from_python(origin,"origin"),{});
+        const auto g=validated_origin.origin;
+        const auto count=threads_from_python(threads);
+        return basis_array(basis,std::move(output),[&](auto values){
+            giao::compute_kinetic_angular_momentum_matrix(basis,axis,g,f,values,count);
+        });
+    },py::arg("basis"),py::arg("component"),py::kw_only(),py::arg("origin")=py::make_tuple(0.0,0.0,0.0),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),R"doc(Return complex128 (nao,nao) AO matrix of [(r-G) cross pi0]_component.
+
+component is x/y/z; origin is the independent operator origin G in bohr,
+default zero. field supplies the fixed London phase field B0 and gauge G0.
+pi0=p+A0, p=-i*gradient, A0=B0 cross (r-G0)/2. Both canonical and vector-
+potential terms are included. G does not change B0, G0 or the London phases.
+Cartesian AO order/normalization and the p+A convention
+match magnetic_kinetic. Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+threads=None follows the configured native shell-pair policy.
+)doc");
+
+    module.def("primitive_magnetic_kinetic_operator",[](const giao::PrimitiveGaussian& a,const giao::PrimitiveGaussian& b,const py::object& operator_field,const py::object& origin,const py::object& field){
+        const auto f=field_or_zero(field);
+const giao::MagneticField operator_value(operator_field.is_none()?f.B:vec3_from_python(operator_field,"operator_field"),origin.is_none()?f.gauge_origin:vec3_from_python(origin,"origin"));
+        py::gil_scoped_release release;giao::IntegralWorkspace workspace;
+        return giao::primitive_magnetic_kinetic_operator(a,b,f,operator_value,workspace);
+    },py::arg("a"),py::arg("b"),py::kw_only(),py::arg("operator_field")=py::none(),py::arg("origin")=py::none(),py::arg("field")=py::none(),R"doc(Return complex scalar of 1/2*[p+Aop]^2 with fixed London phases.
+
+field supplies the phase field B0/gauge G0. operator_field is the independent
+three-vector C; origin is its independent origin G, with Aop=C cross (r-G)/2.
+Defaults C=B0 and G=G0 reproduce magnetic_kinetic bitwise; C=0 gives canonical
+kinetic. Includes canonical, linear C angular and quadratic C second-moment
+terms. Changing C or G never changes the London phases. No force/charge sign.
+Native computation releases the GIL.
+)doc");
+
+    module.def("magnetic_kinetic_operator_shell",[](const giao::Shell& a,const giao::Shell& b,const py::object& operator_field,const py::object& origin,const py::object& field,py::object output){
+        const auto f=field_or_zero(field);
+const giao::MagneticField operator_value(operator_field.is_none()?f.B:vec3_from_python(operator_field,"operator_field"),origin.is_none()?f.gauge_origin:vec3_from_python(origin,"origin"));
+        return shell_array(a,b,std::move(output),[&](auto values,auto& workspace){
+            giao::compute_magnetic_kinetic_operator(a,b,f,operator_value,values,workspace);
+        });
+    },py::arg("a"),py::arg("b"),py::kw_only(),py::arg("operator_field")=py::none(),py::arg("origin")=py::none(),py::arg("field")=py::none(),py::arg("out")=py::none(),R"doc(Return complex128 (na,nb) shell block of 1/2*[p+Aop]^2 with fixed London phases.
+
+field supplies the phase field B0/gauge G0. operator_field is the independent
+three-vector C; origin is its independent origin G, with Aop=C cross (r-G)/2.
+Defaults C=B0 and G=G0 reproduce magnetic_kinetic bitwise; C=0 gives canonical
+kinetic. Includes canonical, linear C angular and quadratic C second-moment
+terms. Changing C or G never changes the London phases. No force/charge sign.
+Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
+
+    module.def("magnetic_kinetic_operator",[](const giao::Basis& basis,const py::object& operator_field,const py::object& origin,const py::object& field,py::object output,const py::object& threads){
+        const auto f=field_or_zero(field);
+const giao::MagneticField operator_value(operator_field.is_none()?f.B:vec3_from_python(operator_field,"operator_field"),origin.is_none()?f.gauge_origin:vec3_from_python(origin,"origin"));
+        const auto count=threads_from_python(threads);
+        return basis_array(basis,std::move(output),[&](auto values){
+            giao::compute_magnetic_kinetic_operator_matrix(basis,f,operator_value,values,count);
+        });
+    },py::arg("basis"),py::kw_only(),py::arg("operator_field")=py::none(),py::arg("origin")=py::none(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),R"doc(Return complex128 (nao,nao) AO matrix of 1/2*[p+Aop]^2 with fixed London phases.
+
+field supplies the phase field B0/gauge G0. operator_field is the independent
+three-vector C; origin is its independent origin G, with Aop=C cross (r-G)/2.
+Defaults C=B0 and G=G0 reproduce magnetic_kinetic bitwise; C=0 gives canonical
+kinetic. Includes canonical, linear C angular and quadratic C second-moment
+terms. Changing C or G never changes the London phases. No force/charge sign.
+Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+threads=None follows the configured native shell-pair policy.
+)doc");
 
 }

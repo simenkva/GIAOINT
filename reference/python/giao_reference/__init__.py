@@ -35,7 +35,9 @@ from .overlap import (
 from .property import (
     primitive_gradient,
     primitive_kinetic,
+    primitive_kinetic_angular_momentum,
     primitive_magnetic_kinetic,
+    primitive_magnetic_kinetic_operator,
     primitive_moment,
     primitive_momentum,
     shell_gradient,
@@ -69,6 +71,8 @@ __all__ = [
     "primitive_gradient",
     "primitive_eri",
     "primitive_kinetic",
+    "primitive_kinetic_angular_momentum",
+    "primitive_magnetic_kinetic_operator",
     "primitive_magnetic_kinetic",
     "primitive_moment",
     "primitive_momentum",

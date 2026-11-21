@@ -73,3 +73,61 @@ np.testing.assert_array_equal(
     gi.eri_center_derivatives_shell(*[basis.shells[k] for k in q], field=field),
 )
 print("Installed derivative priorities 1–4: passed")
+
+# 0.11: atom assembly and streamed density contraction without optional BSE.
+minimal_basis = {
+    "elements": {
+        "1": {
+            "electron_shells": [
+                {
+                    "function_type": "gto",
+                    "angular_momentum": [0],
+                    "exponents": ["0.8"],
+                    "coefficients": [["1.0"]],
+                }
+            ]
+        }
+    }
+}
+mol = gi.Molecule(
+    [("H", (0, 0, 0)), ("H", (0.1, 0.2, 1.4))], minimal_basis, unit="bohr", field=field
+)
+atom_dS = mol.overlap_nuclear_derivatives(threads=2)
+assert atom_dS.shape == (2, 3, 2, 2)
+atom_dX, origin_dX = mol.moment_mixed_derivatives((1, 0, 0), threads=2)
+assert atom_dX.shape == (2, 3, 3, 2, 2)
+assert origin_dX.shape == (3, 3, 2, 2)
+gradient = mol.eri_derivative_contraction(
+    coulomb_pairs=[(np.eye(2), np.eye(2))],
+    threads=2,
+    target_bytes=4096,
+)
+assert gradient.shape == (2, 3) and np.isfinite(gradient).all()
+
+# 0.11 TD4: same fields preserve the old operator exactly; fixed-phase dC
+# gives half the kinetic angular momentum when the operator origins agree.
+np.testing.assert_array_equal(
+    gi.magnetic_kinetic_operator(basis, field=field, threads=2),
+    gi.magnetic_kinetic(basis, field=field),
+)
+angular = gi.kinetic_angular_momentum(
+    basis,
+    "z",
+    origin=field.gauge_origin,
+    field=field,
+    threads=2,
+)
+plus = gi.magnetic_kinetic_operator(
+    basis,
+    field=field,
+    operator_field=np.array(field.B) + (0, 0, h),
+    threads=2,
+)
+minus = gi.magnetic_kinetic_operator(
+    basis,
+    field=field,
+    operator_field=np.array(field.B) - (0, 0, h),
+    threads=2,
+)
+np.testing.assert_allclose((plus - minus) / (2 * h), 0.5 * angular, atol=2e-10)
+print("Installed 0.11 atom/density/TD4 features: passed")

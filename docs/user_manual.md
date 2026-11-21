@@ -356,3 +356,46 @@ The optional density-to-J/K gradient contraction helper is not part of this API.
 - [`docs/mathematical_specification.md`](mathematical_specification.md):
   conventions, normalization, and derivations.
 - [`STATUS.md`](../STATUS.md): what's implemented and what isn't yet.
+
+## Per-atom gradient assembly (0.11 source preparation)
+
+```python
+dS_atoms = mol.overlap_nuclear_derivatives()
+dV_atoms = mol.nuclear_attraction_nuclear_derivatives()
+dX_atoms, dX_origin = mol.moment_nuclear_derivatives((1, 0, 0), origin=(0, 0, 0))
+dRdB_S_atoms = mol.overlap_mixed_derivatives()
+```
+
+The leading nuclear centre is an atom rather than a shell. Attraction potential
+centres are included in their atom contributions. Moment-origin response stays
+separate, including for mixed derivatives, and must be assembled according to
+the Hamiltonian's chosen origin and charge convention.
+
+```python
+gradient_J = mol.eri_derivative_contraction(coulomb_pairs=[(P, Q)])
+gradient_K = mol.eri_derivative_contraction(exchange_pairs=[(P, Q)])
+gradient_Gamma = mol.eri_derivative_contraction(gamma=Gamma)
+```
+
+These are literal derivatives, with no implicit 1/2, exchange minus, spin,
+charge or force factors. Inputs need not be Hermitian; density entries are
+not conjugated. See [the exact index and symmetry conventions](api.md#vice-gradient-assembly-011-preparation).
+The iterator and native contraction keep workspace bounded and support
+configured threading. Screening remains opt-in.
+
+## TD4.0 operators with fixed London phases (0.11 source preparation)
+
+```python
+G = (0.4, -0.2, 0.3)  # operator origin, independent of mol.field.gauge_origin
+LKx = mol.kinetic_angular_momentum("x", origin=G)
+T_trial = mol.magnetic_kinetic_operator(operator_field=(0.1, 0.0, 0.2), origin=G)
+Qxy = gi.moment(mol.basis, (1, 1, 0), origin=G, field=mol.field)
+```
+
+`LKx` includes the vector potential of the molecule's phase field B0/G0:
+`[(r-G) cross (p+A0)]_x`. `T_trial` instead uses the supplied operator field
+and origin in its vector potential, while keeping the same London orbitals.
+Second moments use the existing `moment` API. Changing G never changes the
+phase gauge origin. Omitting the operator field/origin reproduces the existing
+`mol.magnetic_kinetic()` exactly; setting the operator field to zero gives
+canonical kinetic. See [the exact operators and sum rules](api.md#td40-independent-operator-field-and-origin-011-preparation).

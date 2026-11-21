@@ -16,6 +16,7 @@ import numpy.typing as npt
 from . import _giao_integrals as core
 from .cholesky import CholeskyERI
 from .cholesky import cholesky_eri as compute_cholesky_eri
+from .derivative_assembly import eri_derivative_contraction as contract_eri_derivatives
 from .eri import EriBatch, EriDerivativeBatch
 from .eri import eri as compute_eri
 from .eri import eri_batches as compute_eri_batches
@@ -467,6 +468,259 @@ class Molecule:
             target_bytes=target_bytes,
             screening_threshold=screening_threshold,
             threads=threads,
+        )
+
+    def kinetic_angular_momentum(
+        self, component, *, origin=(0, 0, 0), out=None, threads=None
+    ):
+        """Return (r-origin) cross pi0 for this molecule's fixed phase field.
+
+        pi0=p+B0 cross (r-G0)/2 uses this molecule's field/gauge. origin is
+        independent of G0. Result is complex128 (nao,nao); strict out= and
+        configured threads=None are supported. See kinetic_angular_momentum.
+        """
+        return core.kinetic_angular_momentum(
+            self.basis,
+            component,
+            origin=origin,
+            field=self.field,
+            out=out,
+            threads=threads,
+        )
+
+    def magnetic_kinetic_operator(
+        self, *, operator_field=None, origin=None, out=None, threads=None
+    ):
+        """Return 1/2*(p+Aop)^2 with this molecule's London phases fixed.
+
+        operator_field C and origin G set Aop=C cross (r-G)/2 independently.
+        None defaults to this molecule's B0/G0, reproducing magnetic_kinetic.
+        Result is complex128 (nao,nao); strict out= and threads=None supported.
+        """
+        return core.magnetic_kinetic_operator(
+            self.basis,
+            operator_field=operator_field,
+            origin=origin,
+            field=self.field,
+            out=out,
+            threads=threads,
+        )
+
+    def _atom_one_electron_derivatives(
+        self,
+        name,
+        *,
+        mixed=False,
+        powers=(0, 0, 0),
+        origin=(0.0, 0.0, 0.0),
+        out=None,
+        threads=None,
+    ):
+        return core._atom_one_electron_derivatives(
+            self.basis,
+            self.shell_atoms,
+            len(self.atoms),
+            self.nuclei,
+            name,
+            mixed,
+            powers,
+            origin,
+            field=self.field,
+            out=out,
+            threads=threads,
+        )
+
+    def overlap_nuclear_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom overlap nuclear derivatives,
+
+        Shape (natom,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "overlap", mixed=False, out=out, threads=threads
+        )
+
+    def overlap_mixed_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom overlap mixed derivatives,
+
+        Shape (natom,3,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "overlap", mixed=True, out=out, threads=threads
+        )
+
+    def kinetic_nuclear_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom kinetic nuclear derivatives,
+
+        Shape (natom,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "kinetic", mixed=False, out=out, threads=threads
+        )
+
+    def kinetic_mixed_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom kinetic mixed derivatives,
+
+        Shape (natom,3,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "kinetic", mixed=True, out=out, threads=threads
+        )
+
+    def magnetic_kinetic_nuclear_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom magnetic_kinetic nuclear derivatives,
+
+        Shape (natom,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "magnetic_kinetic", mixed=False, out=out, threads=threads
+        )
+
+    def magnetic_kinetic_mixed_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom magnetic_kinetic mixed derivatives,
+
+        Shape (natom,3,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        Physical kinetic includes explicit operator B terms.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "magnetic_kinetic", mixed=True, out=out, threads=threads
+        )
+
+    def nuclear_attraction_nuclear_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom nuclear_attraction nuclear derivatives,
+
+        Shape (natom,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        Attraction potential-centre response is added to its owning atom.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "nuclear_attraction", mixed=False, out=out, threads=threads
+        )
+
+    def nuclear_attraction_mixed_derivatives(self, *, out=None, threads=None):
+        """Literal per-atom nuclear_attraction mixed derivatives,
+
+        Shape (natom,3,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        Attraction potential-centre response is added to its owning atom.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        threads=None uses the configured native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "nuclear_attraction", mixed=True, out=out, threads=threads
+        )
+
+    def moment_nuclear_derivatives(
+        self, powers, *, origin=(0.0, 0.0, 0.0), out=None, threads=None
+    ):
+        """Literal per-atom moment nuclear derivatives,
+
+        Shape (natom,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        Returns (atom_response, origin_response); the moment-origin derivative
+        is separate, is not assigned to atoms, and has shape (3,nao,nao).
+        powers selects (r-origin)^powers; origin is in bohr.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        moment out=(atom_out,origin_out). threads=None uses native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "moment",
+            mixed=False,
+            powers=powers,
+            origin=origin,
+            out=out,
+            threads=threads,
+        )
+
+    def moment_mixed_derivatives(
+        self, powers, *, origin=(0.0, 0.0, 0.0), out=None, threads=None
+    ):
+        """Literal per-atom moment mixed derivatives,
+
+        Shape (natom,3,3,nao,nao).
+
+        Sum basis-centre slots with shell_atoms; include complete London response
+        at fixed gauge origin.
+        Returns (atom_response, origin_response); the moment-origin derivative
+        is separate, is not assigned to atoms, and has shape (3,3,nao,nao).
+        powers selects (r-origin)^powers; origin is in bohr.
+        No force/charge sign. Strict out= buffers are returned exactly;
+        moment out=(atom_out,origin_out). threads=None uses native task policy.
+        """
+        return self._atom_one_electron_derivatives(
+            "moment", mixed=True, powers=powers, origin=origin, out=out, threads=threads
+        )
+
+    def eri_derivative_contraction(
+        self,
+        *,
+        coulomb_pairs=(),
+        exchange_pairs=(),
+        gamma=None,
+        target_bytes=64 * 1024**2,
+        screening_threshold=0.0,
+        threads=None,
+        out=None,
+    ):
+        """Contract ERI centre derivatives into complex128 (natom,3).
+
+        Coulomb: d(mu nu|lam sig)*P[nu,mu]*Q[sig,lam].
+        Exchange: d(mu nu|lam sig)*P[nu,lam]*Q[sig,mu].
+        Dense: d(mu nu|lam sig)*gamma[mu,nu,lam,sig]. No implicit density
+        conjugation, force/charge/spin sign or 1/2. Contributions add.
+        Uses this molecule's field and shell_atoms, with full London response.
+        See eri_derivative_contraction for exact canonical/slot symmetry,
+        deterministic threading, strict out= and bounded-memory conventions.
+        """
+        return contract_eri_derivatives(
+            self.basis,
+            self.shell_atoms,
+            len(self.atoms),
+            field=self.field,
+            coulomb_pairs=coulomb_pairs,
+            exchange_pairs=exchange_pairs,
+            gamma=gamma,
+            target_bytes=target_bytes,
+            screening_threshold=screening_threshold,
+            threads=threads,
+            out=out,
         )
 
     def integrals(

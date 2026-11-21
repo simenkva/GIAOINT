@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.11.0 — release candidate (not yet published)
+
+### VICE item 6 — 0.11.0 release preparation
+
+Prepared 0.11.0 for the Cholesky, gradient-assembly and TD4.0 follow-ups.
+Installed wheel/source smoke tests cover the new helpers and independent-field
+operators as well as every derivative priority. The 0.10.0 candidate remains
+independently frozen. Neither version is published without its own approval.
+
+### VICE item 5 — independent-field TD4.0 operators
+
+Added primitive/shell/basis kinetic angular momentum about an independent
+origin G, using pi0=p+B0 cross (r-G0)/2 from the fixed London phase field.
+Added magnetic_kinetic_operator with independent operator field C and origin G;
+changing them never changes the phases. Matching C/G defaults delegate to the
+existing physical kinetic kernel bitwise; C=0 is canonical kinetic. Existing
+moment(powers,origin=G) supplies all six independent second moments. Native
+matrix calls support strict outputs, GIL release and deterministic threading.
+Validation covers reference values through g, operator-field differences,
+Hermiticity, origin sum rules and libcint angular/quadrupole/kinetic operators.
+
+### VICE item 4 — per-atom derivative and density contraction helpers
+
+Added Molecule one-electron nuclear/mixed derivatives in atom layout, including
+attraction potential-centre ownership and separate moment-origin response.
+Added mixed moment/origin kernels needed by that interface. Added streamed
+native Coulomb, exchange and dense two-particle-density ERI derivative
+contractions with explicit indices, no implicit density conjugation or force
+factors, deterministic reductions, and opt-in derivative-specific screening.
+Canonical orbit expansion permutes AO axes and centre slots and removes only
+duplicate shell-quartet images. Dense gamma is read without copying; no full
+AO derivative tensor is constructed. Tests use explicit ordered-quartet
+contractions, finite differences and exact thread/batch-boundary comparisons.
+
+### VICE item 3 — deterministic selected-integral Cholesky backend
+
+Profiled the 152-AO Ne case: NumPy vector/residual updates account for under
+1% of serial wall time. Replaced complete-quartet generation and Python
+extraction with native selected diagonal/column evaluation, split into
+deterministic parallel tasks. The underlying ERI kernel, primitive contraction
+order, pivoting and NumPy reductions are retained. Added bitwise comparison
+tests against the unchanged full-shell backend and before/after benchmark tools
+for Ne and Be. Memory remains O(rank*nao²) plus bounded native/column workspace.
+
 ## 0.10.0 — release candidate (not yet published)
 
 ### VICE item 2 — 0.10.0 release preparation

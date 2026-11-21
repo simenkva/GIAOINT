@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import inspect
 import json
+import resource
 import sys
 from importlib import import_module
 from time import perf_counter
@@ -20,15 +21,23 @@ import basis_set_exchange as bse
 import giao_integrals as gi
 
 
-def run(threads: int, profile: bool) -> dict:
-    data = bse.get_basis(
-        "aug-cc-pCVQZ",
-        elements=["Ne"],
-        uncontract_general=True,
-        uncontract_segmented=True,
-        uncontract_spdf=True,
-    )
-    mol = gi.Molecule([("Ne", (0, 0, 0))], data, field=gi.MagneticField((0, 0, 0.1)))
+def run(threads: int, profile: bool, atom="Ne", threshold=1e-8) -> dict:
+    data = bse.get_basis("aug-cc-pCVQZ", elements=[atom])
+    element = next(iter(data["elements"].values()))
+    exponents = {}
+    for shell in element["electron_shells"]:
+        for angular in shell["angular_momentum"]:
+            exponents.setdefault(angular, set()).update(map(float, shell["exponents"]))
+    element["electron_shells"] = [
+        {
+            "angular_momentum": [angular],
+            "exponents": [str(exponent)],
+            "coefficients": [["1.0"]],
+        }
+        for angular, values in sorted(exponents.items())
+        for exponent in sorted(values, reverse=True)
+    ]
+    mol = gi.Molecule([(atom, (0, 0, 0))], data, field=gi.MagneticField((0, 0, 0.1)))
     assert mol.ao_count == 152
     function = import_module("giao_integrals.cholesky").cholesky_eri
     source, first = inspect.getsourcelines(function)
@@ -65,7 +74,7 @@ def run(threads: int, profile: bool) -> dict:
         sys.settrace(trace)
     start = perf_counter()
     try:
-        result = mol.cholesky_eri(threshold=1e-8, threads=threads)
+        result = mol.cholesky_eri(threshold=threshold, threads=threads)
     finally:
         elapsed = perf_counter() - start
         if profile:
@@ -73,6 +82,12 @@ def run(threads: int, profile: bool) -> dict:
     digest = hashlib.sha256(memoryview(result.vectors)).hexdigest()
     pivots = hashlib.sha256(memoryview(result.pivots)).hexdigest()
     return {
+        "profiled": bool(profile),
+        "vectors_bytes": result.vectors.nbytes,
+        "atom": atom,
+        "threshold": threshold,
+        "peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        * (1 if sys.platform == "darwin" else 1024),
         "threads": threads,
         "seconds": elapsed,
         "nao": mol.ao_count,
@@ -89,6 +104,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--threads", type=int, nargs="+", default=[1, 4, 8, 12])
     parser.add_argument("--profile", action="store_true")
+    parser.add_argument(
+        "--profile-serial", action="store_true", help="profile only threads=1"
+    )
+    parser.add_argument("--atom", choices=["Ne", "Be"], default="Ne")
+    parser.add_argument("--threshold", type=float, default=1e-8)
     args = parser.parse_args()
     for count in args.threads:
-        print(json.dumps(run(count, args.profile)), flush=True)
+        print(
+            json.dumps(
+                run(
+                    count,
+                    args.profile or (args.profile_serial and count == 1),
+                    args.atom,
+                    args.threshold,
+                )
+            ),
+            flush=True,
+        )

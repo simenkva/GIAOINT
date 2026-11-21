@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.10.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.11.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -29,6 +29,8 @@ endif()
 
 add_library(giao_integrals_core
     src/boys.cpp
+    src/assembly.cpp
+    src/cholesky.cpp
     src/derivatives.cpp
     src/eri.cpp
     src/hermite.cpp

@@ -415,3 +415,84 @@ def shell_magnetic_kinetic(
         shell_ket,
         lambda bra, ket: primitive_magnetic_kinetic(bra, ket, field),
     )
+
+
+def _canonical_angular_momentum(bra, ket, axis, origin, field):
+    j, k = (axis + 1) % 3, (axis + 2) % 3
+
+    def coordinate_momentum(coordinate, momentum):
+        return _raw_momentum_moment(bra, ket, coordinate, momentum, field) + (
+            field.gauge_origin[coordinate] - origin[coordinate]
+        ) * primitive_momentum(bra, ket, "xyz"[momentum], field)
+
+    return coordinate_momentum(j, k) - coordinate_momentum(k, j)
+
+
+def primitive_kinetic_angular_momentum(
+    bra, ket, component, *, origin=(0, 0, 0), field=ZERO_FIELD
+):
+    """<(r-G) cross [p+B0 cross (r-G0)/2]> with independent G."""
+    axis = _axis_index(component)
+    origin = _origin(origin)
+    a, b = _raw(bra), _raw(ket)
+
+    def moment(first, second=None):
+        powers = [0, 0, 0]
+        powers[first] += 1
+        if second is not None:
+            powers[second] += 1
+        return primitive_moment(a, b, tuple(powers), origin=origin, field=field)
+
+    def coordinate_vector_potential(coordinate, component):
+        j, k = (component + 1) % 3, (component + 2) % 3
+        first = moment(coordinate, k) + (origin[k] - field.gauge_origin[k]) * moment(
+            coordinate
+        )
+        second = moment(coordinate, j) + (origin[j] - field.gauge_origin[j]) * moment(
+            coordinate
+        )
+        return 0.5 * (field.B[j] * first - field.B[k] * second)
+
+    j, k = (axis + 1) % 3, (axis + 2) % 3
+    return (
+        _canonical_angular_momentum(a, b, axis, origin, field)
+        + coordinate_vector_potential(j, k)
+        - coordinate_vector_potential(k, j)
+    )
+
+
+def primitive_magnetic_kinetic_operator(
+    bra, ket, *, operator_field=None, origin=None, field=ZERO_FIELD
+):
+    """Independent uniform operator field; London phases remain field B0/G0."""
+    operator = MagneticField(
+        field.B if operator_field is None else operator_field,
+        field.gauge_origin if origin is None else origin,
+    )
+    if operator == field:
+        return primitive_magnetic_kinetic(bra, ket, field)
+    a, b = _raw(bra), _raw(ket)
+    result = primitive_kinetic(a, b, field)
+    for axis in range(3):
+        result += (
+            0.5
+            * operator.B[axis]
+            * _canonical_angular_momentum(a, b, axis, operator.gauge_origin, field)
+        )
+        j, k = (axis + 1) % 3, (axis + 2) % 3
+
+        def moment(first, second):
+            powers = [0, 0, 0]
+            powers[first] += 1
+            powers[second] += 1
+            return primitive_moment(
+                a, b, tuple(powers), origin=operator.gauge_origin, field=field
+            )
+
+        # Direct Aop squared, independent of the production triple-product form.
+        result += 0.125 * (
+            operator.B[j] ** 2 * moment(k, k)
+            + operator.B[k] ** 2 * moment(j, j)
+            - 2 * operator.B[j] * operator.B[k] * moment(j, k)
+        )
+    return result
