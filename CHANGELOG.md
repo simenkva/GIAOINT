@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Priority 3 — mixed nuclear/magnetic derivatives
+
+Added literal mixed derivatives of overlap, canonical and physical magnetic
+kinetic, nuclear attraction (separate basis and potential centres), and ERI
+quartets. Layout is centre, nuclear axis, field axis, AO axes. Includes the
+London cross coefficient and explicit physical kinetic operator field terms;
+no finite differences are used in production. Supports strict output buffers,
+GIL release and configured basis-matrix threading. Common quartet contraction
+code now serves first and mixed derivatives without changing unscreened sums.
+
 ### Priority 2 — gradient/momentum and property field derivatives
 
 Added literal nuclear derivatives for all components of gradient and canonical

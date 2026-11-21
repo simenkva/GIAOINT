@@ -672,8 +672,7 @@ a molecular atom derivative.
 
 All shell and basis derivative functions support strict `out=` buffers and
 release the GIL. ERI derivatives are shell-quartet only; the API does not
-allocate an automatic derivative of the full fourth-rank AO tensor. Mixed
-nuclear/magnetic derivatives and derivatives of Cholesky vectors are not exposed
+allocate an automatic derivative of the full fourth-rank AO tensor. Derivatives of Cholesky vectors are not exposed
 in 0.9.
 
 ## 8. Errors and reproducibility
@@ -776,3 +775,57 @@ Shell variants replace `primitive_` by an empty prefix and append `_shell`;
 they support `out=` and have the same leading derivative dimensions as the
 existing shell APIs. All native computation releases the GIL. Basis matrix
 assembly uses the same configured shell-pair threading policy as Priority 1.
+
+## Mixed nuclear/magnetic derivatives (Priority 3, after 0.9.0)
+
+For `overlap`, `kinetic` and `magnetic_kinetic`:
+
+```python
+mixed = gi.overlap_mixed_derivatives(basis, field=field, out=None, threads=None)
+```
+
+The result is `(nshell,3,3,nao,nao)` with axes
+`(shell centre, nuclear xyz, field xyz, bra AO, ket AO)`. It is literally
+`d²I/(dR dB)`, with fixed gauge origin and no hidden force sign. Shell functions
+are `*_mixed_derivatives_shell(a,b,*,field,out)`, with leading `(2,3,3)`;
+primitive functions are `primitive_*_mixed_derivatives(a,b,*,field)`, shape
+`(2,3,3)`. Gaussian, London centre/field, and the cross derivative of the London
+centre coefficient are all included. Physical `magnetic_kinetic` additionally
+includes the explicit B dependence of `1/2*(p+A)^2`; canonical `kinetic` does not
+include the vector-potential operator.
+
+```python
+shell_mixed, potential_mixed = gi.nuclear_attraction_mixed_derivatives(
+    basis, nuclei, field=field, out=None, threads=None,
+)
+```
+
+The shapes are `(nshell,3,3,nao,nao)` and `(nnucleus,3,3,nao,nao)`.
+The Coulomb potential has no explicit B dependence. Potential centres remain
+independent of basis centres; assemble atom derivatives using ownership, as
+with first derivatives. `out=(shell_out,nucleus_out)` supports separately
+allocated strict buffers; either may be `None`, and overlap is rejected.
+`nuclear_attraction_mixed_derivatives_shell` and
+`primitive_nuclear_attraction_mixed_derivatives` give the basis-centre parts;
+`nuclear_attraction_nucleus_mixed_derivatives_shell` and
+`primitive_nuclear_attraction_nucleus_mixed_derivatives` give the separate
+potential-centre parts, with leading `(nnucleus,3,3)`.
+
+```python
+quartet_mixed = gi.eri_mixed_derivatives_shell(a, b, c, d, field=field, out=None)
+```
+
+Shape: `(4,3,3,na,nb,nc,nd)`, centre slots in quartet order, nuclear axis then
+field axis. `primitive_eri_mixed_derivatives` returns `(4,3,3)`. These include
+London response of all four functions, obey pair exchange and simultaneous
+conjugate reversal with the corresponding centre-slot permutation, and retain
+the value kernel's angular/workspace admission limits (including the extra
+shifted powers needed by differentiation).
+
+All native paths release the GIL; basis matrices use configured shell-pair
+threading. Shell/primitive functions evaluate one block serially. Strict
+`out=` arrays are returned unchanged. Differentiating the translation identity
+in the moment section adds both `i*d(k_mu-k_nu)/dB*I` and
+`i*(k_mu-k_nu)*dI/dB`; even at B=0, raw mixed AO matrices need not have a zero
+translation sum. Tests check this covariant identity, including potential
+and gauge-centre contributions where applicable.

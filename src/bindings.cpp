@@ -1791,4 +1791,186 @@ applied. out is a strict complex128 C-contiguous buffer. Native work releases
 the GIL; threads=None follows the configured library policy.
 )doc");
 
+    module.def("primitive_overlap_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,const py::object& field) {
+        const auto f=field_or_zero(field);
+        std::array<giao::Complex,18> values{};
+        { py::gil_scoped_release release;
+          values=giao::primitive_overlap_mixed_derivatives(a,b,f); }
+        return derivative_values(values,{2,3,3});
+    }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),
+    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+
+    module.def("overlap_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+            [&](auto values) { giao::compute_overlap_mixed_derivatives(a,b,f,values); });
+    }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+
+    module.def("overlap_mixed_derivatives", [](const giao::Basis& basis,const py::object& field,py::object output,const py::object& threads) {
+        const auto f=field_or_zero(field);
+        const auto thread_count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        return derivative_array(std::move(output),{static_cast<py::ssize_t>(basis.shells().size()),3,3,n,n},
+            [&](auto values) { giao::compute_overlap_mixed_derivative_matrices(basis,f,values,thread_count); });
+    },py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),
+    R"doc(Literal mixed d2I/dR dB, shape (nshell,3,3,nao,nao).
+
+Axes: shell centre, nuclear xyz, field xyz, bra AO, ket AO. Includes ordinary
+Gaussian and London centre/field/cross response; magnetic_kinetic also includes
+explicit operator field dependence. Gauge origin is fixed. No force sign.
+Strict out= buffers, GIL release, threads=None configured policy.
+)doc");
+
+    module.def("primitive_kinetic_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,const py::object& field) {
+        const auto f=field_or_zero(field);
+        std::array<giao::Complex,18> values{};
+        { py::gil_scoped_release release;
+          values=giao::primitive_kinetic_mixed_derivatives(a,b,f); }
+        return derivative_values(values,{2,3,3});
+    }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),
+    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+
+    module.def("kinetic_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+            [&](auto values) { giao::compute_kinetic_mixed_derivatives(a,b,f,values); });
+    }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+
+    module.def("kinetic_mixed_derivatives", [](const giao::Basis& basis,const py::object& field,py::object output,const py::object& threads) {
+        const auto f=field_or_zero(field);
+        const auto thread_count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        return derivative_array(std::move(output),{static_cast<py::ssize_t>(basis.shells().size()),3,3,n,n},
+            [&](auto values) { giao::compute_kinetic_mixed_derivative_matrices(basis,f,values,thread_count); });
+    },py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),
+    R"doc(Literal mixed d2I/dR dB, shape (nshell,3,3,nao,nao).
+
+Axes: shell centre, nuclear xyz, field xyz, bra AO, ket AO. Includes ordinary
+Gaussian and London centre/field/cross response; magnetic_kinetic also includes
+explicit operator field dependence. Gauge origin is fixed. No force sign.
+Strict out= buffers, GIL release, threads=None configured policy.
+)doc");
+
+    module.def("primitive_magnetic_kinetic_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,const py::object& field) {
+        const auto f=field_or_zero(field);
+        std::array<giao::Complex,18> values{};
+        { py::gil_scoped_release release;
+          values=giao::primitive_magnetic_kinetic_mixed_derivatives(a,b,f); }
+        return derivative_values(values,{2,3,3});
+    }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),
+    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+
+    module.def("magnetic_kinetic_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+            [&](auto values) { giao::compute_magnetic_kinetic_mixed_derivatives(a,b,f,values); });
+    }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+
+    module.def("magnetic_kinetic_mixed_derivatives", [](const giao::Basis& basis,const py::object& field,py::object output,const py::object& threads) {
+        const auto f=field_or_zero(field);
+        const auto thread_count=threads_from_python(threads);
+        const auto n=static_cast<py::ssize_t>(basis.ao_count());
+        return derivative_array(std::move(output),{static_cast<py::ssize_t>(basis.shells().size()),3,3,n,n},
+            [&](auto values) { giao::compute_magnetic_kinetic_mixed_derivative_matrices(basis,f,values,thread_count); });
+    },py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),
+    R"doc(Literal mixed d2I/dR dB, shape (nshell,3,3,nao,nao).
+
+Axes: shell centre, nuclear xyz, field xyz, bra AO, ket AO. Includes ordinary
+Gaussian and London centre/field/cross response; magnetic_kinetic also includes
+explicit operator field dependence. Gauge origin is fixed. No force sign.
+Strict out= buffers, GIL release, threads=None configured policy.
+)doc");
+
+    module.def("primitive_nuclear_attraction_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b, const std::vector<giao::Nucleus>& nuclei,const py::object& field) {
+        const auto f=field_or_zero(field);
+        std::array<giao::Complex,18> values{};
+        { py::gil_scoped_release release;
+          values=giao::primitive_nuclear_attraction_mixed_derivatives(a,b,nuclei,f); }
+        return derivative_values(values,{2,3,3});
+    }, py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),py::arg("field")=py::none(),
+    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+
+    module.def("nuclear_attraction_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b, const std::vector<giao::Nucleus>& nuclei,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+            [&](auto values) { giao::compute_nuclear_attraction_mixed_derivatives(a,b,nuclei,f,values); });
+    }, py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+
+    module.def("primitive_eri_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b, const giao::PrimitiveGaussian& c, const giao::PrimitiveGaussian& d,const py::object& field) {
+        const auto f=field_or_zero(field);
+        std::array<giao::Complex,36> values{};
+        { py::gil_scoped_release release;
+          values=giao::primitive_eri_mixed_derivatives(a,b,c,d,f); }
+        return derivative_values(values,{4,3,3});
+    }, py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),py::arg("field")=py::none(),
+    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+
+    module.def("eri_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b, const giao::Shell& c, const giao::Shell& d,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{4,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count()), static_cast<py::ssize_t>(c.ao_count()), static_cast<py::ssize_t>(d.ao_count())},
+            [&](auto values) { giao::compute_eri_mixed_derivatives(a,b,c,d,f,values); });
+    }, py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+
+    module.def("primitive_nuclear_attraction_nucleus_mixed_derivatives",[](const giao::PrimitiveGaussian& a,const giao::PrimitiveGaussian& b,
+        const std::vector<giao::Nucleus>& nuclei,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{static_cast<py::ssize_t>(nuclei.size()),3,3},
+            [&](auto values) { giao::primitive_nuclear_attraction_nucleus_mixed_derivatives(a,b,nuclei,f,values); });
+    },py::arg("a"),py::arg("b"),py::arg("nuclei"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Potential-centre mixed derivatives, axes (nucleus,nuclear axis,field axis,AO axes).");
+
+    module.def("nuclear_attraction_nucleus_mixed_derivatives_shell",[](const giao::Shell& a,const giao::Shell& b,
+        const std::vector<giao::Nucleus>& nuclei,const py::object& field,py::object output) {
+        const auto f=field_or_zero(field);
+        return derivative_array(std::move(output),{static_cast<py::ssize_t>(nuclei.size()),3,3,static_cast<py::ssize_t>(a.ao_count()),static_cast<py::ssize_t>(b.ao_count())},
+            [&](auto values) { giao::compute_nuclear_attraction_nucleus_mixed_derivatives(a,b,nuclei,f,values); });
+    },py::arg("a"),py::arg("b"),py::arg("nuclei"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
+    "Potential-centre mixed derivatives, axes (nucleus,nuclear axis,field axis,AO axes).");
+    module.def("nuclear_attraction_mixed_derivatives",
+        [](const giao::Basis& basis, const std::vector<giao::Nucleus>& nuclei,
+           const py::object& field, const py::object& output, const py::object& threads) {
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            py::object shell_out = py::none();
+            py::object nucleus_out = py::none();
+            if (!output.is_none()) {
+                if (!py::isinstance<py::tuple>(output) || py::len(output) != 2) {
+                    throw py::value_error("out must be None or a (shell_out, nucleus_out) tuple");
+                }
+                shell_out = output[py::int_(0)];
+                nucleus_out = output[py::int_(1)];
+            }
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            auto centers = validate_or_create_output(shell_out,
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, 3, n, n});
+            auto potentials = validate_or_create_output(nucleus_out, {static_cast<py::ssize_t>(nuclei.size()), 3, 3, n, n});
+            const auto first = reinterpret_cast<std::uintptr_t>(centers.data());
+            const auto second = reinterpret_cast<std::uintptr_t>(potentials.data());
+            if (centers.nbytes() != 0 && potentials.nbytes() != 0 &&
+                first < second + static_cast<std::uintptr_t>(potentials.nbytes()) &&
+                second < first + static_cast<std::uintptr_t>(centers.nbytes())) {
+                throw py::value_error("shell and potential outputs must not overlap");
+            }
+            { py::gil_scoped_release release;
+              giao::compute_nuclear_attraction_mixed_derivative_matrices(basis, nuclei, f,
+                  {static_cast<giao::Complex*>(centers.mutable_data()), static_cast<std::size_t>(centers.size())},
+                  {static_cast<giao::Complex*>(potentials.mutable_data()), static_cast<std::size_t>(potentials.size())}, thread_count); }
+            return py::make_tuple(centers, potentials);
+        }, py::arg("basis"), py::arg("nuclei"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Return (shell-centre,potential-centre) mixed attraction derivatives.
+
+Shapes (nshell,3,3,nao,nao), (nnucleus,3,3,nao,nao); axes are centre,
+nuclear xyz, field xyz, bra AO, ket AO. Literal d2I/dR dB, no force sign.
+Includes full Gaussian/London cross response at fixed gauge origin. The
+Coulomb operator has no explicit B term. out=(shell_out,nucleus_out) uses
+strict nonoverlapping buffers; either may be None. threads=None follows
+the configured policy; native work releases the GIL.
+)doc");
+
 }

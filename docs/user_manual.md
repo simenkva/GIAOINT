@@ -305,6 +305,26 @@ London response under the spatial operator. These APIs accept `out=` and
 `threads=None`; [validation](derivative_validation.md) includes independent
 reference/libcint checks and a 105-AO timing table.
 
+### Mixed nuclear/magnetic derivatives
+
+```python
+dRdB_S = gi.overlap_mixed_derivatives(mol.basis, field=mol.field)
+dRdB_T = gi.magnetic_kinetic_mixed_derivatives(mol.basis, field=mol.field)
+dRdB_V_shell, dRdB_V_nucleus = gi.nuclear_attraction_mixed_derivatives(
+    mol.basis, mol.nuclei, field=mol.field,
+)
+```
+
+The leading axes are `(centre, nuclear xyz, field xyz)`, followed by the AO
+matrix. Basis and attraction-potential centres are independent and returned
+separately. `kinetic_mixed_derivatives` supplies canonical kinetic response;
+`magnetic_kinetic_mixed_derivatives` includes the explicit physical operator
+field response. All hold the gauge origin fixed and return literal derivatives.
+ERI quartet response is `eri_mixed_derivatives_shell(a,b,c,d,field=mol.field)`,
+shape `(4,3,3,na,nb,nc,nd)`. See [API details](api.md) for output buffers,
+threading, translation covariance and extra angular-order requirements.
+These APIs require a source build after 0.9.0.
+
 ## 4. Where to go next
 
 - [Runnable examples](../examples/): scripts covering direct-basis

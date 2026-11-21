@@ -67,9 +67,44 @@ moment. Each four-thread output is bitwise identical to its serial reference:
 | Gradient magnetic | 0.115853 | 0.030501 | 0.505 |
 | Momentum magnetic | 0.116818 | 0.030771 | 0.505 |
 
+## Priority 3: mixed nuclear/magnetic derivatives
+
+49 mixed tests pass; the full Python suite has 590 passing tests. The tests
+cover overlap, canonical/physical magnetic kinetic, attraction basis/potential
+centres and ERI quartets, at zero and finite field with the same off-centre
+gauge. Primitive angular momentum reaches g. Two-dimensional central
+Richardson differences against value integrals use h=2e-3 in both coordinates;
+independent differences of first derivatives use h=4e-4 in each differentiation
+order. Maximum absolute deviation across all mixed validation comparisons:
+2.494e-10. Tests also use independent pure-Python value kernels for all five
+operators, check shell/basis assembly, same-shell accumulation, strict buffers,
+ERI symmetries, Hermiticity and differentiated translation covariance.
+
+`tests/external/mixed_derivatives_pyscf.py` checks H2O/cc-pVDZ (25 Cartesian AOs)
+at B=0. The overlap cross coefficient and Gaussian moment-response terms are
+built independently from libcint coordinate and `int1e_irp_cart` matrices.
+The physical-minus-canonical kinetic mixed response, grouped by atom, agrees
+with Richardson differences of the explicit angular-momentum operator built
+from libcint `irp`. Maximum libcint/Richardson disagreement: 1.210e-12.
+
+Same 105-AO finite-field benchmark as earlier priorities. The full mixed tensor
+is timed, not a single axis. Shifted-pair magnetic responses are cached across
+axes; no derivative is approximated numerically in production.
+
+| Mixed derivative | 1 thread seconds | 4 threads seconds | Output MiB |
+|---|---:|---:|---:|
+| Overlap | 0.536072 | 0.146368 | 15.141 |
+| Canonical kinetic | 5.826756 | 1.523662 | 15.141 |
+| Physical magnetic kinetic | 39.092522 | 10.170701 | 15.141 |
+| Attraction (basis + one Ne potential) | 18.249122 | 5.465344 | 16.655 |
+
+Every four-thread result is bitwise identical to serial. These are single local
+measurements with BLAS limited to one thread; the composed physical-kinetic
+kernel is still substantially more expensive than overlap.
+
 ## Remaining priorities
 
-Priority 3 adds mixed nuclear/magnetic derivatives. Priority 4 adds streamed
+Priority 4 adds streamed
 ERI derivative batches and derivative-specific screening/performance work.
 NMR shielding and spin–spin coupling require new nuclear magnetic operators;
 they remain possible later milestones, alongside the separately planned TD4.0

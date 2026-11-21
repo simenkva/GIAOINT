@@ -54,6 +54,48 @@ void compute_moment_magnetic_derivative_matrices(const Basis& basis,
     const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output,
     std::size_t threads = 1U);
 
+[[nodiscard]] std::array<Complex,18> primitive_overlap_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field = {});
+void compute_overlap_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output);
+void compute_overlap_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads=1U);
+[[nodiscard]] std::array<Complex,18> primitive_kinetic_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field = {});
+void compute_kinetic_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output);
+void compute_kinetic_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads=1U);
+[[nodiscard]] std::array<Complex,18> primitive_magnetic_kinetic_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field = {});
+void compute_magnetic_kinetic_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output);
+void compute_magnetic_kinetic_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads=1U);
+[[nodiscard]] std::array<Complex,18> primitive_nuclear_attraction_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    std::span<const Nucleus> nuclei, const MagneticField& field = {});
+void compute_nuclear_attraction_mixed_derivatives(const Shell& a, const Shell& b,
+    std::span<const Nucleus> nuclei, const MagneticField& field, std::span<Complex> output);
+// Mixed layouts: centre, nuclear axis, field axis, AO axes.
+[[nodiscard]] std::array<Complex,36> primitive_eri_mixed_derivatives(
+    const PrimitiveGaussian& a, const PrimitiveGaussian& b, const PrimitiveGaussian& c,
+    const PrimitiveGaussian& d, const MagneticField& field = {});
+void compute_eri_mixed_derivatives(const Shell& a, const Shell& b, const Shell& c,
+    const Shell& d, const MagneticField& field, std::span<Complex> output);
+void compute_nuclear_attraction_nucleus_mixed_derivatives(const Shell& a, const Shell& b,
+    std::span<const Nucleus> nuclei, const MagneticField& field, std::span<Complex> output);
+void primitive_nuclear_attraction_nucleus_mixed_derivatives(const PrimitiveGaussian& bra,
+    const PrimitiveGaussian& ket, std::span<const Nucleus> nuclei,
+    const MagneticField& field, std::span<Complex> output);
+void compute_nuclear_attraction_mixed_derivative_matrices(const Basis& basis,
+    std::span<const Nucleus> nuclei, const MagneticField& field,
+    std::span<Complex> shell_output, std::span<Complex> nucleus_output,
+    std::size_t threads=1U);
+
 // Literal derivatives of <a|(r-origin)^powers|b>, including London response.
 [[nodiscard]] std::array<Complex, 6> primitive_moment_center_derivatives(
     const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,

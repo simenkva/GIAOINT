@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <stdexcept>
 #include <vector>
 
@@ -157,6 +158,57 @@ pair_magnetic_derivatives(const PrimitiveGaussian& bra, const PrimitiveGaussian&
     return result;
 }
 
+
+template <typename Evaluator>
+Complex center_phase_field_response(const PrimitiveGaussian& raw, bool bra,
+    std::size_t nuclear_axis, std::size_t field_axis, Evaluator&& evaluate) {
+    const auto coefficient = cross(unit_vector(field_axis), unit_vector(nuclear_axis));
+    const double sign = bra ? 0.5 : -0.5;
+    Complex result{};
+    const Complex base = evaluate(raw);
+    for (std::size_t coordinate = 0; coordinate < 3U; ++coordinate) {
+        if (coefficient[coordinate] != 0.0) {
+            result += Complex{0.0, sign * coefficient[coordinate]} *
+                (evaluate(with_angular(raw, shifted(raw.angular, coordinate, 1))) +
+                 raw.center[coordinate] * base);
+        }
+    }
+    return result;
+}
+
+template <typename Value, typename Magnetic>
+std::array<Complex, 18> pair_mixed_derivatives(const PrimitiveGaussian& bra,
+    const PrimitiveGaussian& ket, const MagneticField& field,
+    Value&& value, Magnetic&& magnetic) {
+    const std::array<PrimitiveGaussian,2> raw{raw_primitive(bra),raw_primitive(ket)};
+    // A shifted pair is reused across field/nuclear axes. Cache its complete
+    // field response, preserving the value kernels and summation order.
+    std::map<std::array<std::uint16_t,6>,std::array<Complex,3>> magnetic_cache;
+    auto cached_magnetic = [&](const auto& a,const auto& b) -> const std::array<Complex,3>& {
+        const std::array<std::uint16_t,6> key{a.angular.x,a.angular.y,a.angular.z,
+                                              b.angular.x,b.angular.y,b.angular.z};
+        auto [it, inserted]=magnetic_cache.try_emplace(key);
+        if (inserted) { it->second=magnetic(a,b); }
+        return it->second;
+    };
+    std::array<Complex,18> result{};
+    for (std::size_t center = 0; center < 2U; ++center) {
+        for (std::size_t r = 0; r < 3U; ++r) {
+            for (std::size_t b = 0; b < 3U; ++b) {
+                auto eval_b = [&](const auto& changed) {
+                    return center == 0U ? cached_magnetic(changed,raw[1])[b] : cached_magnetic(raw[0],changed)[b];
+                };
+                auto eval = [&](const auto& changed) {
+                    return center == 0U ? value(changed,raw[1]) : value(raw[0],changed);
+                };
+                result[(center*3U+r)*3U+b] =
+                    center_response(raw[center],center==0U,r,field,eval_b) +
+                    center_phase_field_response(raw[center],center==0U,r,b,eval);
+            }
+        }
+    }
+    return result;
+}
 Complex coordinate_momentum(const PrimitiveGaussian& raw_bra,
                             const PrimitiveGaussian& raw_ket,
                             std::size_t coordinate_axis, std::size_t momentum_axis,
@@ -363,10 +415,10 @@ void compute_basis_magnetic_derivatives(const Basis& basis, std::span<Complex> o
 template <typename Evaluator>
 void property_derivative_matrices(const Basis& basis, std::size_t other_count,
     std::span<Complex> centers, std::span<Complex> other, std::size_t threads,
-    Evaluator&& evaluate) {
+    Evaluator&& evaluate, std::size_t components = 3U) {
     const auto nshell = basis.shells().size();
     const auto nao = basis.ao_count();
-    if (centers.size() != nshell * 3U * nao * nao ||
+    if (centers.size() != nshell * components * nao * nao ||
         other.size() != other_count * nao * nao) {
         throw std::length_error("property derivative matrix output has an incorrect size");
     }
@@ -378,19 +430,19 @@ void property_derivative_matrices(const Basis& basis, std::size_t other_count,
         const auto& a = basis.shells()[sa];
         const auto& b = basis.shells()[sb];
         const auto size = shell_pair_size(a, b);
-        std::vector<Complex> block((6U + other_count) * size);
+        std::vector<Complex> block((2U * components + other_count) * size);
         evaluate(a, b, block);
         for (std::size_t i = 0; i < a.ao_count(); ++i) {
             for (std::size_t j = 0; j < b.ao_count(); ++j) {
                 const auto local = i * b.ao_count() + j;
                 const auto global = (basis.ao_offsets()[sa] + i) * nao +
                                     basis.ao_offsets()[sb] + j;
-                for (std::size_t axis = 0; axis < 3U; ++axis) {
-                    centers[(sa * 3U + axis) * nao * nao + global] += block[axis * size + local];
-                    centers[(sb * 3U + axis) * nao * nao + global] += block[(3U + axis) * size + local];
+                for (std::size_t axis = 0; axis < components; ++axis) {
+                    centers[(sa * components + axis) * nao * nao + global] += block[axis * size + local];
+                    centers[(sb * components + axis) * nao * nao + global] += block[(components + axis) * size + local];
                 }
                 for (std::size_t k = 0; k < other_count; ++k) {
-                    other[k * nao * nao + global] = block[(6U + k) * size + local];
+                    other[k * nao * nao + global] = block[(2U * components + k) * size + local];
                 }
             }
         }
@@ -423,6 +475,113 @@ void property_magnetic_matrices(const Basis& basis, std::span<Complex> output,
         }
     });
 }
+template <std::size_t derivative_count, typename Evaluator>
+void compute_quartet_block(const Shell& a, const Shell& b, const Shell& c,
+    const Shell& d, std::span<Complex> output, Evaluator&& evaluate) {
+    const std::size_t block_size = shell_quartet_size(a, b, c, d);
+    if (output.size() != derivative_count * block_size) {
+        throw std::length_error(
+            "center-derivative shell-quartet output has an incorrect size");
+    }
+    std::fill(output.begin(), output.end(), Complex{});
+    const std::array<const Shell*, 4> shells{&a, &b, &c, &d};
+    std::array<std::vector<double>, 4> normalizations;
+    for (std::size_t shell = 0; shell < 4U; ++shell) {
+        normalizations[shell].resize(shells[shell]->cartesian_count() *
+                                     shells[shell]->primitive_count());
+        for (std::size_t component = 0; component < shells[shell]->cartesian_count();
+             ++component) {
+            for (std::size_t primitive = 0;
+                 primitive < shells[shell]->primitive_count(); ++primitive) {
+                normalizations[shell][component * shells[shell]->primitive_count() +
+                                      primitive] =
+                    primitive_normalization(shells[shell]->exponents()[primitive],
+                                            shells[shell]->components()[component]);
+            }
+        }
+    }
+    for (std::size_t pa = 0; pa < a.primitive_count(); ++pa) {
+        for (std::size_t pb = 0; pb < b.primitive_count(); ++pb) {
+            for (std::size_t pc = 0; pc < c.primitive_count(); ++pc) {
+                for (std::size_t pd = 0; pd < d.primitive_count(); ++pd) {
+                    for (std::size_t ca = 0; ca < a.cartesian_count(); ++ca) {
+                        for (std::size_t cb = 0; cb < b.cartesian_count(); ++cb) {
+                            for (std::size_t cc = 0; cc < c.cartesian_count(); ++cc) {
+                                for (std::size_t cd = 0; cd < d.cartesian_count();
+                                     ++cd) {
+                                    const PrimitiveGaussian ga(
+                                        a.exponents()[pa], a.center(),
+                                        a.components()[ca],
+                                        normalizations[0]
+                                                      [ca * a.primitive_count() + pa],
+                                        false);
+                                    const PrimitiveGaussian gb(
+                                        b.exponents()[pb], b.center(),
+                                        b.components()[cb],
+                                        normalizations[1]
+                                                      [cb * b.primitive_count() + pb],
+                                        false);
+                                    const PrimitiveGaussian gc(
+                                        c.exponents()[pc], c.center(),
+                                        c.components()[cc],
+                                        normalizations[2]
+                                                      [cc * c.primitive_count() + pc],
+                                        false);
+                                    const PrimitiveGaussian gd(
+                                        d.exponents()[pd], d.center(),
+                                        d.components()[cd],
+                                        normalizations[3]
+                                                      [cd * d.primitive_count() + pd],
+                                        false);
+                                    const auto values =
+                                        evaluate(ga, gb, gc, gd);
+                                    for (std::size_t xa = 0; xa < a.contraction_count();
+                                         ++xa) {
+                                        const auto aoa = xa * a.cartesian_count() + ca;
+                                        for (std::size_t xb = 0;
+                                             xb < b.contraction_count(); ++xb) {
+                                            const auto aob =
+                                                xb * b.cartesian_count() + cb;
+                                            for (std::size_t xc = 0;
+                                                 xc < c.contraction_count(); ++xc) {
+                                                const auto aoc =
+                                                    xc * c.cartesian_count() + cc;
+                                                for (std::size_t xd = 0;
+                                                     xd < d.contraction_count(); ++xd) {
+                                                    const auto aod =
+                                                        xd * d.cartesian_count() + cd;
+                                                    const double weight =
+                                                        a.coefficient(xa, pa) *
+                                                        b.coefficient(xb, pb) *
+                                                        c.coefficient(xc, pc) *
+                                                        d.coefficient(xd, pd);
+                                                    const std::size_t element =
+                                                        ((aoa * b.ao_count() + aob) *
+                                                             c.ao_count() +
+                                                         aoc) *
+                                                            d.ao_count() +
+                                                        aod;
+                                                    for (std::size_t derivative = 0;
+                                                         derivative < derivative_count;
+                                                         ++derivative) {
+                                                        output[derivative * block_size +
+                                                               element] +=
+                                                            weight * values[derivative];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 } // namespace
 
@@ -747,211 +906,25 @@ void compute_nuclear_attraction_nucleus_derivatives(const Shell& a, const Shell&
     }
 }
 
-void compute_eri_center_derivatives(const Shell& a, const Shell& b, const Shell& c,
-                                    const Shell& d, const MagneticField& field,
-                                    std::span<Complex> output) {
-    const std::size_t block_size = shell_quartet_size(a, b, c, d);
-    if (output.size() != 12U * block_size) {
-        throw std::length_error(
-            "center-derivative shell-quartet output has an incorrect size");
-    }
-    std::fill(output.begin(), output.end(), Complex{});
-    const std::array<const Shell*, 4> shells{&a, &b, &c, &d};
-    std::array<std::vector<double>, 4> normalizations;
-    for (std::size_t shell = 0; shell < 4U; ++shell) {
-        normalizations[shell].resize(shells[shell]->cartesian_count() *
-                                     shells[shell]->primitive_count());
-        for (std::size_t component = 0; component < shells[shell]->cartesian_count();
-             ++component) {
-            for (std::size_t primitive = 0;
-                 primitive < shells[shell]->primitive_count(); ++primitive) {
-                normalizations[shell][component * shells[shell]->primitive_count() +
-                                      primitive] =
-                    primitive_normalization(shells[shell]->exponents()[primitive],
-                                            shells[shell]->components()[component]);
-            }
-        }
-    }
-    for (std::size_t pa = 0; pa < a.primitive_count(); ++pa) {
-        for (std::size_t pb = 0; pb < b.primitive_count(); ++pb) {
-            for (std::size_t pc = 0; pc < c.primitive_count(); ++pc) {
-                for (std::size_t pd = 0; pd < d.primitive_count(); ++pd) {
-                    for (std::size_t ca = 0; ca < a.cartesian_count(); ++ca) {
-                        for (std::size_t cb = 0; cb < b.cartesian_count(); ++cb) {
-                            for (std::size_t cc = 0; cc < c.cartesian_count(); ++cc) {
-                                for (std::size_t cd = 0; cd < d.cartesian_count();
-                                     ++cd) {
-                                    const PrimitiveGaussian ga(
-                                        a.exponents()[pa], a.center(),
-                                        a.components()[ca],
-                                        normalizations[0]
-                                                      [ca * a.primitive_count() + pa],
-                                        false);
-                                    const PrimitiveGaussian gb(
-                                        b.exponents()[pb], b.center(),
-                                        b.components()[cb],
-                                        normalizations[1]
-                                                      [cb * b.primitive_count() + pb],
-                                        false);
-                                    const PrimitiveGaussian gc(
-                                        c.exponents()[pc], c.center(),
-                                        c.components()[cc],
-                                        normalizations[2]
-                                                      [cc * c.primitive_count() + pc],
-                                        false);
-                                    const PrimitiveGaussian gd(
-                                        d.exponents()[pd], d.center(),
-                                        d.components()[cd],
-                                        normalizations[3]
-                                                      [cd * d.primitive_count() + pd],
-                                        false);
-                                    const auto values =
-                                        primitive_eri_center_derivatives(ga, gb, gc, gd,
-                                                                         field);
-                                    for (std::size_t xa = 0; xa < a.contraction_count();
-                                         ++xa) {
-                                        const auto aoa = xa * a.cartesian_count() + ca;
-                                        for (std::size_t xb = 0;
-                                             xb < b.contraction_count(); ++xb) {
-                                            const auto aob =
-                                                xb * b.cartesian_count() + cb;
-                                            for (std::size_t xc = 0;
-                                                 xc < c.contraction_count(); ++xc) {
-                                                const auto aoc =
-                                                    xc * c.cartesian_count() + cc;
-                                                for (std::size_t xd = 0;
-                                                     xd < d.contraction_count(); ++xd) {
-                                                    const auto aod =
-                                                        xd * d.cartesian_count() + cd;
-                                                    const double weight =
-                                                        a.coefficient(xa, pa) *
-                                                        b.coefficient(xb, pb) *
-                                                        c.coefficient(xc, pc) *
-                                                        d.coefficient(xd, pd);
-                                                    const std::size_t element =
-                                                        ((aoa * b.ao_count() + aob) *
-                                                             c.ao_count() +
-                                                         aoc) *
-                                                            d.ao_count() +
-                                                        aod;
-                                                    for (std::size_t derivative = 0;
-                                                         derivative < 12U;
-                                                         ++derivative) {
-                                                        output[derivative * block_size +
-                                                               element] +=
-                                                            weight * values[derivative];
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+void compute_eri_center_derivatives(const Shell& a, const Shell& b,
+    const Shell& c, const Shell& d, const MagneticField& field, std::span<Complex> output) {
+    compute_quartet_block<12U>(a,b,c,d,output,[&](const auto& ga,const auto& gb,const auto& gc,const auto& gd) {
+        return primitive_eri_center_derivatives(ga,gb,gc,gd,field);
+    });
 }
 
-void compute_eri_magnetic_derivatives(const Shell& a, const Shell& b, const Shell& c,
-                                      const Shell& d, const MagneticField& field,
-                                      std::span<Complex> output) {
-    // Reuse the center-derivative contraction structure through a direct,
-    // component-preserving primitive loop in the small correctness-first M7 path.
-    const std::size_t block_size = shell_quartet_size(a, b, c, d);
-    if (output.size() != axis_count * block_size) {
-        throw std::length_error(
-            "magnetic-derivative shell-quartet output has an incorrect size");
-    }
-    std::fill(output.begin(), output.end(), Complex{});
-    const std::array<const Shell*, 4> shells{&a, &b, &c, &d};
-    std::array<std::vector<double>, 4> normalizations;
-    for (std::size_t shell = 0; shell < 4U; ++shell) {
-        normalizations[shell].resize(shells[shell]->cartesian_count() *
-                                     shells[shell]->primitive_count());
-        for (std::size_t component = 0; component < shells[shell]->cartesian_count();
-             ++component) {
-            for (std::size_t primitive = 0;
-                 primitive < shells[shell]->primitive_count(); ++primitive) {
-                normalizations[shell][component * shells[shell]->primitive_count() +
-                                      primitive] =
-                    primitive_normalization(shells[shell]->exponents()[primitive],
-                                            shells[shell]->components()[component]);
-            }
-        }
-    }
-    for (std::size_t pa = 0; pa < a.primitive_count(); ++pa)
-        for (std::size_t pb = 0; pb < b.primitive_count(); ++pb)
-            for (std::size_t pc = 0; pc < c.primitive_count(); ++pc)
-                for (std::size_t pd = 0; pd < d.primitive_count(); ++pd)
-                    for (std::size_t ca = 0; ca < a.cartesian_count(); ++ca)
-                        for (std::size_t cb = 0; cb < b.cartesian_count(); ++cb)
-                            for (std::size_t cc = 0; cc < c.cartesian_count(); ++cc)
-                                for (std::size_t cd = 0; cd < d.cartesian_count();
-                                     ++cd) {
-                                    const PrimitiveGaussian ga(
-                                        a.exponents()[pa], a.center(),
-                                        a.components()[ca],
-                                        normalizations[0]
-                                                      [ca * a.primitive_count() + pa],
-                                        false);
-                                    const PrimitiveGaussian gb(
-                                        b.exponents()[pb], b.center(),
-                                        b.components()[cb],
-                                        normalizations[1]
-                                                      [cb * b.primitive_count() + pb],
-                                        false);
-                                    const PrimitiveGaussian gc(
-                                        c.exponents()[pc], c.center(),
-                                        c.components()[cc],
-                                        normalizations[2]
-                                                      [cc * c.primitive_count() + pc],
-                                        false);
-                                    const PrimitiveGaussian gd(
-                                        d.exponents()[pd], d.center(),
-                                        d.components()[cd],
-                                        normalizations[3]
-                                                      [cd * d.primitive_count() + pd],
-                                        false);
-                                    const auto values =
-                                        primitive_eri_magnetic_derivatives(ga, gb, gc,
-                                                                           gd, field);
-                                    for (std::size_t xa = 0; xa < a.contraction_count();
-                                         ++xa)
-                                        for (std::size_t xb = 0;
-                                             xb < b.contraction_count(); ++xb)
-                                            for (std::size_t xc = 0;
-                                                 xc < c.contraction_count(); ++xc)
-                                                for (std::size_t xd = 0;
-                                                     xd < d.contraction_count(); ++xd) {
-                                                    const auto aoa =
-                                                        xa * a.cartesian_count() + ca;
-                                                    const auto aob =
-                                                        xb * b.cartesian_count() + cb;
-                                                    const auto aoc =
-                                                        xc * c.cartesian_count() + cc;
-                                                    const auto aod =
-                                                        xd * d.cartesian_count() + cd;
-                                                    const double weight =
-                                                        a.coefficient(xa, pa) *
-                                                        b.coefficient(xb, pb) *
-                                                        c.coefficient(xc, pc) *
-                                                        d.coefficient(xd, pd);
-                                                    const std::size_t element =
-                                                        ((aoa * b.ao_count() + aob) *
-                                                             c.ao_count() +
-                                                         aoc) *
-                                                            d.ao_count() +
-                                                        aod;
-                                                    for (std::size_t axis = 0;
-                                                         axis < axis_count; ++axis)
-                                                        output[axis * block_size +
-                                                               element] +=
-                                                            weight * values[axis];
-                                                }
-                                }
+void compute_eri_magnetic_derivatives(const Shell& a, const Shell& b,
+    const Shell& c, const Shell& d, const MagneticField& field, std::span<Complex> output) {
+    compute_quartet_block<3U>(a,b,c,d,output,[&](const auto& ga,const auto& gb,const auto& gc,const auto& gd) {
+        return primitive_eri_magnetic_derivatives(ga,gb,gc,gd,field);
+    });
+}
+
+void compute_eri_mixed_derivatives(const Shell& a, const Shell& b,
+    const Shell& c, const Shell& d, const MagneticField& field, std::span<Complex> output) {
+    compute_quartet_block<36U>(a,b,c,d,output,[&](const auto& ga,const auto& gb,const auto& gc,const auto& gd) {
+        return primitive_eri_mixed_derivatives(ga,gb,gc,gd,field);
+    });
 }
 
 #define GIAO_DEFINE_BASIS_DERIVATIVES(NAME)                                            \
@@ -1147,6 +1120,162 @@ void compute_moment_magnetic_derivative_matrices(const Basis& basis,
         [&](const Shell& a, const Shell& b, std::span<Complex> block) {
             compute_moment_magnetic_derivatives(a, b, moment, field, block);
         });
+}
+
+std::array<Complex,18> primitive_overlap_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_mixed_derivatives(bra,ket,field,
+        [&](const auto& a,const auto& b) { return primitive_overlap(a,b,field,workspace); },
+        [&](const auto& a,const auto& b) { return primitive_overlap_magnetic_derivatives(a,b,field); });
+}
+
+void compute_overlap_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<18U>(a,b,output,[&](const auto& bra,const auto& ket) {
+        return primitive_overlap_mixed_derivatives(bra,ket,field);
+    });
+}
+
+void compute_overlap_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads) {
+    property_derivative_matrices(basis,0U,output,{},threads,
+        [&](const auto& a,const auto& b,std::span<Complex> block) { compute_overlap_mixed_derivatives(a,b,field,block); },9U);
+}
+
+std::array<Complex,18> primitive_kinetic_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_mixed_derivatives(bra,ket,field,
+        [&](const auto& a,const auto& b) { return primitive_kinetic(a,b,field,workspace); },
+        [&](const auto& a,const auto& b) { return primitive_kinetic_magnetic_derivatives(a,b,field); });
+}
+
+void compute_kinetic_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<18U>(a,b,output,[&](const auto& bra,const auto& ket) {
+        return primitive_kinetic_mixed_derivatives(bra,ket,field);
+    });
+}
+
+void compute_kinetic_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads) {
+    property_derivative_matrices(basis,0U,output,{},threads,
+        [&](const auto& a,const auto& b,std::span<Complex> block) { compute_kinetic_mixed_derivatives(a,b,field,block); },9U);
+}
+
+std::array<Complex,18> primitive_magnetic_kinetic_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_mixed_derivatives(bra,ket,field,
+        [&](const auto& a,const auto& b) { return primitive_magnetic_kinetic(a,b,field,workspace); },
+        [&](const auto& a,const auto& b) { return primitive_magnetic_kinetic_magnetic_derivatives(a,b,field); });
+}
+
+void compute_magnetic_kinetic_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<18U>(a,b,output,[&](const auto& bra,const auto& ket) {
+        return primitive_magnetic_kinetic_mixed_derivatives(bra,ket,field);
+    });
+}
+
+void compute_magnetic_kinetic_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads) {
+    property_derivative_matrices(basis,0U,output,{},threads,
+        [&](const auto& a,const auto& b,std::span<Complex> block) { compute_magnetic_kinetic_mixed_derivatives(a,b,field,block); },9U);
+}
+
+std::array<Complex,18> primitive_nuclear_attraction_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    std::span<const Nucleus> nuclei, const MagneticField& field) {
+    NuclearAttractionWorkspace workspace;
+    return pair_mixed_derivatives(bra,ket,field,
+        [&](const auto& a,const auto& b) { return primitive_nuclear_attraction(a,b,nuclei, field,workspace); },
+        [&](const auto& a,const auto& b) { return primitive_nuclear_attraction_magnetic_derivatives(a,b,nuclei, field); });
+}
+
+void compute_nuclear_attraction_mixed_derivatives(const Shell& a, const Shell& b,
+    std::span<const Nucleus> nuclei, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<18U>(a,b,output,[&](const auto& bra,const auto& ket) {
+        return primitive_nuclear_attraction_mixed_derivatives(bra,ket,nuclei, field);
+    });
+}
+
+std::array<Complex,36> primitive_eri_mixed_derivatives(
+    const PrimitiveGaussian& a, const PrimitiveGaussian& b, const PrimitiveGaussian& c,
+    const PrimitiveGaussian& d, const MagneticField& field) {
+    const std::array<PrimitiveGaussian,4> raw{raw_primitive(a),raw_primitive(b),raw_primitive(c),raw_primitive(d)};
+    EriWorkspace workspace;
+    std::array<Complex,36> result{};
+    for (std::size_t center=0; center<4U; ++center) {
+        for (std::size_t r=0; r<3U; ++r) {
+            for (std::size_t axis=0; axis<3U; ++axis) {
+                auto value = [&](const auto& changed) {
+                    auto p=raw; p[center]=changed;
+                    return primitive_eri(p[0],p[1],p[2],p[3],field,workspace);
+                };
+                auto magnetic = [&](const auto& changed) {
+                    auto p=raw; p[center]=changed;
+                    return primitive_eri_magnetic_derivatives(p[0],p[1],p[2],p[3],field)[axis];
+                };
+                result[(center*3U+r)*3U+axis] = center_response(raw[center],center%2U==0U,r,field,magnetic) +
+                    center_phase_field_response(raw[center],center%2U==0U,r,axis,value);
+            }
+        }
+    }
+    return result;
+}
+
+void primitive_nuclear_attraction_nucleus_mixed_derivatives(const PrimitiveGaussian& bra,
+    const PrimitiveGaussian& ket, std::span<const Nucleus> nuclei,
+    const MagneticField& field, std::span<Complex> output) {
+    if (output.size()!=nuclei.size()*9U) {
+        throw std::length_error("nucleus mixed output has an incorrect size");
+    }
+    for (std::size_t nucleus=0; nucleus<nuclei.size(); ++nucleus) {
+        const std::span<const Nucleus> single(&nuclei[nucleus],1U);
+        for (std::size_t axis=0; axis<3U; ++axis) {
+            const auto response=pair_magnetic_derivatives(bra,ket,field,
+                [&](const auto& a,const auto& b) {
+                    std::array<Complex,3> derivatives{};
+                    primitive_nuclear_attraction_nucleus_derivatives(a,b,single,field,derivatives);
+                    return derivatives[axis];
+                });
+            for (std::size_t b=0; b<3U; ++b) {
+                output[(nucleus*3U+axis)*3U+b]=response[b];
+            }
+        }
+    }
+}
+
+void compute_nuclear_attraction_nucleus_mixed_derivatives(const Shell& a, const Shell& b,
+    std::span<const Nucleus> nuclei, const MagneticField& field, std::span<Complex> output) {
+    const auto size=shell_pair_size(a,b);
+    if (output.size()!=nuclei.size()*9U*size) {
+        throw std::length_error("nucleus mixed shell output has an incorrect size");
+    }
+    for (std::size_t nucleus=0; nucleus<nuclei.size(); ++nucleus) {
+        const std::span<const Nucleus> single(&nuclei[nucleus],1U);
+        compute_pair_block<9U>(a,b,output.subspan(nucleus*9U*size,9U*size),[&](const auto& bra,const auto& ket) {
+            std::array<Complex,9> result{};
+            primitive_nuclear_attraction_nucleus_mixed_derivatives(bra,ket,single,field,result);
+            return result;
+        });
+    }
+}
+
+void compute_nuclear_attraction_mixed_derivative_matrices(const Basis& basis,
+    std::span<const Nucleus> nuclei, const MagneticField& field,
+    std::span<Complex> centers, std::span<Complex> potential, std::size_t threads) {
+    property_derivative_matrices(basis,nuclei.size()*9U,centers,potential,threads,
+        [&](const Shell& a,const Shell& b,std::span<Complex> block) {
+            const auto size=shell_pair_size(a,b);
+            compute_nuclear_attraction_mixed_derivatives(a,b,nuclei,field,block.first(18U*size));
+            compute_nuclear_attraction_nucleus_mixed_derivatives(a,b,nuclei,field,block.subspan(18U*size));
+        },9U);
 }
 
 } // namespace giao

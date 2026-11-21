@@ -206,7 +206,8 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
   a separate moment-origin response, strict output buffers and shell-pair
   threading. Priority 2 adds gradient/momentum nuclear derivatives and magnetic
   derivatives of moments, gradients and momentum. See `docs/derivative_validation.md`.
-  Mixed nuclear/magnetic derivatives remain to be added.
+  Priority 3 adds mixed nuclear/magnetic derivatives for overlap, both kinetic
+  operators, separate attraction basis/potential centres and ERI quartets.
 - Production functions are Cartesian only. Spherical transformation is a
   documented future design, not an implemented API.
 
@@ -289,5 +290,5 @@ thread comparisons, see [the validation report](docs/release_0_9_report.md).
 Milestones 0--9 and the Cholesky API are implemented, and 0.9.0 is published
 on PyPI. Future releases follow `docs/release_checklist.md`. A separately validated
 spherical transformation layer and preparation of a 1.0 API freeze remain candidate work. Mixed
-nuclear/magnetic derivatives remain deferred. Further finite-field ERI work
+nuclear/magnetic derivatives are now implemented in the post-0.9.0 source API. Further finite-field ERI work
 can use the remaining costs recorded in `docs/eri_performance_plan.md`.

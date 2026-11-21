@@ -18,6 +18,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--threads", nargs="+", type=int, default=[1])
     parser.add_argument("--basis", default="aug-cc-pVQZ")
+    parser.add_argument(
+        "--mixed", action="store_true", help="include mixed derivatives"
+    )
     args = parser.parse_args()
     mol = gi.Molecule(
         [("Ne", (0.1, -0.2, 0.3))],
@@ -86,6 +89,26 @@ def main():
             ),
         ),
     ]
+    if args.mixed:
+        for operator in ["overlap", "kinetic", "magnetic_kinetic"]:
+            calls.append(
+                (
+                    operator + " mixed",
+                    lambda t, op=operator: (
+                        getattr(gi, op + "_mixed_derivatives")(
+                            mol.basis, field=mol.field, threads=t
+                        ),
+                    ),
+                )
+            )
+        calls.append(
+            (
+                "attraction mixed",
+                lambda t: gi.nuclear_attraction_mixed_derivatives(
+                    mol.basis, mol.nuclei, field=mol.field, threads=t
+                ),
+            )
+        )
     for name, function in calls:
         reference = None
         for threads in args.threads:
