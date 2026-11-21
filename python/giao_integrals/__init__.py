@@ -43,6 +43,7 @@ from ._giao_integrals import (
     moment_center_derivatives_shell,
     moment_magnetic_derivatives,
     moment_magnetic_derivatives_shell,
+    moment_mixed_derivatives,
     moment_nuclear_derivatives,
     moment_origin_derivatives_shell,
     moment_shell,
@@ -108,6 +109,7 @@ from ._giao_integrals import (
 )
 from ._threads import build_info, set_num_threads
 from .cholesky import CholeskyERI, cholesky_eri
+from .derivative_assembly import eri_derivative_contraction
 from .eri import (
     EriBatch,
     EriDerivativeBatch,
@@ -127,6 +129,7 @@ __all__ = [
     "EriBatch",
     "EriDerivativeBatch",
     "eri_derivative_batches",
+    "eri_derivative_contraction",
     "MagneticField",
     "MolecularIntegrals",
     "Molecule",
@@ -180,6 +183,7 @@ __all__ = [
     "primitive_moment_magnetic_derivatives",
     "moment_magnetic_derivatives_shell",
     "moment_magnetic_derivatives",
+    "moment_mixed_derivatives",
     "primitive_overlap_mixed_derivatives",
     "overlap_mixed_derivatives_shell",
     "overlap_mixed_derivatives",

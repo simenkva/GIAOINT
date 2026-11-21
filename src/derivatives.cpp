@@ -1411,4 +1411,48 @@ void compute_eri_derivative_blocks(const Basis& basis,
     });
 }
 
+std::array<Complex,18> primitive_moment_mixed_derivatives(
+    const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    const CartesianMoment& moment,const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_mixed_derivatives(bra,ket,field,
+        [&](const auto& a,const auto& b) {return primitive_moment(a,b, moment,field,workspace);},
+        [&](const auto& a,const auto& b) {return primitive_moment_magnetic_derivatives(a,b,moment,field);});
+}
+std::array<Complex,9> primitive_moment_origin_magnetic_derivatives(
+    const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    const CartesianMoment& moment,const MagneticField& field) {
+    std::array<Complex,9> result{};
+    for (std::size_t r=0;r<3U;++r) {
+        if (moment.powers[r]!=0U) {
+            const auto lower=primitive_moment_magnetic_derivatives(bra,ket,
+                CartesianMoment(moment.origin,shifted(moment.powers,r,-1)),field);
+            for (std::size_t b=0;b<3U;++b) {result[r*3U+b]=-static_cast<double>(moment.powers[r])*lower[b];}
+        }
+    }
+    return result;
+}
+void compute_moment_mixed_derivatives(const Shell& a,const Shell& b,
+    const CartesianMoment& moment,const MagneticField& field,std::span<Complex> output) {
+    compute_pair_block<18U>(a,b,output,[&](const auto& bra,const auto& ket) {
+        return primitive_moment_mixed_derivatives(bra,ket,moment,field);
+    });
+}
+void compute_moment_origin_magnetic_derivatives(const Shell& a,const Shell& b,
+    const CartesianMoment& moment,const MagneticField& field,std::span<Complex> output) {
+    compute_pair_block<9U>(a,b,output,[&](const auto& bra,const auto& ket) {
+        return primitive_moment_origin_magnetic_derivatives(bra,ket,moment,field);
+    });
+}
+void compute_moment_mixed_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment,const MagneticField& field,
+    std::span<Complex> centers,std::span<Complex> origin,std::size_t threads) {
+    property_derivative_matrices(basis,9U,centers,origin,threads,
+        [&](const Shell& a,const Shell& b,std::span<Complex> block) {
+            const auto size=shell_pair_size(a,b);
+            compute_moment_mixed_derivatives(a,b,moment,field,block.first(18U*size));
+            compute_moment_origin_magnetic_derivatives(a,b,moment,field,block.subspan(18U*size));
+        },9U);
+}
+
 } // namespace giao

@@ -98,6 +98,20 @@ void compute_nuclear_attraction_mixed_derivative_matrices(const Basis& basis,
     std::span<Complex> shell_output, std::span<Complex> nucleus_output,
     std::size_t threads=1U);
 
+[[nodiscard]] std::array<Complex,18> primitive_moment_mixed_derivatives(
+    const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    const CartesianMoment& moment,const MagneticField& field = {});
+[[nodiscard]] std::array<Complex,9> primitive_moment_origin_magnetic_derivatives(
+    const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    const CartesianMoment& moment,const MagneticField& field = {});
+void compute_moment_mixed_derivatives(const Shell& a,const Shell& b,
+    const CartesianMoment& moment,const MagneticField& field,std::span<Complex> output);
+void compute_moment_origin_magnetic_derivatives(const Shell& a,const Shell& b,
+    const CartesianMoment& moment,const MagneticField& field,std::span<Complex> output);
+void compute_moment_mixed_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment,const MagneticField& field,
+    std::span<Complex> centers,std::span<Complex> origin,std::size_t threads=1U);
+
 // Literal derivatives of <a|(r-origin)^powers|b>, including London response.
 [[nodiscard]] std::array<Complex, 6> primitive_moment_center_derivatives(
     const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,

@@ -907,3 +907,58 @@ kernels. Mixed-derivative screening is not provided by this API.
 The installed C++ `EriDerivativeSchwarzBounds` exposes `quartet_bound()` and
 basis/field matching. `compute_eri_derivative_blocks` fills caller-owned packed
 buffers with explicit cumulative element offsets and native quartet threading.
+
+## VICE gradient assembly (0.11 preparation)
+
+`Molecule` supplies `overlap_nuclear_derivatives`, `kinetic_nuclear_derivatives`,
+`magnetic_kinetic_nuclear_derivatives`, `nuclear_attraction_nuclear_derivatives`
+and `moment_nuclear_derivatives(powers, *, origin=...)`. Non-moment calls return
+`(natom,3,nao,nao)`. The attraction call includes both shell-centre terms and
+the potential-centre term for the owning atom. The moment call returns
+`(atom_response, origin_response)`, with origin shape `(3,nao,nao)`; that origin
+is independent and is **not assigned to any atom**. All accept strict `out=`
+(moment: a tuple of buffers) and configured `threads=None`.
+
+The corresponding `*_mixed_derivatives` methods return `(natom,3,3,nao,nao)`;
+axes are atom, nuclear xyz, field xyz, AO axes. Moment origin response has
+shape `(3,3,nao,nao)` and remains separate. `gi.moment_mixed_derivatives` exposes
+the lower-level shell layout `(nshell,3,3,nao,nao)` plus the same separate
+origin response. Gauge origin is fixed; London and, for physical kinetic,
+explicit operator field response are included. No charge or force signs.
+
+```python
+gradient = mol.eri_derivative_contraction(
+    coulomb_pairs=[(P, Q)], exchange_pairs=[(R, S)], gamma=None,
+    target_bytes=8*1024**2, screening_threshold=0.0, threads=None,
+)
+```
+
+The free function is `gi.eri_derivative_contraction(basis, shell_atoms, natom,
+*, field, coulomb_pairs, exchange_pairs, gamma, target_bytes,
+screening_threshold, threads, out)`. Each density contribution is added to a
+complex128 `(natom,3)` result, with exactly these indices:
+
+- Coulomb: `sum d(mu nu|lam sig)/dR[A,r] * P[nu,mu] * Q[sig,lam]`.
+- Exchange: `sum d(mu nu|lam sig)/dR[A,r] * P[nu,lam] * Q[sig,mu]`.
+- Dense: `sum d(mu nu|lam sig)/dR[A,r] * gamma[mu,nu,lam,sig]`.
+
+There is no implicit conjugation of densities, spin/exchange/force sign or
+factor of 1/2. Non-Hermitian complex densities are accepted; the result is not
+forced real. Matrices P/Q are converted to contiguous complex128; gamma must
+already be C-contiguous float64 or complex128 and is read without copying.
+Strict `out=` is returned exactly and must not overlap density inputs.
+
+The native contraction expands canonical images `(0,1,2,3)`, `(2,3,0,1)`,
+`(1,0,3,2)` and `(3,2,1,0)`; only the derivative is conjugated for the last
+two. Both AO axes and centre slots follow the permutation. Equal **shell**
+images are counted once; all AO entries within a block are still included.
+No real eight-fold assumption is made, including at B=0. Repeated slots add
+into their owning atom. Each quartet is contracted in a fixed scalar order,
+then twelve local partial sums per quartet are accumulated in canonical/slot
+order, giving bitwise thread- and batch-boundary equality.
+
+Memory is a bounded packed derivative batch plus twelve complex sums per
+quartet, native recurrence workspace and input densities. No full AO derivative
+tensor or extra dense gamma copy is formed. Screening is off by default and
+uses the existing per-component bound; it does not bound the final density
+contraction error. Native computation releases the GIL.

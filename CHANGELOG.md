@@ -2,6 +2,19 @@
 
 ## Unreleased (0.11.0 preparation)
 
+### VICE item 4 — per-atom derivative and density contraction helpers
+
+Added Molecule one-electron nuclear/mixed derivatives in atom layout, including
+attraction potential-centre ownership and separate moment-origin response.
+Added mixed moment/origin kernels needed by that interface. Added streamed
+native Coulomb, exchange and dense two-particle-density ERI derivative
+contractions with explicit indices, no implicit density conjugation or force
+factors, deterministic reductions, and opt-in derivative-specific screening.
+Canonical orbit expansion permutes AO axes and centre slots and removes only
+duplicate shell-quartet images. Dense gamma is read without copying; no full
+AO derivative tensor is constructed. Tests use explicit ordered-quartet
+contractions, finite differences and exact thread/batch-boundary comparisons.
+
 ### VICE item 3 — deterministic selected-integral Cholesky backend
 
 Profiled the 152-AO Ne case: NumPy vector/residual updates account for under
