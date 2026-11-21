@@ -9,10 +9,10 @@ the lower-level API below takes atomic units throughout.
 The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 
-This overview describes the 0.9.0 release candidate, including streamed
-Cholesky and configured Python thread defaults. Signatures below are condensed;
+This overview describes the published 0.9.0 API and subsequent derivative additions,
+including streamed Cholesky and configured Python thread defaults. Signatures below are condensed;
 installed headers and Python docstrings give individual overload details.
-Cross-platform wheel validation has passed; publication remains pending.
+Version 0.9.0 is published; derivative additions below require a source checkout.
 See [release validation](release_0_9_report.md).
 
 All positions, Gaussian exponents, moment origins, magnetic fields, energies,
@@ -672,8 +672,7 @@ a molecular atom derivative.
 
 All shell and basis derivative functions support strict `out=` buffers and
 release the GIL. ERI derivatives are shell-quartet only; the API does not
-allocate an automatic derivative of the full fourth-rank AO tensor. Mixed
-nuclear/magnetic derivatives and derivatives of Cholesky vectors are not exposed
+allocate an automatic derivative of the full fourth-rank AO tensor. Derivatives of Cholesky vectors are not exposed
 in 0.9.
 
 ## 8. Errors and reproducibility
@@ -695,3 +694,201 @@ The compatibility boundary and staged warning mechanism are specified in
 [`compatibility.md`](compatibility.md). In particular, changes to units,
 normalization, ordering, shapes, or finite-field symmetries count as API
 changes rather than ordinary numerical refinements.
+
+## Moment nuclear derivatives (Priority 1, after 0.9.0)
+
+```python
+shell_response, origin_response = gi.moment_nuclear_derivatives(
+    basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=None,
+    out=None, threads=None,
+)
+```
+
+This differentiates `moment(basis, powers, origin=origin, field=field)` literally,
+with no force or electronic-charge sign. The tuple has shapes
+`(nshell, 3, nao, nao)` and `(3, nao, nao)`, respectively. Each shell centre is
+an independent coordinate; if bra and ket belong to the same shell, both
+responses are accumulated. Sum shell entries with `Molecule.shell_atoms` to
+obtain atom contributions. `origin_response` differentiates the moment origin,
+not the magnetic gauge origin, and is returned separately.
+
+All non-negative Cartesian powers supported by the value kernel are accepted,
+including monopoles, dipoles, quadrupoles and higher moments. The exact origin
+identity is `dI/dO_k = -powers[k] * I(powers-e_k)` (zero if that power is zero).
+Basis derivatives include ordinary Gaussian and London-phase centre response,
+at fixed field, gauge origin and moment origin. The operator has no explicit
+field dependence and no electronic-charge factor.
+
+`out=(shell_array, origin_array)` fills and returns the exact buffers; either
+entry may be `None`. Buffers must be writable, C-contiguous `complex128`, have
+exact shapes and not overlap. `threads=None` follows the configured thread
+policy, including serial-build fallback; explicit unsupported parallel counts
+raise. Shell-pair tasks are parallel, with unchanged primitive summation order.
+Native computations release the GIL.
+
+Related primitive/shell entry points:
+
+- `primitive_moment_center_derivatives(a, b, powers, *, origin, field)` → `(2,3)`.
+- `primitive_moment_origin_derivatives(a, b, powers, *, origin, field)` → `(3,)`.
+- `moment_center_derivatives_shell(a, b, powers, *, origin, field, out)` → `(2,3,na,nb)`.
+- `moment_origin_derivatives_shell(a, b, powers, *, origin, field, out)` → `(3,na,nb)`.
+
+The installed C++ header `derivatives.hpp` exposes corresponding primitive,
+shell and basis functions; C++ thread counts default to one.
+
+**Translation convention:** raw London AO matrices acquire a phase under
+translation. With `k_mu = B × (R_mu-G)/2`, translating all basis centres, the
+moment origin and gauge origin together gives
+`sum_s dI/dR_s,k + dI/dO_k + dI/dG_k = i*(k_mu-k_nu)[k]*I_mu,nu`.
+The gauge-origin derivative of this multiplicative moment matrix is zero.
+At zero field the sum is zero; at finite field it is the covariant identity
+above. A literal zero sum for raw finite-field matrices would contradict the
+existing value and derivative conventions.
+
+## Other property derivatives (Priority 2, after 0.9.0)
+
+```python
+dR_gradient = gi.gradient_nuclear_derivatives(basis, "x", field=field, threads=None)
+dR_momentum = gi.momentum_nuclear_derivatives(basis, "x", field=field, threads=None)
+dB_gradient = gi.gradient_magnetic_derivatives(basis, "x", field=field, threads=None)
+dB_momentum = gi.momentum_magnetic_derivatives(basis, "x", field=field, threads=None)
+dB_moment = gi.moment_magnetic_derivatives(
+    basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=field, threads=None,
+)
+```
+
+Each function also accepts a strict `out=` buffer and returns that exact buffer.
+The property component is `"x"`, `"y"` or `"z"`; it is independent of the
+leading derivative axis. Nuclear outputs are `(nshell,3,nao,nao)`, magnetic
+outputs `(3,nao,nao)`. No electronic-charge or force sign is applied.
+Gradient is the ket spatial derivative; momentum is canonical `-i*gradient`.
+They do not include a vector-potential term. Field derivatives hold the gauge
+origin (and moment origin) fixed, include the complete London response, and
+have no additional explicit operator B dependence. In particular, differentiating
+the ket gradient includes the derivative of its London wave vector; retaining
+only the pair-phase derivative would be incomplete.
+
+Primitive variants are `primitive_{gradient,momentum}_center_derivatives`,
+`primitive_{gradient,momentum}_magnetic_derivatives`, and
+`primitive_moment_magnetic_derivatives`, with the same property argument.
+Shell variants replace `primitive_` by an empty prefix and append `_shell`;
+they support `out=` and have the same leading derivative dimensions as the
+existing shell APIs. All native computation releases the GIL. Basis matrix
+assembly uses the same configured shell-pair threading policy as Priority 1.
+
+## Mixed nuclear/magnetic derivatives (Priority 3, after 0.9.0)
+
+For `overlap`, `kinetic` and `magnetic_kinetic`:
+
+```python
+mixed = gi.overlap_mixed_derivatives(basis, field=field, out=None, threads=None)
+```
+
+The result is `(nshell,3,3,nao,nao)` with axes
+`(shell centre, nuclear xyz, field xyz, bra AO, ket AO)`. It is literally
+`d²I/(dR dB)`, with fixed gauge origin and no hidden force sign. Shell functions
+are `*_mixed_derivatives_shell(a,b,*,field,out)`, with leading `(2,3,3)`;
+primitive functions are `primitive_*_mixed_derivatives(a,b,*,field)`, shape
+`(2,3,3)`. Gaussian, London centre/field, and the cross derivative of the London
+centre coefficient are all included. Physical `magnetic_kinetic` additionally
+includes the explicit B dependence of `1/2*(p+A)^2`; canonical `kinetic` does not
+include the vector-potential operator.
+
+```python
+shell_mixed, potential_mixed = gi.nuclear_attraction_mixed_derivatives(
+    basis, nuclei, field=field, out=None, threads=None,
+)
+```
+
+The shapes are `(nshell,3,3,nao,nao)` and `(nnucleus,3,3,nao,nao)`.
+The Coulomb potential has no explicit B dependence. Potential centres remain
+independent of basis centres; assemble atom derivatives using ownership, as
+with first derivatives. `out=(shell_out,nucleus_out)` supports separately
+allocated strict buffers; either may be `None`, and overlap is rejected.
+`nuclear_attraction_mixed_derivatives_shell` and
+`primitive_nuclear_attraction_mixed_derivatives` give the basis-centre parts;
+`nuclear_attraction_nucleus_mixed_derivatives_shell` and
+`primitive_nuclear_attraction_nucleus_mixed_derivatives` give the separate
+potential-centre parts, with leading `(nnucleus,3,3)`.
+
+```python
+quartet_mixed = gi.eri_mixed_derivatives_shell(a, b, c, d, field=field, out=None)
+```
+
+Shape: `(4,3,3,na,nb,nc,nd)`, centre slots in quartet order, nuclear axis then
+field axis. `primitive_eri_mixed_derivatives` returns `(4,3,3)`. These include
+London response of all four functions, obey pair exchange and simultaneous
+conjugate reversal with the corresponding centre-slot permutation, and retain
+the value kernel's angular/workspace admission limits (including the extra
+shifted powers needed by differentiation).
+
+All native paths release the GIL; basis matrices use configured shell-pair
+threading. Shell/primitive functions evaluate one block serially. Strict
+`out=` arrays are returned unchanged. Differentiating the translation identity
+in the moment section adds both `i*d(k_mu-k_nu)/dB*I` and
+`i*(k_mu-k_nu)*dI/dB`; even at B=0, raw mixed AO matrices need not have a zero
+translation sum. Tests check this covariant identity, including potential
+and gauge-centre contributions where applicable.
+
+## Streamed ERI centre derivatives (Priority 4, after 0.9.0)
+
+```python
+for batch in gi.eri_derivative_batches(
+    basis, field=field, quartets=None, target_bytes=64 * 1024**2,
+    screening_threshold=0.0, threads=None,
+):
+    for index, quartet in enumerate(batch.quartets):
+        derivative = batch.block(index)
+```
+
+`Molecule.eri_derivative_batches` forwards the same options with its basis and
+field. `EriDerivativeBatch` has the same `quartets`, `shapes`, `offsets`, `values`,
+`requested_count`, `screened_count` interface as `EriBatch`. Shapes have six
+columns, and `block(index)` is a view shaped `(4,3,na,nb,nc,nd)`.
+The first axis is the quartet's four *slots*, not unique atoms or shells.
+Repeated shell slots must be added when assembling a shell or atom derivative;
+use `mol.shell_atoms` to map the quartet's shell indices to atoms.
+
+Without explicit quartets, emit canonical representatives under exactly the
+finite-field ERI symmetries. Pair exchange and simultaneous conjugate reversal
+also permute the leading centre-slot axis: permutations `(2,3,0,1)` and
+`(1,0,3,2)`, respectively, together with the same AO-axis permutations.
+Explicit quartets are evaluated in input order, including duplicates.
+
+`target_bytes` bounds packed complex derivative values in a batch. A single
+oversized quartet is emitted alone. Small metadata arrays, per-thread native
+workspaces and optional `O(nshell²)` screening bounds are additional. Batches
+are evaluated directly into their NumPy packed buffers without a second full
+output copy. Release batches after contraction to keep consumer memory bounded;
+collecting all batches in a list retains all their data. There is no automatic
+full `nao⁴` derivative allocation.
+
+Unscreened outputs preserve existing primitive summation order and are bitwise
+identical at different thread counts. Quartets are native parallel tasks; GIL
+release and the configured `threads=None` policy match the other new APIs.
+
+### Safe derivative screening
+
+Screening is disabled by default. Ordinary ERI Schwarz factors alone do not
+bound derivatives. For a pair density `rho_ab`, define the Coulomb norm
+`||rho||² = (rho*|rho)`. A differentiated density is a finite linear combination
+`d rho_ab = sum_t c_t rho_t` of shifted primitive pairs: Gaussian lowering and
+raising terms, plus London terms proportional to `r_k = (r_k-R_k)+R_k`.
+The implementation computes
+`D_ab >= max_(AO pair,slot,axis) sum_t |c_t| ||rho_t||`, including absolute
+contracted coefficients, and ordinary pair bounds `Q_ab`. The triangle and
+Coulomb Cauchy–Schwarz inequalities give the quartet-component bound
+`max(D_ab*Q_cd, Q_ab*D_cd)` for all twelve local derivatives. Self-norms use
+`(ba|ab)`, preserving complex ordered-pair conventions. Floating-point padding
+is added to the non-negative bounds.
+
+A quartet is omitted only if this derivative-specific bound is below
+`screening_threshold`. The guarantee applies to each omitted local component,
+not a subsequent sum over slots, atoms or quartets. Bound preparation can be
+expensive and is conservative for strongly contracted or oscillatory densities.
+Screening has the same shifted-integral admission limits as the derivative
+kernels. Mixed-derivative screening is not provided by this API.
+
+The installed C++ `EriDerivativeSchwarzBounds` exposes `quartet_bound()` and
+basis/field matching. `compute_eri_derivative_blocks` fills caller-owned packed
+buffers with explicit cumulative element offsets and native quartet threading.

@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased
+
+### Priority 4 — streamed ERI centre derivatives and safe screening
+
+Added `eri_derivative_batches` and `Molecule.eri_derivative_batches`, yielding
+packed `(4,3,na,nb,nc,nd)` blocks with native quartet threading and a configurable
+memory target. Optional derivative-density triangle/Coulomb Schwarz screening
+includes Gaussian and London centre terms; ordinary ERI bounds alone are not
+used to screen derivative blocks. Shared primitive pair geometry, workspaces
+and angular-shift caches remove repeated setup and evaluations in ERI centre,
+magnetic and mixed derivatives. Saved unscreened outputs remain bitwise unchanged.
+The optional density-contraction convenience helper is not included.
+
+### Priority 3 — mixed nuclear/magnetic derivatives
+
+Added literal mixed derivatives of overlap, canonical and physical magnetic
+kinetic, nuclear attraction (separate basis and potential centres), and ERI
+quartets. Layout is centre, nuclear axis, field axis, AO axes. Includes the
+London cross coefficient and explicit physical kinetic operator field terms;
+no finite differences are used in production. Supports strict output buffers,
+GIL release and configured basis-matrix threading. Common quartet contraction
+code now serves first and mixed derivatives without changing unscreened sums.
+
+### Priority 2 — gradient/momentum and property field derivatives
+
+Added literal nuclear derivatives for all components of gradient and canonical
+momentum, plus magnetic derivatives of general moments, gradient and momentum.
+Primitive/shell/basis APIs include all London-phase terms, release the GIL,
+accept strict outputs and use configured shell-pair threading at basis level.
+Field derivatives hold the origins fixed and include the ket wave-vector
+response under the spatial operator; no vector-potential term is added to
+canonical momentum. Validation includes Richardson differences through g,
+anti-/Hermiticity and independent reference/libcint comparisons.
+
+### Priority 1 — moment nuclear derivatives
+
+Added analytic primitive, shell and basis-centre moment derivatives, including
+London-phase response and separate moment-origin derivatives for general
+Cartesian powers. The basis API supports `out=(shell_out, origin_out)`, releases
+the GIL, and uses the configured thread policy with bitwise-equal shell-pair
+parallelism. Derivatives are literal coordinate derivatives, with no force or
+electronic-charge sign. See docs/derivative_validation.md for finite-difference,
+reference-engine, libcint and 105-AO timing results. These additions require a
+source build; PyPI 0.9.0 is unchanged.
+
 ## 0.9.0 — 20 November 2026
 
 Fixed macOS conda source builds to prefer the target interpreter's OpenMP

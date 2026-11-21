@@ -14,7 +14,9 @@ from ._giao_integrals import (
     Basis,
     MagneticField,
     _eri_batch,
+    _eri_derivative_batch,
     _eri_full,
+    _EriDerivativeSchwarzBounds,
     _EriSchwarzBounds,
 )
 from ._threads import resolve_num_threads
@@ -204,3 +206,83 @@ def eri_schwarz_bounds(
     """Return the shell-pair Schwarz factors used by ERI screening."""
 
     return np.asarray(_EriSchwarzBounds(basis, field=field).values, dtype=np.float64)
+
+
+@dataclass(frozen=True)
+class EriDerivativeBatch(EriBatch):
+    """Packed local centre derivatives, with blocks (4,3,na,nb,nc,nd).
+
+    Centre slots follow quartet order, independent even for repeated shells.
+    block() returns a view of values. Counts include screened requests.
+    """
+
+
+def eri_derivative_batches(
+    basis: Basis,
+    *,
+    field: MagneticField | None = None,
+    quartets: Iterable[Sequence[int]] | None = None,
+    target_bytes: int = 64 * 1024 * 1024,
+    screening_threshold: float = 0.0,
+    threads: int | None = None,
+) -> Iterator[EriDerivativeBatch]:
+    """Stream literal ERI centre derivatives without a full derivative AO tensor.
+
+    Each block has axes (quartet centre slot, nuclear xyz, mu, nu, lambda, sigma).
+    London-phase centre response is included, at fixed B and gauge origin.
+    Canonical quartets use only pair exchange and simultaneous conjugate reversal;
+    callers expanding symmetry must also permute the leading centre-slot axis.
+    Explicit quartets are emitted in the supplied order, without canonicalisation.
+
+    target_bytes bounds packed complex values per batch; a single oversized
+    quartet is emitted alone. Metadata, O(nshell**2) optional screening bounds,
+    and per-thread native workspaces are additional. No dense nao**4 array or
+    hidden full output copy is created. Consumers control retained batch memory.
+
+    Screening is off by default. Positive thresholds use derivative-density
+    triangle/Coulomb Schwarz bounds, including London terms; ordinary ERI
+    screening alone is not valid. Every omitted local derivative component is
+    bounded by screening_threshold (up to floating-point rounding). This is a
+    per-component bound, not a bound on a later sum over slots/atoms/quartets.
+    threads=None follows the configured policy; native work releases the GIL.
+    """
+    if (
+        isinstance(target_bytes, (bool, np.bool_))
+        or not isinstance(target_bytes, (int, np.integer))
+        or target_bytes <= 0
+    ):
+        raise ValueError("target_bytes must be a positive integer")
+    threshold = float(screening_threshold)
+    if not np.isfinite(threshold) or threshold < 0:
+        raise ValueError("screening_threshold must be finite and non-negative")
+    thread_count = resolve_num_threads(threads)
+    bounds = (
+        _EriDerivativeSchwarzBounds(basis, field=field, threads=thread_count)
+        if threshold > 0
+        else None
+    )
+    shells = basis.shells
+    packed: list[Quartet] = []
+    packed_bytes = 0
+
+    def emit() -> EriDerivativeBatch:
+        q, shapes, offsets, values, requested, screened = _eri_derivative_batch(
+            basis,
+            packed,
+            field=field,
+            screening_threshold=threshold,
+            threads=thread_count,
+            bounds=bounds,
+        )
+        return EriDerivativeBatch(q, shapes, offsets, values, requested, screened)
+
+    for quartet in _checked_quartets(len(shells), quartets):
+        block_bytes = 12 * prod(shells[index].ao_count for index in quartet) * 16
+        if packed and packed_bytes + block_bytes > target_bytes:
+            yield emit()
+            packed.clear()
+            packed_bytes = 0
+        packed.append(quartet)
+        packed_bytes += block_bytes
+    if packed:
+        yield emit()

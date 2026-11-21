@@ -19,6 +19,16 @@ and headers before Homebrew. The conda/OpenMP OpenBLAS regression, full CI,
 and repaired-wheel matrix pass for that correction; local conda validation
 passes 459 Python tests and the atom timing example at 1/2/4 threads.
 
+## Post-0.9.0 derivative additions
+
+All four requested derivative priorities are implemented in separate commits:
+new moment basis/origin response, remaining property nuclear/field response,
+mixed nuclear/magnetic response and streamed/safely screened ERI derivatives.
+The final 612-test suite, full cross-platform CI (including sanitizers), four
+optional libcint oracle scripts and repaired wheel/source builds pass. See
+[derivative validation and timings](docs/derivative_validation.md). These are
+source additions; no new release tag or PyPI upload has been created.
+
 ## Completed
 
 - Milestone 0 repository assessment.
@@ -196,14 +206,24 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
   limit. The optimized general kernel still accounts for 93% of finite-field
   dddd top-of-stack samples; see `benchmarks/results/m9_macos_arm64.md`.
   Basis-scale zero-field ERIs remain slower than libcint.
-- Derivative shell drivers are correctness-first compositions of shifted
-  production kernels. They are serial, do not yet use derivative screening,
-  and may repeat primitive setup.
+- Individual derivative shell blocks remain serial compositions of shifted
+  production kernels. New property/mixed matrix assembly and ERI centre-derivative
+  batches are threaded. ERI derivatives reuse pair geometry, workspace and
+  shifted-integral caches; centre-derivative batches support conservative
+  derivative-density Schwarz screening. Mixed-derivative screening and further
+  recurrence-level derivative optimisation remain future work.
 - The low-level `Basis` has no atom-to-shell ownership map. `Molecule` tracks
   ownership in `shell_atoms`; derivative APIs still return basis-center and
   attraction-potential-center contributions separately for callers to assemble.
-- Mixed nuclear/magnetic derivatives and derivatives of the general
-  moment/gradient/momentum property APIs are not yet exposed.
+- Moment nuclear derivatives (post-0.9.0 Priority 1) are implemented, including
+  a separate moment-origin response, strict output buffers and shell-pair
+  threading. Priority 2 adds gradient/momentum nuclear derivatives and magnetic
+  derivatives of moments, gradients and momentum. See `docs/derivative_validation.md`.
+  Priority 3 adds mixed nuclear/magnetic derivatives for overlap, both kinetic
+  operators, separate attraction basis/potential centres and ERI quartets.
+- NMR shielding and spin–spin coupling need nuclear-magnetic-moment vector
+  potentials and Fermi-contact/spin-dipole operators; these remain possible
+  later milestones. Cholesky-vector derivatives and TD4.0 work are separate.
 - Production functions are Cartesian only. Spherical transformation is a
   documented future design, not an implemented API.
 
@@ -286,5 +306,5 @@ thread comparisons, see [the validation report](docs/release_0_9_report.md).
 Milestones 0--9 and the Cholesky API are implemented, and 0.9.0 is published
 on PyPI. Future releases follow `docs/release_checklist.md`. A separately validated
 spherical transformation layer and preparation of a 1.0 API freeze remain candidate work. Mixed
-nuclear/magnetic derivatives remain deferred. Further finite-field ERI work
+nuclear/magnetic derivatives are now implemented in the post-0.9.0 source API. Further finite-field ERI work
 can use the remaining costs recorded in `docs/eri_performance_plan.md`.

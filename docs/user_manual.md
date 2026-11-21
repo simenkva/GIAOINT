@@ -266,6 +266,86 @@ dS = gi.overlap_magnetic_derivatives(mol.basis, field=mol.field)
 returns the Cartesian AO count; `mol.shell_atoms` returns each shell's
 zero-based owner atom.
 
+### Moment derivatives for electric-field gradients
+
+With a source build after 0.9.0, obtain basis-centre and moment-origin
+responses separately:
+
+```python
+dR, dO = gi.moment_nuclear_derivatives(
+    mol.basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=mol.field,
+)
+```
+
+`dR` has shape `(nshell, 3, nao, nao)` and includes London-phase centre
+response. `dO` has shape `(3, nao, nao)`; for an x dipole its x component is
+`-overlap`. These are literal derivatives of the unsigned coordinate moment,
+not forces or electronic dipole derivatives. Multiply by the sign and electric
+field coefficients used by your Hamiltonian. Sum `dR` over shells owned by each
+atom using `mol.shell_atoms`. Moment-origin contributions remain separate.
+General powers, strict `out=(shell_buffer, origin_buffer)`, and `threads=None`
+are supported. See [the API conventions](api.md#moment-nuclear-derivatives-priority-1-after-090)
+and [validation and timings](derivative_validation.md).
+
+### Gradient, momentum and property field derivatives
+
+With the post-0.9.0 source build, choose the property component separately
+from the derivative axis:
+
+```python
+dR_px = gi.momentum_nuclear_derivatives(mol.basis, "x", field=mol.field)
+dB_px = gi.momentum_magnetic_derivatives(mol.basis, "x", field=mol.field)
+dB_x = gi.moment_magnetic_derivatives(mol.basis, (1, 0, 0), field=mol.field)
+```
+
+Replace `momentum` with `gradient` for ket spatial derivatives; canonical
+momentum is `-i*gradient`. Nuclear shapes are `(nshell,3,nao,nao)` and field
+shapes `(3,nao,nao)`. Field derivatives hold both origins fixed and include
+London response under the spatial operator. These APIs accept `out=` and
+`threads=None`; [validation](derivative_validation.md) includes independent
+reference/libcint checks and a 105-AO timing table.
+
+### Mixed nuclear/magnetic derivatives
+
+```python
+dRdB_S = gi.overlap_mixed_derivatives(mol.basis, field=mol.field)
+dRdB_T = gi.magnetic_kinetic_mixed_derivatives(mol.basis, field=mol.field)
+dRdB_V_shell, dRdB_V_nucleus = gi.nuclear_attraction_mixed_derivatives(
+    mol.basis, mol.nuclei, field=mol.field,
+)
+```
+
+The leading axes are `(centre, nuclear xyz, field xyz)`, followed by the AO
+matrix. Basis and attraction-potential centres are independent and returned
+separately. `kinetic_mixed_derivatives` supplies canonical kinetic response;
+`magnetic_kinetic_mixed_derivatives` includes the explicit physical operator
+field response. All hold the gauge origin fixed and return literal derivatives.
+ERI quartet response is `eri_mixed_derivatives_shell(a,b,c,d,field=mol.field)`,
+shape `(4,3,3,na,nb,nc,nd)`. See [API details](api.md) for output buffers,
+threading, translation covariance and extra angular-order requirements.
+These APIs require a source build after 0.9.0.
+
+### Streaming ERI gradient blocks
+
+```python
+for batch in mol.eri_derivative_batches(target_bytes=8 * 1024**2, threads=None):
+    for index, quartet in enumerate(batch.quartets):
+        dERI = batch.block(index)  # (4,3,na,nb,nc,nd), a view
+        atoms = [mol.shell_atoms[int(shell)] for shell in quartet]
+        # Contract each centre slot into the owning atom's gradient here.
+```
+
+This post-0.9.0 interface replaces Python quartet-evaluation loops. It yields
+canonical finite-field quartets; expand symmetry with matching centre-slot
+permutations when your contraction requires all ordered quartets. Repeated
+shell/atom slots contribute separately and must be added. Explicit `quartets=`
+is also supported. The memory target counts derivative values, with at least
+one complete quartet per batch, plus metadata and native thread workspaces.
+`screening_threshold=0.0` preserves exact unscreened results. Positive thresholds
+use derivative-specific Coulomb bounds including London terms; see
+[the screening proof and conventions](api.md#safe-derivative-screening).
+The optional density-to-J/K gradient contraction helper is not part of this API.
+
 ## 4. Where to go next
 
 - [Runnable examples](../examples/): scripts covering direct-basis

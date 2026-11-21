@@ -5,13 +5,115 @@
 #include "giao_integrals/property.hpp"
 
 #include <array>
+#include <cstddef>
 #include <span>
+#include <vector>
 
 namespace giao {
 
 // Derivative buffers are row-major with the derivative indices leading:
 // pair-center [2,3,na,nb], magnetic [3,na,nb], nuclear potential
 // [nnucleus,3,na,nb], and quartet-center [4,3,na,nb,nc,nd].
+
+[[nodiscard]] std::array<Complex, 6> primitive_gradient_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_gradient_center_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_gradient_nuclear_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 3> primitive_gradient_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_gradient_magnetic_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_gradient_magnetic_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 6> primitive_momentum_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_momentum_center_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_momentum_nuclear_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 3> primitive_momentum_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_momentum_magnetic_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_momentum_magnetic_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 3> primitive_moment_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field = {});
+void compute_moment_magnetic_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output);
+void compute_moment_magnetic_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+
+[[nodiscard]] std::array<Complex,18> primitive_overlap_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field = {});
+void compute_overlap_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output);
+void compute_overlap_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads=1U);
+[[nodiscard]] std::array<Complex,18> primitive_kinetic_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field = {});
+void compute_kinetic_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output);
+void compute_kinetic_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads=1U);
+[[nodiscard]] std::array<Complex,18> primitive_magnetic_kinetic_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const MagneticField& field = {});
+void compute_magnetic_kinetic_mixed_derivatives(const Shell& a, const Shell& b,
+    const MagneticField& field, std::span<Complex> output);
+void compute_magnetic_kinetic_mixed_derivative_matrices(const Basis& basis,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads=1U);
+[[nodiscard]] std::array<Complex,18> primitive_nuclear_attraction_mixed_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    std::span<const Nucleus> nuclei, const MagneticField& field = {});
+void compute_nuclear_attraction_mixed_derivatives(const Shell& a, const Shell& b,
+    std::span<const Nucleus> nuclei, const MagneticField& field, std::span<Complex> output);
+// Mixed layouts: centre, nuclear axis, field axis, AO axes.
+[[nodiscard]] std::array<Complex,36> primitive_eri_mixed_derivatives(
+    const PrimitiveGaussian& a, const PrimitiveGaussian& b, const PrimitiveGaussian& c,
+    const PrimitiveGaussian& d, const MagneticField& field = {});
+void compute_eri_mixed_derivatives(const Shell& a, const Shell& b, const Shell& c,
+    const Shell& d, const MagneticField& field, std::span<Complex> output);
+void compute_nuclear_attraction_nucleus_mixed_derivatives(const Shell& a, const Shell& b,
+    std::span<const Nucleus> nuclei, const MagneticField& field, std::span<Complex> output);
+void primitive_nuclear_attraction_nucleus_mixed_derivatives(const PrimitiveGaussian& bra,
+    const PrimitiveGaussian& ket, std::span<const Nucleus> nuclei,
+    const MagneticField& field, std::span<Complex> output);
+void compute_nuclear_attraction_mixed_derivative_matrices(const Basis& basis,
+    std::span<const Nucleus> nuclei, const MagneticField& field,
+    std::span<Complex> shell_output, std::span<Complex> nucleus_output,
+    std::size_t threads=1U);
+
+// Literal derivatives of <a|(r-origin)^powers|b>, including London response.
+[[nodiscard]] std::array<Complex, 6> primitive_moment_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field = {});
+[[nodiscard]] std::array<Complex, 3> primitive_moment_origin_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field = {});
+void compute_moment_center_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output);
+void compute_moment_origin_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output);
+// shell_output [nshell,3,nao,nao]; origin_output [3,nao,nao].
+void compute_moment_nuclear_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment, const MagneticField& field,
+    std::span<Complex> shell_output, std::span<Complex> origin_output,
+    std::size_t threads = 1U);
 
 [[nodiscard]] std::array<Complex, 6>
 primitive_overlap_center_derivatives(const PrimitiveGaussian& bra,
@@ -122,5 +224,26 @@ void compute_nuclear_attraction_nuclear_derivative_matrices(
 void compute_nuclear_attraction_magnetic_derivative_matrices(
     const Basis& basis, std::span<const Nucleus> nuclei, const MagneticField& field,
     std::span<Complex> output);
+
+// Triangle/Coulomb Schwarz bounds for all 12 local quartet-centre components.
+// Includes Gaussian and London-phase terms; ordinary ERI bounds alone are unsafe.
+class EriDerivativeSchwarzBounds {
+  public:
+    explicit EriDerivativeSchwarzBounds(const Basis& basis,
+        const MagneticField& field = {}, std::size_t threads = 1U);
+    [[nodiscard]] double quartet_bound(ShellQuartetIndex quartet) const;
+    [[nodiscard]] bool matches(const Basis& basis,const MagneticField& field) const noexcept;
+    [[nodiscard]] std::span<const double> values() const noexcept { return values_; }
+    [[nodiscard]] std::size_t shell_count() const noexcept { return ordinary_.shell_count(); }
+  private:
+    EriSchwarzBounds ordinary_;
+    std::vector<double> values_;
+};
+
+// Fill concatenated [4,3,na,nb,nc,nd] blocks, using explicit cumulative offsets.
+// No full AO tensor or hidden copy is allocated. Quartet summation order is fixed.
+void compute_eri_derivative_blocks(const Basis& basis,
+    std::span<const ShellQuartetIndex> quartets, std::span<const std::size_t> offsets,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads = 1U);
 
 } // namespace giao
