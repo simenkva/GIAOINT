@@ -48,7 +48,7 @@ def test_molecular_cache_reconstruction_and_threads(field, monkeypatch):
             assert other.max_residual_diagonal == reference.max_residual_diagonal
 
 
-@pytest.mark.parametrize("field,rank", zip(FIELDS, (656, 668), strict=True))
+@pytest.mark.parametrize("field,rank", list(zip(FIELDS, (656, 668), strict=True)))
 def test_cc_pvtz_reproducer_rank_and_bound(field, rank):
     mol = gi.Molecule(WATER, "cc-pVTZ", unit="bohr", field=field)
     count = 2 if gi.openmp_enabled() else 1

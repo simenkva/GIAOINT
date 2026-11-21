@@ -190,7 +190,10 @@ def cholesky_eri(
         pivot = int(np.argmax(residual))
         if contracted and not real and pivot_batch_size > 1 and len(block_candidates):
             local = int(block_candidates[np.argmax(residual[block_candidates])])
-            if residual[local] > tolerance and residual[local] >= 0.01 * residual[pivot]:
+            if (
+                residual[local] > tolerance
+                and residual[local] >= 0.01 * residual[pivot]
+            ):
                 pivot = local
         rank = len(pivots)
         if rank >= limit:
