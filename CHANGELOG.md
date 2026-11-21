@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Priority 1 — moment nuclear derivatives
+
+Added analytic primitive, shell and basis-centre moment derivatives, including
+London-phase response and separate moment-origin derivatives for general
+Cartesian powers. The basis API supports `out=(shell_out, origin_out)`, releases
+the GIL, and uses the configured thread policy with bitwise-equal shell-pair
+parallelism. Derivatives are literal coordinate derivatives, with no force or
+electronic-charge sign. See docs/derivative_validation.md for finite-difference,
+reference-engine, libcint and 105-AO timing results. These additions require a
+source build; PyPI 0.9.0 is unchanged.
+
 ## 0.9.0 — 20 November 2026
 
 Fixed macOS conda source builds to prefer the target interpreter's OpenMP

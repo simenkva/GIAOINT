@@ -1470,4 +1470,95 @@ PYBIND11_MODULE(_giao_integrals, module) {
         },
         py::arg("basis"), py::arg("nuclei"), py::kw_only(),
         py::arg("field") = py::none(), py::arg("out") = py::none());
+    module.def("primitive_moment_center_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const py::object& powers, const py::object& origin, const py::object& field) {
+            const auto moment = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 6> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_moment_center_derivatives(a, b, moment, f); }
+            return derivative_values(values, {2, 3});
+        }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(),
+        py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        "Literal centre derivatives, shape (2,3), including London-phase response.");
+    module.def("primitive_moment_origin_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const py::object& powers, const py::object& origin, const py::object& field) {
+            const auto moment = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 3> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_moment_origin_derivatives(a, b, moment, f); }
+            return derivative_values(values, {3});
+        }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(),
+        py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        "Moment-origin derivatives: -p_axis times the corresponding lower moment.");
+    module.def("moment_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& powers,
+           const py::object& origin, const py::object& field, py::object output) {
+            const auto moment = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {2, 3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_moment_center_derivatives(a, b, moment, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(),
+        py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), "Literal derivatives, shape (2,3,na,nb), at fixed moment/gauge origins.");
+    module.def("moment_origin_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& powers,
+           const py::object& origin, const py::object& field, py::object output) {
+            const auto moment = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_moment_origin_derivatives(a, b, moment, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(),
+        py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), "Moment-origin derivatives, shape (3,na,nb).");
+    module.def("moment_nuclear_derivatives",
+        [](const giao::Basis& basis, const py::object& powers, const py::object& origin,
+           const py::object& field, const py::object& output, const py::object& threads) {
+            const auto moment = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            py::object shell_out = py::none();
+            py::object origin_out = py::none();
+            if (!output.is_none()) {
+                if (!py::isinstance<py::tuple>(output) || py::len(output) != 2) {
+                    throw py::value_error("out must be None or a (shell_out, origin_out) tuple");
+                }
+                shell_out = output[py::int_(0)];
+                origin_out = output[py::int_(1)];
+            }
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            auto centers = validate_or_create_output(shell_out,
+                {static_cast<py::ssize_t>(basis.shells().size()), 3, n, n});
+            auto origins = validate_or_create_output(origin_out, {3, n, n});
+            const auto first = reinterpret_cast<std::uintptr_t>(centers.data());
+            const auto second = reinterpret_cast<std::uintptr_t>(origins.data());
+            if (centers.nbytes() != 0 && origins.nbytes() != 0 &&
+                first < second + static_cast<std::uintptr_t>(origins.nbytes()) &&
+                second < first + static_cast<std::uintptr_t>(centers.nbytes())) {
+                throw py::value_error("shell and origin outputs must not overlap");
+            }
+            { py::gil_scoped_release release;
+              giao::compute_moment_nuclear_derivative_matrices(basis, moment, f,
+                  {static_cast<giao::Complex*>(centers.mutable_data()), static_cast<std::size_t>(centers.size())},
+                  {static_cast<giao::Complex*>(origins.mutable_data()), static_cast<std::size_t>(origins.size())}, thread_count); }
+            return py::make_tuple(centers, origins);
+        }, py::arg("basis"), py::arg("powers"), py::kw_only(),
+        py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Return (basis-centre, moment-origin) derivatives of <mu|(r-origin)^powers|nu>.
+
+Shapes are (nshell,3,nao,nao) and (3,nao,nao), complex128, in existing AO order.
+Derivatives are literally dI/dR and dI/dorigin, with no force/electronic-charge sign.
+Includes ordinary Gaussian and London-phase centre response, at fixed B and
+fixed gauge origin. General non-negative Cartesian powers are supported within
+the value kernel's angular limits. out=(shell_array, origin_array) fills and
+returns those exact arrays (either may be None); buffers must not overlap.
+threads=None uses the configured library policy. Native work releases the GIL.
+)doc");
+
 }

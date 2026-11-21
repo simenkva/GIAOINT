@@ -1,0 +1,49 @@
+# Additional derivative integrals: validation and timings
+
+Each priority is a separate releasable implementation step after PyPI 0.9.0.
+No new PyPI version is published by this work.
+
+## Priority 1: moment nuclear and moment-origin derivatives
+
+Validated on 21 November 2026, macOS arm64, CPython 3.13 and AppleClang.
+`tests/python/test_moment_derivatives.py` passes 35 checks, covering every
+Cartesian power of total degree ≤2, a higher `(3,1,0)` moment, zero and finite
+B=(0.17,-0.11,0.23) with off-centre gauge G=(0.2,-0.3,0.1), normalised primitive
+functions through g, general contractions, same-shell accumulation, Hermiticity,
+strict output buffers and serial/parallel equality. Two-step central differences
+use h=4e-4 bohr and h/2 with Richardson extrapolation. The largest absolute
+validation deviation is 2.699e-12. Independent pure-Python reference finite
+differences also pass. Gaussian and London-phase terms are checked separately.
+
+The optional `tests/external/moment_derivatives_pyscf.py` compares H2O/cc-pVDZ
+(25 Cartesian AOs) to PySCF 2.8.0/libcint `int1e_irp_cart`, using identical bohr
+coordinates, origin and Cartesian normalisation. Ket spatial derivatives have
+the opposite sign to centre derivatives; bra contributions use transpose.
+Maximum centre-derivative disagreement: 1.332e-15. Origin derivatives agree
+with the exact `-overlap` dipole identity.
+
+Translation is tested in the raw London AO convention: the derivative sum
+including moment and gauge origins is `i*(k_mu-k_nu)*I`, and vanishes at B=0.
+A literal zero sum at finite B is incompatible with these existing AO phases.
+This convention is documented in [the API](api.md).
+
+`benchmarks/property_derivatives.py --threads 1 4` times the x-moment nuclear
+and origin derivatives for Ne/aug-cc-pVQZ: 105 Cartesian AOs, 10 shells,
+B=(0.05,-0.03,0.2), G=(0.37,-0.29,0.43), O=(0.2,0.3,-0.1). BLAS is limited
+to one thread. Basis construction and equality checks are excluded.
+
+| Threads | Seconds | Output MiB | Equality |
+|---:|---:|---:|---|
+| 1 | 0.150322 | 5.552 | Reference |
+| 4 | 0.040469 | 5.552 | Bitwise identical |
+
+These are single local measurements, not portable speedup guarantees.
+
+## Remaining priorities
+
+Priority 2 adds gradient/momentum centre and property magnetic derivatives.
+Priority 3 adds mixed nuclear/magnetic derivatives. Priority 4 adds streamed
+ERI derivative batches and derivative-specific screening/performance work.
+NMR shielding and spin–spin coupling require new nuclear magnetic operators;
+they remain possible later milestones, alongside the separately planned TD4.0
+work. Cholesky-vector derivatives remain out of scope.

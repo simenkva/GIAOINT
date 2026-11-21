@@ -266,6 +266,27 @@ dS = gi.overlap_magnetic_derivatives(mol.basis, field=mol.field)
 returns the Cartesian AO count; `mol.shell_atoms` returns each shell's
 zero-based owner atom.
 
+### Moment derivatives for electric-field gradients
+
+With a source build after 0.9.0, obtain basis-centre and moment-origin
+responses separately:
+
+```python
+dR, dO = gi.moment_nuclear_derivatives(
+    mol.basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=mol.field,
+)
+```
+
+`dR` has shape `(nshell, 3, nao, nao)` and includes London-phase centre
+response. `dO` has shape `(3, nao, nao)`; for an x dipole its x component is
+`-overlap`. These are literal derivatives of the unsigned coordinate moment,
+not forces or electronic dipole derivatives. Multiply by the sign and electric
+field coefficients used by your Hamiltonian. Sum `dR` over shells owned by each
+atom using `mol.shell_atoms`. Moment-origin contributions remain separate.
+General powers, strict `out=(shell_buffer, origin_buffer)`, and `threads=None`
+are supported. See [the API conventions](api.md#moment-nuclear-derivatives-priority-1-after-090)
+and [validation and timings](derivative_validation.md).
+
 ## 4. Where to go next
 
 - [Runnable examples](../examples/): scripts covering direct-basis

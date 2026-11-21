@@ -1,4 +1,5 @@
 #include "giao_integrals/derivatives.hpp"
+#include "parallel.hpp"
 
 #include <algorithm>
 #include <array>
@@ -357,7 +358,95 @@ void compute_basis_magnetic_derivatives(const Basis& basis, std::span<Complex> o
     }
 }
 
+// Assemble arbitrary derivative components without AO symmetry assumptions.
+// Every shell pair owns disjoint AO entries, including both coincident centres.
+template <typename Evaluator>
+void property_derivative_matrices(const Basis& basis, std::size_t other_count,
+    std::span<Complex> centers, std::span<Complex> other, std::size_t threads,
+    Evaluator&& evaluate) {
+    const auto nshell = basis.shells().size();
+    const auto nao = basis.ao_count();
+    if (centers.size() != nshell * 3U * nao * nao ||
+        other.size() != other_count * nao * nao) {
+        throw std::length_error("property derivative matrix output has an incorrect size");
+    }
+    std::fill(centers.begin(), centers.end(), Complex{});
+    std::fill(other.begin(), other.end(), Complex{});
+    detail::parallel_for(nshell * nshell, threads, [&](std::size_t pair) {
+        const auto sa = pair / nshell;
+        const auto sb = pair % nshell;
+        const auto& a = basis.shells()[sa];
+        const auto& b = basis.shells()[sb];
+        const auto size = shell_pair_size(a, b);
+        std::vector<Complex> block((6U + other_count) * size);
+        evaluate(a, b, block);
+        for (std::size_t i = 0; i < a.ao_count(); ++i) {
+            for (std::size_t j = 0; j < b.ao_count(); ++j) {
+                const auto local = i * b.ao_count() + j;
+                const auto global = (basis.ao_offsets()[sa] + i) * nao +
+                                    basis.ao_offsets()[sb] + j;
+                for (std::size_t axis = 0; axis < 3U; ++axis) {
+                    centers[(sa * 3U + axis) * nao * nao + global] += block[axis * size + local];
+                    centers[(sb * 3U + axis) * nao * nao + global] += block[(3U + axis) * size + local];
+                }
+                for (std::size_t k = 0; k < other_count; ++k) {
+                    other[k * nao * nao + global] = block[(6U + k) * size + local];
+                }
+            }
+        }
+    });
+}
+
 } // namespace
+
+std::array<Complex, 6> primitive_moment_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_center_derivatives(bra, ket, field, [&](const auto& a, const auto& b) {
+        return primitive_moment(a, b, moment, field, workspace);
+    });
+}
+
+std::array<Complex, 3> primitive_moment_origin_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    std::array<Complex, 3> result{};
+    for (std::size_t axis = 0; axis < 3U; ++axis) {
+        if (moment.powers[axis] != 0U) {
+            result[axis] = -static_cast<double>(moment.powers[axis]) *
+                primitive_moment(bra, ket, CartesianMoment(moment.origin,
+                    shifted(moment.powers, axis, -1)), field, workspace);
+        }
+    }
+    return result;
+}
+
+void compute_moment_center_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<6U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_moment_center_derivatives(bra, ket, moment, field);
+    });
+}
+
+void compute_moment_origin_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<3U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_moment_origin_derivatives(bra, ket, moment, field);
+    });
+}
+
+void compute_moment_nuclear_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment, const MagneticField& field,
+    std::span<Complex> centers, std::span<Complex> origin, std::size_t threads) {
+    property_derivative_matrices(basis, 3U, centers, origin, threads,
+        [&](const Shell& a, const Shell& b, std::span<Complex> output) {
+            const auto size = shell_pair_size(a, b);
+            compute_moment_center_derivatives(a, b, moment, field, output.first(6U * size));
+            compute_moment_origin_derivatives(a, b, moment, field, output.subspan(6U * size));
+        });
+}
 
 std::array<Complex, 6>
 primitive_overlap_center_derivatives(const PrimitiveGaussian& bra,

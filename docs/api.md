@@ -9,10 +9,10 @@ the lower-level API below takes atomic units throughout.
 The API works at shell or shell-batch granularity. Recurrence tables, primitive
 pair loops, and complex-center machinery remain private.
 
-This overview describes the 0.9.0 release candidate, including streamed
-Cholesky and configured Python thread defaults. Signatures below are condensed;
+This overview describes the published 0.9.0 API and subsequent derivative additions,
+including streamed Cholesky and configured Python thread defaults. Signatures below are condensed;
 installed headers and Python docstrings give individual overload details.
-Cross-platform wheel validation has passed; publication remains pending.
+Version 0.9.0 is published; derivative additions below require a source checkout.
 See [release validation](release_0_9_report.md).
 
 All positions, Gaussian exponents, moment origins, magnetic fields, energies,
@@ -695,3 +695,53 @@ The compatibility boundary and staged warning mechanism are specified in
 [`compatibility.md`](compatibility.md). In particular, changes to units,
 normalization, ordering, shapes, or finite-field symmetries count as API
 changes rather than ordinary numerical refinements.
+
+## Moment nuclear derivatives (Priority 1, after 0.9.0)
+
+```python
+shell_response, origin_response = gi.moment_nuclear_derivatives(
+    basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=None,
+    out=None, threads=None,
+)
+```
+
+This differentiates `moment(basis, powers, origin=origin, field=field)` literally,
+with no force or electronic-charge sign. The tuple has shapes
+`(nshell, 3, nao, nao)` and `(3, nao, nao)`, respectively. Each shell centre is
+an independent coordinate; if bra and ket belong to the same shell, both
+responses are accumulated. Sum shell entries with `Molecule.shell_atoms` to
+obtain atom contributions. `origin_response` differentiates the moment origin,
+not the magnetic gauge origin, and is returned separately.
+
+All non-negative Cartesian powers supported by the value kernel are accepted,
+including monopoles, dipoles, quadrupoles and higher moments. The exact origin
+identity is `dI/dO_k = -powers[k] * I(powers-e_k)` (zero if that power is zero).
+Basis derivatives include ordinary Gaussian and London-phase centre response,
+at fixed field, gauge origin and moment origin. The operator has no explicit
+field dependence and no electronic-charge factor.
+
+`out=(shell_array, origin_array)` fills and returns the exact buffers; either
+entry may be `None`. Buffers must be writable, C-contiguous `complex128`, have
+exact shapes and not overlap. `threads=None` follows the configured thread
+policy, including serial-build fallback; explicit unsupported parallel counts
+raise. Shell-pair tasks are parallel, with unchanged primitive summation order.
+Native computations release the GIL.
+
+Related primitive/shell entry points:
+
+- `primitive_moment_center_derivatives(a, b, powers, *, origin, field)` → `(2,3)`.
+- `primitive_moment_origin_derivatives(a, b, powers, *, origin, field)` → `(3,)`.
+- `moment_center_derivatives_shell(a, b, powers, *, origin, field, out)` → `(2,3,na,nb)`.
+- `moment_origin_derivatives_shell(a, b, powers, *, origin, field, out)` → `(3,na,nb)`.
+
+The installed C++ header `derivatives.hpp` exposes corresponding primitive,
+shell and basis functions; C++ thread counts default to one.
+
+**Translation convention:** raw London AO matrices acquire a phase under
+translation. With `k_mu = B × (R_mu-G)/2`, translating all basis centres, the
+moment origin and gauge origin together gives
+`sum_s dI/dR_s,k + dI/dO_k + dI/dG_k = i*(k_mu-k_nu)[k]*I_mu,nu`.
+The gauge-origin derivative of this multiplicative moment matrix is zero.
+At zero field the sum is zero; at finite field it is the covariant identity
+above. A literal zero sum for raw finite-field matrices would contradict the
+existing value and derivative conventions.

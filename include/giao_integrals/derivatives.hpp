@@ -13,6 +13,23 @@ namespace giao {
 // pair-center [2,3,na,nb], magnetic [3,na,nb], nuclear potential
 // [nnucleus,3,na,nb], and quartet-center [4,3,na,nb,nc,nd].
 
+// Literal derivatives of <a|(r-origin)^powers|b>, including London response.
+[[nodiscard]] std::array<Complex, 6> primitive_moment_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field = {});
+[[nodiscard]] std::array<Complex, 3> primitive_moment_origin_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field = {});
+void compute_moment_center_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output);
+void compute_moment_origin_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output);
+// shell_output [nshell,3,nao,nao]; origin_output [3,nao,nao].
+void compute_moment_nuclear_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment, const MagneticField& field,
+    std::span<Complex> shell_output, std::span<Complex> origin_output,
+    std::size_t threads = 1U);
+
 [[nodiscard]] std::array<Complex, 6>
 primitive_overlap_center_derivatives(const PrimitiveGaussian& bra,
                                      const PrimitiveGaussian& ket,

@@ -202,8 +202,10 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
 - The low-level `Basis` has no atom-to-shell ownership map. `Molecule` tracks
   ownership in `shell_atoms`; derivative APIs still return basis-center and
   attraction-potential-center contributions separately for callers to assemble.
-- Mixed nuclear/magnetic derivatives and derivatives of the general
-  moment/gradient/momentum property APIs are not yet exposed.
+- Moment nuclear derivatives (post-0.9.0 Priority 1) are implemented, including
+  a separate moment-origin response, strict output buffers and shell-pair
+  threading. See `docs/derivative_validation.md`. Mixed nuclear/magnetic
+  derivatives and gradient/momentum property derivatives remain to be added.
 - Production functions are Cartesian only. Spherical transformation is a
   documented future design, not an implemented API.
 
