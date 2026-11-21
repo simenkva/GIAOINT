@@ -158,6 +158,23 @@ def test_hermiticity_origin_sum_rules_and_old_limits(field):
         b, field=field, operator_field=(0.03, -0.08, 0.12), origin=ORIGIN, threads=1
     )
     np.testing.assert_allclose(value, value.T.conj(), atol=3e-13)
+    c = np.array([0.03, -0.08, 0.12])
+    pi_operator = np.array(
+        [gi.momentum(b, component, field=field) for component in "xyz"]
+    )
+    for axis in range(3):
+        j, k = (axis + 1) % 3, (axis + 2) % 3
+        pi_operator[axis] += 0.5 * (c[j] * first[k] - c[k] * first[j])
+    constant = 0.5 * np.cross(c, shift)
+    expected = (
+        value
+        - np.einsum("i,imn->mn", constant, pi_operator)
+        + 0.5 * np.dot(constant, constant) * overlap
+    )
+    moved = gi.magnetic_kinetic_operator(
+        b, field=field, operator_field=c, origin=ORIGIN + shift, threads=1
+    )
+    np.testing.assert_allclose(moved, expected, atol=3e-13)
     out = np.empty_like(value)
     assert (
         gi.magnetic_kinetic_operator(

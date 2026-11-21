@@ -1,4 +1,4 @@
-# Installation, threading, and binary releases (0.9)
+# Installation, threading, and binary releases
 
 ## Install from PyPI
 

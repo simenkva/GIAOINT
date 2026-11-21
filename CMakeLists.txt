@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(giao_integrals VERSION 0.10.0 LANGUAGES CXX)
+project(giao_integrals VERSION 0.11.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

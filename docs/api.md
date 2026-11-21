@@ -1003,6 +1003,8 @@ The six independent powers are `(2,0,0)`, `(1,1,0)`, `(1,0,1)`, `(0,2,0)`,
 `(0,1,1)`, `(0,0,2)`. There is no tie between the moment origin and G0.
 Useful sum rules at fixed phases are `LK(G+d)=LK(G)-d cross <pi0>` and
 `Q_ij(G+d)=Q_ij(G)-d_i <u_j>-d_j <u_i>+d_i*d_j*S`.
+For the independent-field kinetic variant, `a=C cross d/2` gives
+`T(C,G+d)=T(C,G)-a dot <p+Aop(C,G)>+|a|²*S/2`.
 
 Both new matrix functions return complex128 `(nao,nao)` with strict `out=`, GIL
 release and configured shell-pair threading. Primitive versions have prefix

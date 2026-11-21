@@ -27,8 +27,14 @@ additional GIAOINT measurements.
 
 The existing matrix builds CPython 3.11–3.14 for macOS 15+ arm64/x86_64 and
 manylinux x86_64/aarch64, plus an sdist. Every installed wheel/source artifact
-runs `tests/wheel_smoke.py` with one derivative call per priority. Final remote
-CI and artifact run links are recorded after completion.
+runs `tests/wheel_smoke.py` with one derivative call per priority. [CI run 44890477090](https://github.com/simenkva/GIAOINT/actions/runs/44890477090)
+and [artifact run 44890479022](https://github.com/simenkva/GIAOINT/actions/runs/44890479022)
+both pass at source commit `7910655`. This covers serial/OpenMP Python and
+native tests, Linux sanitizers, conda, source installs and all four repaired
+wheel architectures. Each wheel and the source archive passed the expanded
+installed derivative smoke test. Publication was skipped on the branch run.
+All five artifact groups (four wheel platforms plus sdist) are available on
+the artifact run for review.
 
 The existing trusted publisher and protected `pypi` environment are retained.
 Publication still requires an exact `PYPI_APPROVED_TAG=v0.10.0`, an approved

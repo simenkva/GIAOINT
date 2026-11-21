@@ -1,0 +1,9 @@
+{"case": "H2O/STO-3G J+K", "implementation": "Python ordered", "nao": 7, "seconds": 0.8429477501194924}
+{"case": "H2O/STO-3G J+K", "implementation": "native streamed", "nao": 7, "threads": 1, "seconds": 0.2733032919932157, "max_error": 1.930128395963913e-14}
+{"case": "H2O/STO-3G J+K", "implementation": "native streamed", "nao": 7, "threads": 4, "seconds": 0.0870151249691844, "max_error": 1.930128395963913e-14}
+{"case": "atom moment nuclear", "basis": "Ne/aug-cc-pVQZ", "nao": 105, "threads": 1, "seconds": 0.10314270900562406, "bytes": 1058400, "identical": true}
+{"case": "atom moment nuclear", "basis": "Ne/aug-cc-pVQZ", "nao": 105, "threads": 4, "seconds": 0.02836337499320507, "bytes": 1058400, "identical": true}
+{"case": "kinetic angular x", "basis": "Ne/aug-cc-pVQZ", "nao": 105, "threads": 1, "seconds": 0.06210704194381833, "bytes": 176400, "identical": true}
+{"case": "kinetic angular x", "basis": "Ne/aug-cc-pVQZ", "nao": 105, "threads": 4, "seconds": 0.017087874934077263, "bytes": 176400, "identical": true}
+{"case": "independent magnetic kinetic", "basis": "Ne/aug-cc-pVQZ", "nao": 105, "threads": 1, "seconds": 0.13890466699376702, "bytes": 176400, "identical": true}
+{"case": "independent magnetic kinetic", "basis": "Ne/aug-cc-pVQZ", "nao": 105, "threads": 4, "seconds": 0.0374985421076417, "bytes": 176400, "identical": true}

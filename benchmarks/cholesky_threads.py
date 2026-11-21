@@ -82,6 +82,8 @@ def run(threads: int, profile: bool, atom="Ne", threshold=1e-8) -> dict:
     digest = hashlib.sha256(memoryview(result.vectors)).hexdigest()
     pivots = hashlib.sha256(memoryview(result.pivots)).hexdigest()
     return {
+        "profiled": bool(profile),
+        "vectors_bytes": result.vectors.nbytes,
         "atom": atom,
         "threshold": threshold,
         "peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -102,10 +104,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--threads", type=int, nargs="+", default=[1, 4, 8, 12])
     parser.add_argument("--profile", action="store_true")
+    parser.add_argument(
+        "--profile-serial", action="store_true", help="profile only threads=1"
+    )
     parser.add_argument("--atom", choices=["Ne", "Be"], default="Ne")
     parser.add_argument("--threshold", type=float, default=1e-8)
     args = parser.parse_args()
     for count in args.threads:
         print(
-            json.dumps(run(count, args.profile, args.atom, args.threshold)), flush=True
+            json.dumps(
+                run(
+                    count,
+                    args.profile or (args.profile_serial and count == 1),
+                    args.atom,
+                    args.threshold,
+                )
+            ),
+            flush=True,
         )

@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased (0.11.0 preparation)
+## 0.11.0 — release candidate (not yet published)
+
+### VICE item 6 — 0.11.0 release preparation
+
+Prepared 0.11.0 for the Cholesky, gradient-assembly and TD4.0 follow-ups.
+Installed wheel/source smoke tests cover the new helpers and independent-field
+operators as well as every derivative priority. The 0.10.0 candidate remains
+independently frozen. Neither version is published without its own approval.
 
 ### VICE item 5 — independent-field TD4.0 operators
 

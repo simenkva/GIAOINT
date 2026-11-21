@@ -31,7 +31,7 @@ included in the 0.10.0 release candidate. Artifact smoke tests cover every
 derivative priority. No new release tag or PyPI upload has been created; explicit
 maintainer approval is required.
 
-## 0.11.0 source preparation
+## 0.11.0 release candidate
 
 VICE follow-ups add a native selected-integral Cholesky backend, per-atom
 one-electron nuclear/mixed derivative assembly, deterministic streamed density

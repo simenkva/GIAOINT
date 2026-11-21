@@ -347,6 +347,18 @@ def test_dense_gamma_is_read_without_copy_and_out_cannot_alias(monkeypatch):
             out=buffer.reshape(1, 3),
         )
 
+    storage = np.ones(3, dtype=complex)
+    p = storage.view(np.float64)[:1].reshape(1, 1)
+    with pytest.raises(ValueError, match="overlap"):
+        gi.eri_derivative_contraction(
+            basis,
+            [0],
+            1,
+            coulomb_pairs=[(p, np.ones((1, 1)))],
+            out=storage.reshape(1, 3),
+        )
+    np.testing.assert_array_equal(storage, 1)
+
 
 def test_atom_moment_output_validation():
     mol = gi.Molecule([("H", (0, 0, 0))], "STO-3G", unit="bohr")

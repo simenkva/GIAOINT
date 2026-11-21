@@ -34,6 +34,7 @@ def eri_derivative_contraction(
     Exchange pairs (P,Q): sum dI/dR[A,r] * P[nu,lam] * Q[sig,mu].
     Dense gamma: sum dI/dR[A,r] * gamma[mu,nu,lam,sig].
 
+    Densities are held fixed under dR; no density/orbital response is included.
     P, Q and gamma are never conjugated implicitly. No 1/2, spin, exchange
     minus, charge or force sign is applied. Non-Hermitian complex densities
     are supported; the result is not forced real. Supplied pairs and gamma
@@ -75,12 +76,14 @@ def eri_derivative_contraction(
     ):
         raise ValueError("shell_atoms must map every shell to an atom in [0,natom)")
     n = basis.ao_count
+    original_arrays = []
 
     def pairs(values):
         result = []
         for pair in values:
             if len(pair) != 2:
                 raise ValueError("each density pair must contain P and Q")
+            original_arrays.extend(a for a in pair if isinstance(a, np.ndarray))
             p, q = (np.ascontiguousarray(a, dtype=np.complex128) for a in pair)
             if p.shape != (n, n) or q.shape != (n, n):
                 raise ValueError("density matrices must have shape (nao,nao)")
@@ -113,9 +116,11 @@ def eri_derivative_contraction(
         ):
             raise ValueError("out must be writable C-contiguous complex128 (natom,3)")
         result = out
-        for density in [a for pair in coulomb + exchange for a in pair] + (
-            [] if gamma is None else [gamma]
-        ):
+        densities = [a for pair in coulomb + exchange for a in pair]
+        densities.extend(original_arrays)
+        if gamma is not None:
+            densities.append(gamma)
+        for density in densities:
             if np.shares_memory(result, density):
                 raise ValueError("out must not overlap input densities")
         result.fill(0)
