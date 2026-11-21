@@ -620,7 +620,7 @@ Neither the full AO tensor nor a full pair matrix is formed.
 
 In 0.11.1, generally contracted complex molecular factors use deterministic
 local pivot blocks: candidates from the most recently generated Cartesian
-component block are eligible while their residual is at least 10% of the
+component block are eligible while their residual is at least 1% of the
 global maximum. `pivot_batch_size=32` limits the block (internally at most 32);
 `pivot_batch_size=1` restores strict global pivoting and the 0.11.0 factors.
 It must be a positive integer. Zero-field/real factors retain global pivoting;

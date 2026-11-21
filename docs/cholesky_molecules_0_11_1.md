@@ -64,7 +64,7 @@ prefetched, up to 32 at a time. An LRU retains raw columns across shell-pair
 changes, with at most min(1024,rank+8) cached rows. The uncontracted path retains
 its eight-candidate policy. Real factors retain the global largest-residual
 pivot rule. Complex contracted factors select candidates from the most recent
-Cartesian component block while their updated residual is at least 10% of the
+Cartesian component block while their updated residual is at least 1% of the
 global maximum, bounded by pivot_batch_size (default 32). Stopping still tests
 the global largest residual, so the PSD error bound is unchanged. This changes
 complex molecular pivots/vectors and may slightly change rank. Setting

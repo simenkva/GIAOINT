@@ -83,7 +83,7 @@ def cholesky_eri(
     component are generated together; an LRU retains at most min(1024,rank+8)
     raw columns. For complex molecular factors, choose up to ``pivot_batch_size``
     (default 32, bounded internally at 32) candidates from the last generated
-    component block while their residual is at least 10% of the global maximum.
+    component block while their residual is at least 1% of the global maximum.
     Global maximum residual still controls stopping and the error bound. This
     changes pivot order and vectors relative to 0.11.0. ``pivot_batch_size=1``
     restores strict global pivoting and its old factors. Real factors retain
@@ -190,7 +190,7 @@ def cholesky_eri(
         pivot = int(np.argmax(residual))
         if contracted and not real and pivot_batch_size > 1 and len(block_candidates):
             local = int(block_candidates[np.argmax(residual[block_candidates])])
-            if residual[local] > tolerance and residual[local] >= 0.1 * residual[pivot]:
+            if residual[local] > tolerance and residual[local] >= 0.01 * residual[pivot]:
                 pivot = local
         rank = len(pivots)
         if rank >= limit:
