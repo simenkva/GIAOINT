@@ -6,8 +6,11 @@ Profiled molecular Cholesky against the published 0.11.0 wheel. Native column
 evaluation, rather than NumPy updates, dominates: speculative columns are
 discarded and primitive integrals are repeated across general contractions.
 Added primitive-first contraction reuse and a bounded LRU of columns sharing
-the same Cartesian pivot component. Global residual pivoting, AO conventions,
-primitive contraction order, and NumPy reductions are retained. Uncontracted
+the same Cartesian pivot component. Complex contracted factors use local pivot
+blocks within 10% of the global residual maximum; strict global pivoting remains
+available with pivot_batch_size=1. Stopping always uses the global maximum,
+preserving the residual error bound. AO conventions, primitive contraction
+order, and per-pivot NumPy reductions are retained. Uncontracted
 atom evaluation retains its existing path. Added multi-center reconstruction,
 rank and thread-determinism tests and reproducible workload profiling.
 No column screening, release tags or PyPI publication are introduced.

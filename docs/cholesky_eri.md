@@ -25,9 +25,13 @@ Diagonal elements come from `(MN|NM)`. Each pivot is selected from the
 global residual maximum. The uncontracted backend retains up to eight candidate
 columns from one shell pair. The 0.11.1 molecular preparation shares primitive
 component integrals across general contraction rows, generates up to 32 matching
-contraction variants, and retains at most min(128,rank+8) raw columns in an LRU.
-The ERI kernel, primitive contraction order and projection reductions remain
-unchanged. Native work is parallel across shell pairs or selected-entry tasks.
+contraction variants, and retains at most min(1024,rank+8) raw columns in an LRU.
+The ERI kernel, primitive contraction order and per-pivot projection reductions
+remain unchanged. Complex contracted factors use local pivot blocks (up to 32,
+while each selected residual is at least 10% of the global maximum).
+`pivot_batch_size=1` restores the old global pivot order; zero-field factors and
+uncontracted atoms keep their original order. Stopping always uses the global
+largest residual, independently of the pivot batching policy. Native work is parallel across shell pairs or selected-entry tasks.
 See [the molecular profile and benchmarks](cholesky_molecules_0_11_1.md).
 The older full-shell-quartet extraction backend remains the historical
 comparison baseline in the 0.11 report.

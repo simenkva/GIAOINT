@@ -416,6 +416,7 @@ class Molecule:
         screening_threshold: float = 0.0,
         threads: int | None = None,
         max_bytes: int | None = None,
+        pivot_batch_size: int = 32,
     ) -> CholeskyERI:
         """Stream Coulomb Cholesky factors; see :func:`cholesky_eri` for conventions.
 
@@ -429,6 +430,7 @@ class Molecule:
             screening_threshold=screening_threshold,
             threads=threads,
             max_bytes=max_bytes,
+            pivot_batch_size=pivot_batch_size,
         )
 
     def eri_batches(

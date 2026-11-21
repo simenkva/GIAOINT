@@ -61,9 +61,15 @@ coefficient multiplication order. No other integral kernel changes.
 
 Only contraction variants of the current Cartesian pivot component are
 prefetched, up to 32 at a time. An LRU retains raw columns across shell-pair
-changes, with at most min(128,rank+8) cached rows. The uncontracted path retains
-its eight-candidate policy. The global largest-residual pivot rule and NumPy
-projection reductions stay unchanged. Factors, cache and selected-column
+changes, with at most min(1024,rank+8) cached rows. The uncontracted path retains
+its eight-candidate policy. Real factors retain the global largest-residual
+pivot rule. Complex contracted factors select candidates from the most recent
+Cartesian component block while their updated residual is at least 10% of the
+global maximum, bounded by pivot_batch_size (default 32). Stopping still tests
+the global largest residual, so the PSD error bound is unchanged. This changes
+complex molecular pivots/vectors and may slightly change rank. Setting
+pivot_batch_size=1 restores strict global pivoting and the old factors. NumPy
+projection reductions per pivot remain unchanged. Factors, cache and selected-column
 workspace are O(rank*nao^2) plus bounded native/column workspace; no dense
 ERI or full ordered-pair matrix is formed. max_bytes remains an output cap.
 
@@ -71,3 +77,9 @@ Column screening remains absent; no new approximation or changed error bound
 is introduced. Reproducible runs use benchmarks/cholesky_molecules.py; profile
 with --profile and compare dense values with --dense (checking is outside the
 timed decomposition). Final timings and validation follow after collection.
+
+The larger molecular case is nonplanar NH3/aug-cc-pVTZ (130 Cartesian AOs),
+with N=(0,0,.2) and three H centers at radius 1.8, z=-.5 bohr, separated by
+120 degrees. It adds a center and exceeds both water basis sizes. The optional
+benzene example was replaced after an exploratory 12-thread old-backend run
+had exceeded nine minutes; that interrupted run supplies no timing result.

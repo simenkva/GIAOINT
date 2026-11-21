@@ -54,10 +54,27 @@ def test_cc_pvtz_reproducer_rank_and_bound(field, rank):
     count = 2 if gi.openmp_enabled() else 1
     result = mol.cholesky_eri(threshold=1e-8, threads=count)
     assert mol.ao_count == 65
-    assert len(result.vectors) == rank  # published 0.11.0 reference ranks
+    if field is None:
+        assert len(result.vectors) == rank
+    else:
+        assert abs(len(result.vectors) / rank - 1) <= 0.03
     assert result.max_residual_diagonal <= 1e-8
     exact = mol.eri(max_bytes=512 * 1024**2, threads=count)
     for start in range(0, mol.ao_count, 4):
         block = (slice(start, start + 4), slice(None), slice(None), slice(None))
         error = np.max(np.abs(result.reconstruct(block) - exact[block]))
         assert error <= result.max_residual_diagonal + 5e-13
+
+
+def test_strict_global_pivot_option():
+    mol = gi.Molecule(WATER, "cc-pVTZ", unit="bohr", field=FIELDS[1])
+    result = mol.cholesky_eri(threshold=1e-8, threads=1, pivot_batch_size=1)
+    assert len(result.vectors) == 668
+    assert result.max_residual_diagonal <= 1e-8
+
+
+@pytest.mark.parametrize("size", [0, -1, 1.5, True, np.bool_(False)])
+def test_invalid_pivot_batch_size(size):
+    basis = gi.Basis([])
+    with pytest.raises(ValueError, match="pivot_batch_size"):
+        gi.cholesky_eri(basis, pivot_batch_size=size, threads=1)

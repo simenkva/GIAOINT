@@ -38,14 +38,11 @@ def molecule(case, finite):
         return gi.Molecule(
             [(case, (0, 0, 0))], data, unit="bohr", field=gi.MagneticField((0, 0, 0.1))
         )
-    if case == "benzene":
-        atoms = []
-        for element, radius in (("C", 2.64), ("H", 4.70)):
-            for angle in np.arange(6) * np.pi / 3:
-                atoms.append(
-                    (element, (radius * np.cos(angle), radius * np.sin(angle), 0))
-                )
-        basis = "cc-pVDZ"
+    if case == "ammonia":
+        atoms = [("N", (0.0, 0.0, 0.2))]
+        for angle in np.arange(3) * 2 * np.pi / 3:
+            atoms.append(("H", (1.8 * np.cos(angle), 1.8 * np.sin(angle), -0.5)))
+        basis = "aug-cc-pVTZ"
     else:
         atoms = WATER
         basis = "aug-cc-pVTZ" if case == "water-aug" else "cc-pVTZ"
@@ -70,16 +67,14 @@ def run(args):
         "dense_primitive_integrals": 0,
         "column_tasks": 0,
     }
-    for a in range(len(shells)):
-        for b in range(len(shells)):
-            for c in range(len(shells)):
-                for d in range(len(shells)):
-                    q = (a, b, c, d)
-                    if q == min(q, (c, d, a, b), (b, a, d, c), (d, c, b, a)):
-                        counts["dense_shell_quartets"] += 1
-                        counts["dense_primitive_integrals"] += int(
-                            np.prod([prim[x] * cart[x] for x in q])
-                        )
+    # Weighted Burnside count for the fourfold canonical shell orbit. Each
+    # non-identity permutation fixes two pairs, giving three equal terms.
+    weights = [p * c for p, c in zip(prim, cart, strict=True)]
+    ns = len(shells)
+    counts["dense_shell_quartets"] = (ns**4 + 3 * ns**2) // 4
+    counts["dense_primitive_integrals"] = (
+        sum(weights) ** 4 + 3 * sum(w * w for w in weights) ** 2
+    ) // 4
     module = importlib.import_module("giao_integrals.cholesky")
     function = module.cholesky_eri
     times = {"diagonal_seconds": 0.0, "columns_seconds": 0.0, "updates_seconds": 0.0}
@@ -163,7 +158,10 @@ def run(args):
     load_start = os.getloadavg()
     start = perf_counter()
     try:
-        chol = mol.cholesky_eri(threshold=1e-8, threads=args.threads)
+        options = {}
+        if "pivot_batch_size" in inspect.signature(function).parameters:
+            options["pivot_batch_size"] = args.pivot_batch_size
+        chol = mol.cholesky_eri(threshold=1e-8, threads=args.threads, **options)
     finally:
         elapsed = perf_counter() - start
         sys.settrace(None)
@@ -186,6 +184,7 @@ def run(args):
         "load_start": load_start,
         "load_end": os.getloadavg(),
         "profiled": args.profile,
+        "pivot_batch_size": options.get("pivot_batch_size", "legacy"),
         "build": gi.build_info(),
         "python": platform.python_version(),
         "numpy": np.__version__,
@@ -198,24 +197,31 @@ def run(args):
         start = perf_counter()
         dense = mol.eri(max_bytes=2**35, threads=args.threads)
         output["dense_seconds"] = perf_counter() - start
-        # Slice reconstruction to bound checking workspace, including benzene.
-        error = 0.0
-        for a in range(n):
-            block = chol.reconstruct(
-                (slice(a, a + 1), slice(None), slice(None), slice(None))
-            )
-            error = max(error, float(np.max(np.abs(block[0] - dense[a]))))
-        output["max_error"] = error
+        if args.verify:
+            # Slice reconstruction bounds the verification workspace.
+            error = 0.0
+            for a in range(n):
+                block = chol.reconstruct(
+                    (slice(a, a + 1), slice(None), slice(None), slice(None))
+                )
+                error = max(error, float(np.max(np.abs(block[0] - dense[a]))))
+            output["max_error"] = error
     return output
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--case", choices=["water", "water-aug", "benzene", "Ne", "Na"], default="water"
+        "--case", choices=["water", "water-aug", "ammonia", "Ne", "Na"], default="water"
     )
     parser.add_argument("--field", action="store_true")
     parser.add_argument("--threads", type=int, default=12)
     parser.add_argument("--profile", action="store_true")
+    parser.add_argument("--pivot-batch-size", type=int, default=32)
     parser.add_argument("--dense", action="store_true")
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="fully reconstruct against dense ERIs; requires --dense",
+    )
     print(json.dumps(run(parser.parse_args())), flush=True)

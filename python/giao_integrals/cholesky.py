@@ -65,6 +65,7 @@ def cholesky_eri(
     screening_threshold: float = 0.0,
     threads: int | None = None,
     max_bytes: int | None = None,
+    pivot_batch_size: int = 32,
 ) -> CholeskyERI:
     """Factor ERIs without forming a full AO tensor or ordered-pair matrix.
 
@@ -79,13 +80,18 @@ def cholesky_eri(
     Diagonals come from (MN|NM); columns use (MN|SL) for pivot (L,S).
     For generally contracted shells, primitive component integrals are shared
     across contraction rows. Up to 32 contraction variants of a Cartesian pivot
-    component are generated together; an LRU retains at most min(128,rank+8)
-    raw columns (at least eight slots). Uncontracted shells retain the eight-
-    candidate path. Global residual pivoting and reduction order are unchanged.
-    Storage is O(rank*nao**2) plus bounded selected-column/native workspace;
-    no full AO tensor or pair matrix is formed. ``threads`` controls native
-    shell-pair/selected-integral tasks. None selects the configured default;
-    1 is serial.
+    component are generated together; an LRU retains at most min(1024,rank+8)
+    raw columns. For complex molecular factors, choose up to ``pivot_batch_size``
+    (default 32, bounded internally at 32) candidates from the last generated
+    component block while their residual is at least 10% of the global maximum.
+    Global maximum residual still controls stopping and the error bound. This
+    changes pivot order and vectors relative to 0.11.0. ``pivot_batch_size=1``
+    restores strict global pivoting and its old factors. Real factors retain
+    global pivoting; uncontracted shells retain their eight-candidate path.
+    Each policy is bitwise deterministic across thread counts. Storage is
+    O(rank*nao**2) plus bounded selected-column/native workspace; no full AO
+    tensor or pair matrix is formed. ``threads`` controls native shell-pair/
+    selected-integral tasks. None selects the configured default; 1 is serial.
     NumPy/BLAS has its own thread settings and runs outside OpenMP regions.
 
     ``screening_threshold`` enables existing Schwarz bounds only to skip initial
@@ -104,6 +110,12 @@ def cholesky_eri(
         if not np.isfinite(value) or value < 0:
             raise ValueError(f"{name} must be finite and non-negative")
     threads = resolve_num_threads(threads)
+    if (
+        isinstance(pivot_batch_size, (bool, np.bool_))
+        or not isinstance(pivot_batch_size, (int, np.integer))
+        or pivot_batch_size < 1
+    ):
+        raise ValueError("pivot_batch_size must be a positive integer")
     if max_bytes is not None and (
         isinstance(max_bytes, (bool, np.bool_))
         or not isinstance(max_bytes, (int, np.integer))
@@ -170,11 +182,16 @@ def cholesky_eri(
     contracted = any(s.contraction_count > 1 for s in shells)
     candidate_count = 32 if contracted else 8
     raw_cache = OrderedDict()
+    block_candidates = np.empty(0, dtype=int)
     candidates = np.empty(0, dtype=int)
     columns = np.empty((0, n * n), dtype=dtype)
 
     while float(np.max(residual, initial=0.0)) > tolerance:
         pivot = int(np.argmax(residual))
+        if contracted and not real and pivot_batch_size > 1 and len(block_candidates):
+            local = int(block_candidates[np.argmax(residual[block_candidates])])
+            if residual[local] > tolerance and residual[local] >= 0.1 * residual[pivot]:
+                pivot = local
         rank = len(pivots)
         if rank >= limit:
             raise MemoryError(
@@ -215,6 +232,7 @@ def cholesky_eri(
             # Ensure the globally chosen pivot wins ties even within a shell pair.
             if pivot not in candidates:
                 candidates[-1] = pivot
+            block_candidates = candidates[: min(32, pivot_batch_size)]
             cmu, cnu = np.divmod(candidates, n)
             columns = _cholesky_columns(
                 basis,
@@ -226,8 +244,8 @@ def cholesky_eri(
                 for index, candidate in enumerate(candidates):
                     if candidate != pivot:
                         raw_cache[int(candidate)] = columns[index].copy()
-                # Independent of n**4; at most 128 rows and O(rank*n**2).
-                capacity = min(128, max(8, rank + 8))
+                # Independent of n**4; at most 1024 rows and O(rank*n**2).
+                capacity = min(1024, max(8, rank + 8))
                 while len(raw_cache) > capacity:
                     raw_cache.popitem(last=False)
             match = np.flatnonzero(candidates == pivot)
