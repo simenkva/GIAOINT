@@ -94,8 +94,9 @@ fences and `git diff --check` pass. The optional libcint oracle was rerun
 against that installed 0.11.0 package and agrees to 1.776e-14.
 
 The [artifact build](https://github.com/simenkva/GIAOINT/actions/runs/44900250724)
-builds and smoke-tests all 16 repaired wheels and the source archive.
-Publication is skipped on this branch run. Feature-stage CI also passed for
+passed for all 16 repaired wheels and the source archive at `df11f5d`.
+Each artifact passed the expanded installed smoke tests. All five artifact
+groups are available on the run. Publication was skipped on this branch run. Feature-stage CI also passed for
 [Cholesky](https://github.com/simenkva/GIAOINT/actions/runs/44891258829),
 [gradient assembly](https://github.com/simenkva/GIAOINT/actions/runs/44892263308)
 and [TD4](https://github.com/simenkva/GIAOINT/actions/runs/44893576225).
