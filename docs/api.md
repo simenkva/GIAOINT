@@ -962,3 +962,51 @@ quartet, native recurrence workspace and input densities. No full AO derivative
 tensor or extra dense gamma copy is formed. Screening is off by default and
 uses the existing per-component bound; it does not bound the final density
 contraction error. Native computation releases the GIL.
+
+## TD4.0: independent operator field and origin (0.11 preparation)
+
+```python
+LKx = gi.kinetic_angular_momentum(basis, "x", origin=G, field=phase_field,
+                               out=None, threads=None)
+TC = gi.magnetic_kinetic_operator(basis, field=phase_field,
+                                operator_field=C, origin=G, out=None, threads=None)
+```
+
+`phase_field` is `MagneticField(B0,G0)` and determines only the London phases.
+`kinetic_angular_momentum` returns the selected component of
+`<(r-G) cross pi0>`, where `pi0=p+A0`, `p=-i*gradient` and
+`A0=B0 cross (r-G0)/2`. The operator origin G is independent of G0 and defaults
+to zero. Both the canonical angular momentum and vector-potential terms are
+included. It is not merely `(r-G) cross p` when B0 is nonzero.
+
+`magnetic_kinetic_operator` returns `<1/2*(p+Aop)^2>` with
+`Aop=C cross (r-G)/2`. C is a three-vector; it never changes the London phases.
+Defaults C=B0 and G=G0 delegate to the existing physical kinetic kernel,
+reproducing `magnetic_kinetic` bitwise. C=0 is canonical kinetic. Explicit C/G
+are independent of B0/G0. `origin=None` means G0 for this function, whereas
+the angular-momentum function's default origin is zero.
+
+With `u=r-G`, canonical `L(G)=u cross p` and `Q_ij(G)=<u_i u_j>`, the variant is
+`T(C,G)=Tcanonical + 1/2 sum_i C_i L_i(G) + 1/8 sum_ij (|C|² delta_ij-C_i C_j) Q_ij(G)`.
+Holding phases fixed, its derivative with respect to C at C=B0,G=G0 is
+`1/2*LK(G0)`. This is an **operator-field** derivative, not a derivative of the
+phases. Neither field nor origin argument modifies the caller's phase object.
+
+Second moments about an independent G are already supplied exactly by `moment`:
+
+```python
+Qij = gi.moment(basis, tuple(int(k == i) + int(k == j) for k in range(3)),
+                origin=G, field=phase_field)
+```
+
+The six independent powers are `(2,0,0)`, `(1,1,0)`, `(1,0,1)`, `(0,2,0)`,
+`(0,1,1)`, `(0,0,2)`. There is no tie between the moment origin and G0.
+Useful sum rules at fixed phases are `LK(G+d)=LK(G)-d cross <pi0>` and
+`Q_ij(G+d)=Q_ij(G)-d_i <u_j>-d_j <u_i>+d_i*d_j*S`.
+
+Both new matrix functions return complex128 `(nao,nao)` with strict `out=`, GIL
+release and configured shell-pair threading. Primitive versions have prefix
+`primitive_` and return a complex scalar; shell versions have suffix `_shell`
+and return `(na,nb)` with strict `out=`. Cartesian AO order and normalisation
+are unchanged. `Molecule` offers matching methods using its fixed phase field.
+No new nuclear-magnetic, spin or spherical operators are introduced.

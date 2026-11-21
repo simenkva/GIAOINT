@@ -31,6 +31,16 @@ included in the 0.10.0 release candidate. Artifact smoke tests cover every
 derivative priority. No new release tag or PyPI upload has been created; explicit
 maintainer approval is required.
 
+## 0.11.0 source preparation
+
+VICE follow-ups add a native selected-integral Cholesky backend, per-atom
+one-electron nuclear/mixed derivative assembly, deterministic streamed density
+contractions of ERI derivatives, and independent-field/origin TD4.0 operators.
+Existing reductions and unscreened numerical conventions are preserved.
+The 0.10.0 candidate is independently frozen on `release/0.10.0` for publication
+without waiting for these features. Neither version is published without its
+own explicit maintainer approval.
+
 ## Completed
 
 - Milestone 0 repository assessment.
@@ -225,7 +235,9 @@ maintainer approval is required.
   operators, separate attraction basis/potential centres and ERI quartets.
 - NMR shielding and spin–spin coupling need nuclear-magnetic-moment vector
   potentials and Fermi-contact/spin-dipole operators; these remain possible
-  later milestones. Cholesky-vector derivatives and TD4.0 work are separate.
+  later milestones. Cholesky-vector derivatives remain out of scope.
+  TD4.0 independent-origin kinetic angular momentum and independent-field
+  physical kinetic operators are implemented in the 0.11 source preparation.
 - Production functions are Cartesian only. Spherical transformation is a
   documented future design, not an implemented API.
 

@@ -2454,4 +2454,112 @@ threads=None follows configured native shell-pair threading; work releases GIL.
     py::arg("values"),py::arg("coulomb_pairs"),py::arg("exchange_pairs"),py::arg("gamma"),py::arg("out"),
     py::kw_only(),py::arg("threads")=py::none());
 
+    module.def("primitive_kinetic_angular_momentum",[](const giao::PrimitiveGaussian& a,const giao::PrimitiveGaussian& b,const std::string& component,const py::object& origin,const py::object& field){
+        const auto f=field_or_zero(field);
+const auto axis=axis_from_python(component);
+        const giao::CartesianMoment validated_origin(vec3_from_python(origin,"origin"),{});
+        const auto g=validated_origin.origin;
+        py::gil_scoped_release release;giao::IntegralWorkspace workspace;
+        return giao::primitive_kinetic_angular_momentum(a,b,axis,g,f,workspace);
+    },py::arg("a"),py::arg("b"),py::arg("component"),py::kw_only(),py::arg("origin")=py::make_tuple(0.0,0.0,0.0),py::arg("field")=py::none(),R"doc(Return complex scalar of [(r-G) cross pi0]_component.
+
+component is x/y/z; origin is the independent operator origin G in bohr,
+default zero. field supplies the fixed London phase field B0 and gauge G0.
+pi0=p+A0, p=-i*gradient, A0=B0 cross (r-G0)/2. Both canonical and vector-
+potential terms are included. G does not change B0, G0 or the London phases.
+Cartesian AO order/normalization and the p+A convention
+match magnetic_kinetic. Native computation releases the GIL.
+)doc");
+
+    module.def("kinetic_angular_momentum_shell",[](const giao::Shell& a,const giao::Shell& b,const std::string& component,const py::object& origin,const py::object& field,py::object output){
+        const auto f=field_or_zero(field);
+const auto axis=axis_from_python(component);
+        const giao::CartesianMoment validated_origin(vec3_from_python(origin,"origin"),{});
+        const auto g=validated_origin.origin;
+        return shell_array(a,b,std::move(output),[&](auto values,auto& workspace){
+            giao::compute_kinetic_angular_momentum(a,b,axis,g,f,values,workspace);
+        });
+    },py::arg("a"),py::arg("b"),py::arg("component"),py::kw_only(),py::arg("origin")=py::make_tuple(0.0,0.0,0.0),py::arg("field")=py::none(),py::arg("out")=py::none(),R"doc(Return complex128 (na,nb) shell block of [(r-G) cross pi0]_component.
+
+component is x/y/z; origin is the independent operator origin G in bohr,
+default zero. field supplies the fixed London phase field B0 and gauge G0.
+pi0=p+A0, p=-i*gradient, A0=B0 cross (r-G0)/2. Both canonical and vector-
+potential terms are included. G does not change B0, G0 or the London phases.
+Cartesian AO order/normalization and the p+A convention
+match magnetic_kinetic. Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
+
+    module.def("kinetic_angular_momentum",[](const giao::Basis& basis,const std::string& component,const py::object& origin,const py::object& field,py::object output,const py::object& threads){
+        const auto f=field_or_zero(field);
+const auto axis=axis_from_python(component);
+        const giao::CartesianMoment validated_origin(vec3_from_python(origin,"origin"),{});
+        const auto g=validated_origin.origin;
+        const auto count=threads_from_python(threads);
+        return basis_array(basis,std::move(output),[&](auto values){
+            giao::compute_kinetic_angular_momentum_matrix(basis,axis,g,f,values,count);
+        });
+    },py::arg("basis"),py::arg("component"),py::kw_only(),py::arg("origin")=py::make_tuple(0.0,0.0,0.0),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),R"doc(Return complex128 (nao,nao) AO matrix of [(r-G) cross pi0]_component.
+
+component is x/y/z; origin is the independent operator origin G in bohr,
+default zero. field supplies the fixed London phase field B0 and gauge G0.
+pi0=p+A0, p=-i*gradient, A0=B0 cross (r-G0)/2. Both canonical and vector-
+potential terms are included. G does not change B0, G0 or the London phases.
+Cartesian AO order/normalization and the p+A convention
+match magnetic_kinetic. Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+threads=None follows the configured native shell-pair policy.
+)doc");
+
+    module.def("primitive_magnetic_kinetic_operator",[](const giao::PrimitiveGaussian& a,const giao::PrimitiveGaussian& b,const py::object& operator_field,const py::object& origin,const py::object& field){
+        const auto f=field_or_zero(field);
+const giao::MagneticField operator_value(operator_field.is_none()?f.B:vec3_from_python(operator_field,"operator_field"),origin.is_none()?f.gauge_origin:vec3_from_python(origin,"origin"));
+        py::gil_scoped_release release;giao::IntegralWorkspace workspace;
+        return giao::primitive_magnetic_kinetic_operator(a,b,f,operator_value,workspace);
+    },py::arg("a"),py::arg("b"),py::kw_only(),py::arg("operator_field")=py::none(),py::arg("origin")=py::none(),py::arg("field")=py::none(),R"doc(Return complex scalar of 1/2*[p+Aop]^2 with fixed London phases.
+
+field supplies the phase field B0/gauge G0. operator_field is the independent
+three-vector C; origin is its independent origin G, with Aop=C cross (r-G)/2.
+Defaults C=B0 and G=G0 reproduce magnetic_kinetic bitwise; C=0 gives canonical
+kinetic. Includes canonical, linear C angular and quadratic C second-moment
+terms. Changing C or G never changes the London phases. No force/charge sign.
+Native computation releases the GIL.
+)doc");
+
+    module.def("magnetic_kinetic_operator_shell",[](const giao::Shell& a,const giao::Shell& b,const py::object& operator_field,const py::object& origin,const py::object& field,py::object output){
+        const auto f=field_or_zero(field);
+const giao::MagneticField operator_value(operator_field.is_none()?f.B:vec3_from_python(operator_field,"operator_field"),origin.is_none()?f.gauge_origin:vec3_from_python(origin,"origin"));
+        return shell_array(a,b,std::move(output),[&](auto values,auto& workspace){
+            giao::compute_magnetic_kinetic_operator(a,b,f,operator_value,values,workspace);
+        });
+    },py::arg("a"),py::arg("b"),py::kw_only(),py::arg("operator_field")=py::none(),py::arg("origin")=py::none(),py::arg("field")=py::none(),py::arg("out")=py::none(),R"doc(Return complex128 (na,nb) shell block of 1/2*[p+Aop]^2 with fixed London phases.
+
+field supplies the phase field B0/gauge G0. operator_field is the independent
+three-vector C; origin is its independent origin G, with Aop=C cross (r-G)/2.
+Defaults C=B0 and G=G0 reproduce magnetic_kinetic bitwise; C=0 gives canonical
+kinetic. Includes canonical, linear C angular and quadratic C second-moment
+terms. Changing C or G never changes the London phases. No force/charge sign.
+Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
+
+    module.def("magnetic_kinetic_operator",[](const giao::Basis& basis,const py::object& operator_field,const py::object& origin,const py::object& field,py::object output,const py::object& threads){
+        const auto f=field_or_zero(field);
+const giao::MagneticField operator_value(operator_field.is_none()?f.B:vec3_from_python(operator_field,"operator_field"),origin.is_none()?f.gauge_origin:vec3_from_python(origin,"origin"));
+        const auto count=threads_from_python(threads);
+        return basis_array(basis,std::move(output),[&](auto values){
+            giao::compute_magnetic_kinetic_operator_matrix(basis,f,operator_value,values,count);
+        });
+    },py::arg("basis"),py::kw_only(),py::arg("operator_field")=py::none(),py::arg("origin")=py::none(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),R"doc(Return complex128 (nao,nao) AO matrix of 1/2*[p+Aop]^2 with fixed London phases.
+
+field supplies the phase field B0/gauge G0. operator_field is the independent
+three-vector C; origin is its independent origin G, with Aop=C cross (r-G)/2.
+Defaults C=B0 and G=G0 reproduce magnetic_kinetic bitwise; C=0 gives canonical
+kinetic. Includes canonical, linear C angular and quadratic C second-moment
+terms. Changing C or G never changes the London phases. No force/charge sign.
+Native computation releases the GIL.
+out is a strict writable C-contiguous complex128 buffer, returned exactly.
+threads=None follows the configured native shell-pair policy.
+)doc");
+
 }

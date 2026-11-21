@@ -2,6 +2,18 @@
 
 ## Unreleased (0.11.0 preparation)
 
+### VICE item 5 — independent-field TD4.0 operators
+
+Added primitive/shell/basis kinetic angular momentum about an independent
+origin G, using pi0=p+B0 cross (r-G0)/2 from the fixed London phase field.
+Added magnetic_kinetic_operator with independent operator field C and origin G;
+changing them never changes the phases. Matching C/G defaults delegate to the
+existing physical kinetic kernel bitwise; C=0 is canonical kinetic. Existing
+moment(powers,origin=G) supplies all six independent second moments. Native
+matrix calls support strict outputs, GIL release and deterministic threading.
+Validation covers reference values through g, operator-field differences,
+Hermiticity, origin sum rules and libcint angular/quadrupole/kinetic operators.
+
 ### VICE item 4 — per-atom derivative and density contraction helpers
 
 Added Molecule one-electron nuclear/mixed derivatives in atom layout, including

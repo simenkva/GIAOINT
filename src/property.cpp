@@ -1,4 +1,5 @@
 #include "giao_integrals/property.hpp"
+#include "parallel.hpp"
 
 #include <algorithm>
 #include <array>
@@ -286,6 +287,41 @@ void compute_property_matrix(const Basis& basis, std::span<Complex> output,
     }
 }
 
+CartesianExponent coordinate_powers(std::size_t first,std::size_t second=3U) {
+    std::array<std::uint16_t,3> p{};++p[first];if(second<3U){++p[second];}
+    return {p[0],p[1],p[2]};
+}
+
+Complex coordinate_momentum_at(const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    std::size_t coordinate,std::size_t momentum,Vec3 origin,const MagneticField& field,
+    IntegralWorkspace& workspace) {
+    const PrimitiveGaussian raised(bra.exponent,bra.center,shifted(bra.angular,coordinate,1),bra.coefficient,false);
+    return primitive_momentum(raised,ket,static_cast<Axis>(momentum),field,workspace)+
+        (bra.center[coordinate]-origin[coordinate])*primitive_momentum(bra,ket,static_cast<Axis>(momentum),field,workspace);
+}
+
+Complex canonical_angular_momentum(const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    std::size_t component,Vec3 origin,const MagneticField& field,IntegralWorkspace& workspace) {
+    const auto j=(component+1U)%3U,k=(component+2U)%3U;
+    return coordinate_momentum_at(bra,ket,j,k,origin,field,workspace)-
+        coordinate_momentum_at(bra,ket,k,j,origin,field,workspace);
+}
+
+template <typename Evaluator>
+void property_matrix_parallel(const Basis& basis,std::span<Complex> output,
+    std::size_t threads,Evaluator&& evaluate) {
+    const auto n=basis.ao_count(),ns=basis.shells().size();
+    if(output.size()!=n*n){throw std::length_error("property matrix output has incorrect size");}
+    detail::parallel_for(ns*ns,threads,[&](std::size_t pair){
+        const auto a=pair/ns,b=pair%ns;const auto& sa=basis.shells()[a];const auto& sb=basis.shells()[b];
+        IntegralWorkspace workspace;std::vector<Complex> block(shell_pair_size(sa,sb));
+        evaluate(sa,sb,block,workspace);
+        for(std::size_t i=0;i<sa.ao_count();++i){
+            for(std::size_t j=0;j<sb.ao_count();++j){output[(basis.ao_offsets()[a]+i)*n+basis.ao_offsets()[b]+j]=block[i*sb.ao_count()+j];}
+        }
+    });
+}
+
 }  // namespace
 
 CartesianMoment::CartesianMoment(Vec3 origin_in, CartesianExponent powers_in)
@@ -531,6 +567,74 @@ void compute_magnetic_kinetic_matrix(const Basis& basis,
         basis, output, [&](const auto& a, const auto& b, auto& block, auto& scratch) {
             compute_magnetic_kinetic(a, b, field, block, scratch);
         });
+}
+
+Complex primitive_kinetic_angular_momentum(const PrimitiveGaussian& bra,
+    const PrimitiveGaussian& ket,Axis axis,Vec3 origin,const MagneticField& field,
+    IntegralWorkspace& workspace) {
+    [[maybe_unused]] const CartesianMoment validated(origin,{});
+    const auto component=axis_index(axis);
+    const auto a=raw_primitive(bra),b=raw_primitive(ket);
+    Complex result=canonical_angular_momentum(a,b,component,origin,field,workspace);
+    if(field.B.x==0.0 && field.B.y==0.0 && field.B.z==0.0){return result;}
+    // u=(r-G), d=G-G0, u x [B0 x (u+d)]/2.
+    const Vec3 d{origin.x-field.gauge_origin.x,origin.y-field.gauge_origin.y,origin.z-field.gauge_origin.z};
+    Complex scalar{},projection{},linear_projection{};
+    for(std::size_t j=0;j<3U;++j){
+        const auto mu=primitive_moment(a,b,CartesianMoment(origin,coordinate_powers(j)),field,workspace);
+        scalar+=primitive_moment(a,b,CartesianMoment(origin,coordinate_powers(j,j)),field,workspace)+d[j]*mu;
+        projection+=field.B[j]*primitive_moment(a,b,CartesianMoment(origin,coordinate_powers(component,j)),field,workspace);
+        linear_projection+=field.B[j]*mu;
+    }
+    return result+0.5*(field.B[component]*scalar-projection-d[component]*linear_projection);
+}
+
+Complex primitive_magnetic_kinetic_operator(const PrimitiveGaussian& bra,
+    const PrimitiveGaussian& ket,const MagneticField& field,const MagneticField& op,
+    IntegralWorkspace& workspace) {
+    if(op.B.x==field.B.x && op.B.y==field.B.y && op.B.z==field.B.z &&
+       op.gauge_origin.x==field.gauge_origin.x && op.gauge_origin.y==field.gauge_origin.y && op.gauge_origin.z==field.gauge_origin.z){
+        return primitive_magnetic_kinetic(bra,ket,field,workspace);
+    }
+    const auto a=raw_primitive(bra),b=raw_primitive(ket);
+    Complex result=primitive_kinetic(a,b,field,workspace);
+    if(op.B.x==0.0 && op.B.y==0.0 && op.B.z==0.0){return result;}
+    const auto origin=op.gauge_origin;
+    for(std::size_t axis=0;axis<3U;++axis){result+=0.5*op.B[axis]*canonical_angular_momentum(a,b,axis,origin,field,workspace);}
+    const double square=op.B.x*op.B.x+op.B.y*op.B.y+op.B.z*op.B.z;
+    Complex radius{},projected{};
+    for(std::size_t i=0;i<3U;++i){
+        radius+=primitive_moment(a,b,CartesianMoment(origin,coordinate_powers(i,i)),field,workspace);
+        for(std::size_t j=0;j<3U;++j){projected+=op.B[i]*op.B[j]*primitive_moment(a,b,CartesianMoment(origin,coordinate_powers(i,j)),field,workspace);}
+    }
+    return result+0.125*(square*radius-projected);
+}
+
+void compute_kinetic_angular_momentum(const Shell& a,const Shell& b,Axis axis,
+    Vec3 origin,const MagneticField& field,std::span<Complex> output,IntegralWorkspace& workspace) {
+    compute_property(a,b,output,workspace,2U,[&](const auto& bra,const auto& ket,auto& scratch){
+        return primitive_kinetic_angular_momentum(bra,ket,axis,origin,field,scratch);
+    });
+}
+void compute_magnetic_kinetic_operator(const Shell& a,const Shell& b,
+    const MagneticField& field,const MagneticField& op,std::span<Complex> output,IntegralWorkspace& workspace) {
+    compute_property(a,b,output,workspace,2U,[&](const auto& bra,const auto& ket,auto& scratch){
+        return primitive_magnetic_kinetic_operator(bra,ket,field,op,scratch);
+    });
+}
+void compute_kinetic_angular_momentum_matrix(const Basis& basis,Axis axis,Vec3 origin,
+    const MagneticField& field,std::span<Complex> output,std::size_t threads) {
+    [[maybe_unused]] const CartesianMoment validated_origin(origin,{});
+    [[maybe_unused]] const auto validated_axis=axis_index(axis);
+    property_matrix_parallel(basis,output,threads,[&](const auto& a,const auto& b,std::span<Complex> block,auto& workspace){
+        compute_kinetic_angular_momentum(a,b,axis,origin,field,block,workspace);
+    });
+}
+void compute_magnetic_kinetic_operator_matrix(const Basis& basis,const MagneticField& field,
+    const MagneticField& op,std::span<Complex> output,std::size_t threads) {
+    property_matrix_parallel(basis,output,threads,[&](const auto& a,const auto& b,std::span<Complex> block,auto& workspace){
+        compute_magnetic_kinetic_operator(a,b,field,op,block,workspace);
+    });
 }
 
 }  // namespace giao

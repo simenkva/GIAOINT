@@ -78,4 +78,24 @@ void compute_magnetic_kinetic_matrix(const Basis& basis,
                                      const MagneticField& field,
                                      std::span<Complex> output);
 
+// TD4.0: phase field/gauge remain independent of these operator parameters.
+[[nodiscard]] Complex primitive_kinetic_angular_momentum(
+    const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,Axis axis,Vec3 origin,
+    const MagneticField& phase_field,IntegralWorkspace& workspace);
+[[nodiscard]] Complex primitive_magnetic_kinetic_operator(
+    const PrimitiveGaussian& bra,const PrimitiveGaussian& ket,
+    const MagneticField& phase_field,const MagneticField& operator_field,
+    IntegralWorkspace& workspace);
+void compute_kinetic_angular_momentum(const Shell& a,const Shell& b,Axis axis,
+    Vec3 origin,const MagneticField& phase_field,std::span<Complex> output,
+    IntegralWorkspace& workspace);
+void compute_magnetic_kinetic_operator(const Shell& a,const Shell& b,
+    const MagneticField& phase_field,const MagneticField& operator_field,
+    std::span<Complex> output,IntegralWorkspace& workspace);
+void compute_kinetic_angular_momentum_matrix(const Basis& basis,Axis axis,Vec3 origin,
+    const MagneticField& phase_field,std::span<Complex> output,std::size_t threads=1U);
+void compute_magnetic_kinetic_operator_matrix(const Basis& basis,
+    const MagneticField& phase_field,const MagneticField& operator_field,
+    std::span<Complex> output,std::size_t threads=1U);
+
 }  // namespace giao

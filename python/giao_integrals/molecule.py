@@ -470,6 +470,42 @@ class Molecule:
             threads=threads,
         )
 
+    def kinetic_angular_momentum(
+        self, component, *, origin=(0, 0, 0), out=None, threads=None
+    ):
+        """Return (r-origin) cross pi0 for this molecule's fixed phase field.
+
+        pi0=p+B0 cross (r-G0)/2 uses this molecule's field/gauge. origin is
+        independent of G0. Result is complex128 (nao,nao); strict out= and
+        configured threads=None are supported. See kinetic_angular_momentum.
+        """
+        return core.kinetic_angular_momentum(
+            self.basis,
+            component,
+            origin=origin,
+            field=self.field,
+            out=out,
+            threads=threads,
+        )
+
+    def magnetic_kinetic_operator(
+        self, *, operator_field=None, origin=None, out=None, threads=None
+    ):
+        """Return 1/2*(p+Aop)^2 with this molecule's London phases fixed.
+
+        operator_field C and origin G set Aop=C cross (r-G)/2 independently.
+        None defaults to this molecule's B0/G0, reproducing magnetic_kinetic.
+        Result is complex128 (nao,nao); strict out= and threads=None supported.
+        """
+        return core.magnetic_kinetic_operator(
+            self.basis,
+            operator_field=operator_field,
+            origin=origin,
+            field=self.field,
+            out=out,
+            threads=threads,
+        )
+
     def _atom_one_electron_derivatives(
         self,
         name,
