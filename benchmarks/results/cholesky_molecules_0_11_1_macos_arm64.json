@@ -1,0 +1,2947 @@
+{
+  "metadata": {
+    "date": "2026-11-21",
+    "cpu": "Apple M2 Pro, 12 physical cores",
+    "memory_bytes": 34359738368,
+    "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "python": "3.13.3",
+    "numpy": "2.5.5",
+    "threshold": 1e-08,
+    "blas_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "before": "PyPI 0.11.0 CPython 3.13 arm64 wheel, AppleClang 17, bundled libomp",
+    "after": "0.11.1 source e6c2d26, AppleClang 21, Homebrew libomp 23.1.1",
+    "method": "Fresh process for each stage/count/case, sequential paired measurements. No affinity or repeated-trial claim. Load averages are recorded for each case; exploratory interrupted runs are excluded. Dense checks run after the timed factorization; rss_bytes is captured beforehand.",
+    "molecular_field": [
+      0.03,
+      -0.02,
+      0.05
+    ],
+    "gauge_origin": [
+      0.7,
+      -0.4,
+      1.1
+    ],
+    "atom_field": [
+      0,
+      0,
+      0.1
+    ],
+    "atom_uncontracting": {
+      "uncontract_general": true,
+      "uncontract_segmented": true,
+      "uncontract_spdf": true
+    },
+    "basis_set_exchange": "0.12",
+    "latest_source": "a34b5db; final generalizations retain the measured benchmark paths",
+    "completed_stages": 64,
+    "expected_stages": 64,
+    "blas": "Accelerate",
+    "complete": true
+  },
+  "profile_before": {
+    "zero": {
+      "case": "water",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 43.22188404202461,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 154370048,
+      "load_start": [
+        9.80322265625,
+        13.728515625,
+        16.82275390625
+      ],
+      "load_end": [
+        22.52734375,
+        16.58984375,
+        17.7333984375
+      ],
+      "profiled": true,
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "times": {
+        "diagonal_seconds": 0.028208583127707243,
+        "columns_seconds": 42.79646757803857,
+        "updates_seconds": 0.31012873887084424,
+        "python_overhead_seconds": 0.08707914198748767
+      },
+      "counts": {
+        "column_calls": 588,
+        "column_shell_quartet_visits": 32340,
+        "column_ao_integrals": 12611933,
+        "column_primitive_integrals": 711677659,
+        "diagonal_shell_quartets": 55,
+        "diagonal_primitive_integrals": 511476,
+        "dense_shell_quartets": 2575,
+        "dense_primitive_integrals": 11198307,
+        "column_tasks": 176522,
+        "unique_column_shell_quartets": 2585
+      },
+      "dense_seconds": 0.5666887080296874,
+      "max_error": 9.885908820728151e-09
+    },
+    "field": {
+      "case": "water",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 65,
+      "rank": 668,
+      "seconds": 96.39196787495166,
+      "residual": 9.95169465596872e-09,
+      "vectors_sha256": "5e18a872e930cb6e9334780e42256af65c613aac88474c2cca06000b23fc66a7",
+      "pivots_sha256": "35b0a3fc45077d93abc5ca1bd7efcbb9c3da8ee59999f7a35fdb0f601989a3bc",
+      "rss_bytes": 182960128,
+      "load_start": [
+        21.36376953125,
+        16.44677734375,
+        17.67626953125
+      ],
+      "load_end": [
+        33.072265625,
+        21.9013671875,
+        19.66064453125
+      ],
+      "profiled": true,
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "times": {
+        "diagonal_seconds": 0.02631599991582334,
+        "columns_seconds": 95.35602141590789,
+        "updates_seconds": 0.8728217789903283,
+        "python_overhead_seconds": 0.13680868013761938
+      },
+      "counts": {
+        "column_calls": 622,
+        "column_shell_quartet_visits": 62200,
+        "column_ao_integrals": 19658925,
+        "column_primitive_integrals": 1044102075,
+        "diagonal_shell_quartets": 55,
+        "diagonal_primitive_integrals": 511476,
+        "dense_shell_quartets": 2575,
+        "dense_primitive_integrals": 11198307,
+        "column_tasks": 333682,
+        "unique_column_shell_quartets": 8000
+      },
+      "dense_seconds": 0.9449689169414341,
+      "max_error": 9.951695245646874e-09
+    }
+  },
+  "profile_after": {
+    "zero": {
+      "case": "water",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 0.7487540838774294,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 176635904,
+      "load_start": [
+        4.94482421875,
+        11.3330078125,
+        34.2763671875
+      ],
+      "load_end": [
+        4.94482421875,
+        11.3330078125,
+        34.2763671875
+      ],
+      "profiled": true,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "times": {
+        "diagonal_seconds": 0.023402833146974444,
+        "columns_seconds": 0.5056618715170771,
+        "updates_seconds": 0.12510774191468954,
+        "python_overhead_seconds": 0.09458163729868829
+      },
+      "counts": {
+        "column_calls": 492,
+        "column_shell_quartet_visits": 27060,
+        "column_ao_integrals": 3752903,
+        "column_primitive_integrals": 9644326,
+        "diagonal_shell_quartets": 55,
+        "diagonal_primitive_integrals": 511476,
+        "dense_shell_quartets": 2575,
+        "dense_primitive_integrals": 11198307,
+        "column_tasks": 27201,
+        "ao_primitive_integrals_without_reuse": 421094326,
+        "unique_column_shell_quartets": 2585
+      },
+      "dense_seconds": 0.4502066250424832,
+      "max_error": 9.885908820728151e-09
+    },
+    "field": {
+      "case": "water",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 65,
+      "rank": 687,
+      "seconds": 1.973326957784593,
+      "residual": 9.993925116747561e-09,
+      "vectors_sha256": "0d92f3a49f148fb22da549a95f7621ccec9d4a9a6fd6fed125300e249af070ee",
+      "pivots_sha256": "8cd02ac79c2e147e4e0471ab1d8af9b4972ef85a100667bd6fac8f09ae40e05d",
+      "rss_bytes": 240320512,
+      "load_start": [
+        3.31396484375,
+        10.66845703125,
+        27.22412109375
+      ],
+      "load_end": [
+        3.31396484375,
+        10.66845703125,
+        27.22412109375
+      ],
+      "profiled": true,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "times": {
+        "diagonal_seconds": 0.028587666107341647,
+        "columns_seconds": 1.2372145422268659,
+        "updates_seconds": 0.5854214080609381,
+        "python_overhead_seconds": 0.12210334138944745
+      },
+      "counts": {
+        "column_calls": 389,
+        "column_shell_quartet_visits": 38900,
+        "column_ao_integrals": 4153175,
+        "column_primitive_integrals": 14132394,
+        "diagonal_shell_quartets": 55,
+        "diagonal_primitive_integrals": 511476,
+        "dense_shell_quartets": 2575,
+        "dense_primitive_integrals": 11198307,
+        "column_tasks": 39029,
+        "ao_primitive_integrals_without_reuse": 423876625,
+        "unique_column_shell_quartets": 7400
+      },
+      "dense_seconds": 0.9849013749044389,
+      "max_error": 9.993925069451404e-09
+    }
+  },
+  "strict_global": {
+    "case": "water",
+    "finite_field": true,
+    "threads": 12,
+    "nao": 65,
+    "rank": 668,
+    "seconds": 2.5594790000468493,
+    "residual": 9.95169465596872e-09,
+    "vectors_sha256": "5e18a872e930cb6e9334780e42256af65c613aac88474c2cca06000b23fc66a7",
+    "pivots_sha256": "35b0a3fc45077d93abc5ca1bd7efcbb9c3da8ee59999f7a35fdb0f601989a3bc",
+    "rss_bytes": 246874112,
+    "load_start": [
+      4.94482421875,
+      11.3330078125,
+      34.2763671875
+    ],
+    "load_end": [
+      4.62890625,
+      11.1611328125,
+      34.0810546875
+    ],
+    "profiled": false,
+    "pivot_batch_size": 1,
+    "build": {
+      "version": "0.11.1",
+      "compiler": "AppleClang 21.0.0.21000401",
+      "openmp_enabled": true,
+      "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+      "default_threads": 12,
+      "physical_cores": 12
+    },
+    "python": "3.13.3",
+    "numpy": "2.5.5",
+    "dense_seconds": 0.9198597909417003,
+    "max_error": 9.951695245646874e-09
+  },
+  "benchmarks": [
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 43.294714958174154,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 122322944,
+      "load_start": [
+        4.62890625,
+        11.1611328125,
+        34.0810546875
+      ],
+      "load_end": [
+        12.8056640625,
+        12.48828125,
+        33.3916015625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 0.6720409579575062,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 175931392,
+      "load_start": [
+        12.8056640625,
+        12.48828125,
+        33.3916015625
+      ],
+      "load_end": [
+        12.8056640625,
+        12.48828125,
+        33.3916015625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 0.47663595899939537,
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 65,
+      "rank": 668,
+      "seconds": 93.46857612510212,
+      "residual": 9.95169465596872e-09,
+      "vectors_sha256": "5e18a872e930cb6e9334780e42256af65c613aac88474c2cca06000b23fc66a7",
+      "pivots_sha256": "35b0a3fc45077d93abc5ca1bd7efcbb9c3da8ee59999f7a35fdb0f601989a3bc",
+      "rss_bytes": 147931136,
+      "load_start": [
+        12.8056640625,
+        12.48828125,
+        33.3916015625
+      ],
+      "load_end": [
+        25.4150390625,
+        17.373046875,
+        33.10302734375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 65,
+      "rank": 687,
+      "seconds": 1.8259639590978622,
+      "residual": 9.993925116747561e-09,
+      "vectors_sha256": "0d92f3a49f148fb22da549a95f7621ccec9d4a9a6fd6fed125300e249af070ee",
+      "pivots_sha256": "8cd02ac79c2e147e4e0471ab1d8af9b4972ef85a100667bd6fac8f09ae40e05d",
+      "rss_bytes": 235749376,
+      "load_start": [
+        4.00927734375,
+        10.6904296875,
+        27.134765625
+      ],
+      "load_end": [
+        4.00927734375,
+        10.6904296875,
+        27.134765625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 0.9482016251422465,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 42.297006624983624,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 303120384,
+      "load_start": [
+        4.00927734375,
+        10.6904296875,
+        27.134765625
+      ],
+      "load_end": [
+        10.73583984375,
+        11.5517578125,
+        26.6044921875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 2.8352813329547644,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 387645440,
+      "load_start": [
+        10.73583984375,
+        11.5517578125,
+        26.6044921875
+      ],
+      "load_end": [
+        11.2373046875,
+        11.64208984375,
+        26.5478515625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 3.245427542133257,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 105,
+      "rank": 953,
+      "seconds": 116.01962529192679,
+      "residual": 9.868509002706725e-09,
+      "vectors_sha256": "7de1cdfdf193e887a2f7092effc7c4cb78a8258bd19285918221a3e81edf6ceb",
+      "pivots_sha256": "e49dcee8dad97ff33190f48010f2b8faa9c78c8fad641d15f66835397a72c3a5",
+      "rss_bytes": 398360576,
+      "load_start": [
+        11.2373046875,
+        11.64208984375,
+        26.5478515625
+      ],
+      "load_end": [
+        25.8251953125,
+        17.6123046875,
+        27.0546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 105,
+      "rank": 967,
+      "seconds": 7.527856499888003,
+      "residual": 9.868819579328757e-09,
+      "vectors_sha256": "19f49a5a76cd91233276e38683c90bd03dfcf770b52aa2da25764268f9d8e6a3",
+      "pivots_sha256": "30d809266bd6955da450007f53e961b515787a1c7d811a04a521919decd3341f",
+      "rss_bytes": 431308800,
+      "load_start": [
+        25.8251953125,
+        17.6123046875,
+        27.0546875
+      ],
+      "load_end": [
+        22.44970703125,
+        17.1630859375,
+        26.78466796875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 6.593046500114724,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 75.37959837517701,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 527400960,
+      "load_start": [
+        21.85302734375,
+        17.126953125,
+        26.71533203125
+      ],
+      "load_end": [
+        24.50830078125,
+        19.8798828125,
+        27.01171875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 6.850126208039001,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 727056384,
+      "load_start": [
+        24.50830078125,
+        19.8798828125,
+        27.01171875
+      ],
+      "load_end": [
+        22.54638671875,
+        19.61865234375,
+        26.83544921875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 7.696681665955111,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 130,
+      "rank": 1174,
+      "seconds": 216.90477187512442,
+      "residual": 9.971694046551743e-09,
+      "vectors_sha256": "96ff29c15240961df2c844652f0b9ee5c9a9ee1e2fd7409c7557c0f5af17851b",
+      "pivots_sha256": "2bc3034c85b55669e9ecd011ba0e68b585842874530fe4e8f5fe0b0d84a015ac",
+      "rss_bytes": 675790848,
+      "load_start": [
+        28.10791015625,
+        20.81982421875,
+        27.216796875
+      ],
+      "load_end": [
+        26.361328125,
+        24.92724609375,
+        27.77392578125
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 130,
+      "rank": 1192,
+      "seconds": 15.360311125172302,
+      "residual": 9.945617935112805e-09,
+      "vectors_sha256": "e3f6a2c6128a09c211b7403387e2f6d38d18862dbb482ca671d8c7e4efba2535",
+      "pivots_sha256": "a270935acda29975aef535639cd1e5719029f7757859cfb57a54fe4fd3cc2f08",
+      "rss_bytes": 768884736,
+      "load_start": [
+        26.361328125,
+        24.92724609375,
+        27.77392578125
+      ],
+      "load_end": [
+        21.93798828125,
+        24.029296875,
+        27.40380859375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 14.983630707953125,
+      "stage": "after"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 7.706622665980831,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 842350592,
+      "load_start": [
+        27.09423828125,
+        25.05859375,
+        27.71142578125
+      ],
+      "load_end": [
+        24.71533203125,
+        24.6259765625,
+        27.52685546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 7.704595583956689,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 839532544,
+      "load_start": [
+        24.71533203125,
+        24.6259765625,
+        27.52685546875
+      ],
+      "load_end": [
+        23.77685546875,
+        24.4326171875,
+        27.44140625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 28.05738891591318,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1369210880,
+      "load_start": [
+        23.77685546875,
+        24.4326171875,
+        27.44140625
+      ],
+      "load_end": [
+        47.974609375,
+        30.54541015625,
+        29.5693359375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 23.264945999952033,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1375223808,
+      "load_start": [
+        47.974609375,
+        30.54541015625,
+        29.5693359375
+      ],
+      "load_end": [
+        35.8447265625,
+        29.15185546875,
+        29.0986328125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 8,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 52.59913337486796,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 122093568,
+      "load_start": [
+        35.8447265625,
+        29.15185546875,
+        29.0986328125
+      ],
+      "load_end": [
+        21.7822265625,
+        26.33984375,
+        28.05810546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 8,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 0.7810670828912407,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 174981120,
+      "load_start": [
+        21.7822265625,
+        26.33984375,
+        28.05810546875
+      ],
+      "load_end": [
+        21.7822265625,
+        26.33984375,
+        28.05810546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 0.5877034580335021,
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 65,
+      "rank": 668,
+      "seconds": 112.21735658310354,
+      "residual": 9.95169465596872e-09,
+      "vectors_sha256": "5e18a872e930cb6e9334780e42256af65c613aac88474c2cca06000b23fc66a7",
+      "pivots_sha256": "35b0a3fc45077d93abc5ca1bd7efcbb9c3da8ee59999f7a35fdb0f601989a3bc",
+      "rss_bytes": 122830848,
+      "load_start": [
+        20.83837890625,
+        26.068359375,
+        27.9521484375
+      ],
+      "load_end": [
+        12.62548828125,
+        21.59326171875,
+        25.96533203125
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 65,
+      "rank": 687,
+      "seconds": 2.0487578748725355,
+      "residual": 9.993925116747561e-09,
+      "vectors_sha256": "0d92f3a49f148fb22da549a95f7621ccec9d4a9a6fd6fed125300e249af070ee",
+      "pivots_sha256": "8cd02ac79c2e147e4e0471ab1d8af9b4972ef85a100667bd6fac8f09ae40e05d",
+      "rss_bytes": 222920704,
+      "load_start": [
+        12.62548828125,
+        21.59326171875,
+        25.96533203125
+      ],
+      "load_end": [
+        12.3349609375,
+        21.3837890625,
+        25.86572265625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 1.1435821659397334,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 8,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 52.47694900003262,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 276545536,
+      "load_start": [
+        12.3349609375,
+        21.3837890625,
+        25.86572265625
+      ],
+      "load_end": [
+        12.244140625,
+        19.91552734375,
+        25.06201171875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 8,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 3.1928024999797344,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 405012480,
+      "load_start": [
+        12.244140625,
+        19.91552734375,
+        25.06201171875
+      ],
+      "load_end": [
+        12.06396484375,
+        19.75048828125,
+        24.9736328125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 3.630978832952678,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 105,
+      "rank": 953,
+      "seconds": 136.7135082918685,
+      "residual": 9.868509002706725e-09,
+      "vectors_sha256": "7de1cdfdf193e887a2f7092effc7c4cb78a8258bd19285918221a3e81edf6ceb",
+      "pivots_sha256": "e49dcee8dad97ff33190f48010f2b8faa9c78c8fad641d15f66835397a72c3a5",
+      "rss_bytes": 376930304,
+      "load_start": [
+        11.978515625,
+        19.60498046875,
+        24.8916015625
+      ],
+      "load_end": [
+        9.9326171875,
+        16.0244140625,
+        22.66748046875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 105,
+      "rank": 967,
+      "seconds": 7.968758750008419,
+      "residual": 9.868819579328757e-09,
+      "vectors_sha256": "19f49a5a76cd91233276e38683c90bd03dfcf770b52aa2da25764268f9d8e6a3",
+      "pivots_sha256": "30d809266bd6955da450007f53e961b515787a1c7d811a04a521919decd3341f",
+      "rss_bytes": 434257920,
+      "load_start": [
+        9.9326171875,
+        16.0244140625,
+        22.66748046875
+      ],
+      "load_end": [
+        9.5361328125,
+        15.74267578125,
+        22.4892578125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 7.817736125085503,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 8,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 89.04421495785937,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 503349248,
+      "load_start": [
+        9.4931640625,
+        15.63037109375,
+        22.41015625
+      ],
+      "load_end": [
+        14.59716796875,
+        16.34716796875,
+        22.0498046875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 8,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 7.57534125004895,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 660897792,
+      "load_start": [
+        14.59716796875,
+        16.34716796875,
+        22.0498046875
+      ],
+      "load_end": [
+        12.81396484375,
+        15.9072265625,
+        21.82666015625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 8.15888816700317,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 130,
+      "rank": 1174,
+      "seconds": 238.7788559589535,
+      "residual": 9.971694046551743e-09,
+      "vectors_sha256": "96ff29c15240961df2c844652f0b9ee5c9a9ee1e2fd7409c7557c0f5af17851b",
+      "pivots_sha256": "2bc3034c85b55669e9ecd011ba0e68b585842874530fe4e8f5fe0b0d84a015ac",
+      "rss_bytes": 675921920,
+      "load_start": [
+        11.66650390625,
+        15.5634765625,
+        21.63525390625
+      ],
+      "load_end": [
+        11.2080078125,
+        13.82421875,
+        19.4482421875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 130,
+      "rank": 1192,
+      "seconds": 16.62875479203649,
+      "residual": 9.945617935112805e-09,
+      "vectors_sha256": "e3f6a2c6128a09c211b7403387e2f6d38d18862dbb482ca671d8c7e4efba2535",
+      "pivots_sha256": "a270935acda29975aef535639cd1e5719029f7757859cfb57a54fe4fd3cc2f08",
+      "rss_bytes": 766689280,
+      "load_start": [
+        11.2080078125,
+        13.82421875,
+        19.4482421875
+      ],
+      "load_end": [
+        9.28955078125,
+        13.2314453125,
+        19.10546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 16.132882124977186,
+      "stage": "after"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 8.684708958026022,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 835862528,
+      "load_start": [
+        8.75634765625,
+        12.9248046875,
+        18.89306640625
+      ],
+      "load_end": [
+        8.39892578125,
+        12.71240234375,
+        18.748046875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 8.841297833016142,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 841252864,
+      "load_start": [
+        8.39892578125,
+        12.71240234375,
+        18.748046875
+      ],
+      "load_end": [
+        7.99755859375,
+        12.4892578125,
+        18.5986328125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 24.34712504199706,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1396588544,
+      "load_start": [
+        7.99755859375,
+        12.4892578125,
+        18.5986328125
+      ],
+      "load_end": [
+        6.0908203125,
+        11.677734375,
+        18.12890625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 8,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 24.762216832954437,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1393967104,
+      "load_start": [
+        6.0908203125,
+        11.677734375,
+        18.12890625
+      ],
+      "load_end": [
+        6.029296875,
+        11.21875,
+        17.7763671875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 4,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 92.98048158315942,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 91668480,
+      "load_start": [
+        6.029296875,
+        11.21875,
+        17.7763671875
+      ],
+      "load_end": [
+        8.13427734375,
+        10.5712890625,
+        16.8671875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 4,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 1.1712326249107718,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 174194688,
+      "load_start": [
+        8.13427734375,
+        10.5712890625,
+        16.8671875
+      ],
+      "load_end": [
+        8.13427734375,
+        10.5712890625,
+        16.8671875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 1.0220229160040617,
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 65,
+      "rank": 668,
+      "seconds": 196.71213691681623,
+      "residual": 9.95169465596872e-09,
+      "vectors_sha256": "5e18a872e930cb6e9334780e42256af65c613aac88474c2cca06000b23fc66a7",
+      "pivots_sha256": "35b0a3fc45077d93abc5ca1bd7efcbb9c3da8ee59999f7a35fdb0f601989a3bc",
+      "rss_bytes": 118210560,
+      "load_start": [
+        9.00390625,
+        10.7109375,
+        16.87939453125
+      ],
+      "load_end": [
+        7.36328125,
+        8.8994140625,
+        14.81689453125
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 65,
+      "rank": 687,
+      "seconds": 3.0922695419285446,
+      "residual": 9.993925116747561e-09,
+      "vectors_sha256": "0d92f3a49f148fb22da549a95f7621ccec9d4a9a6fd6fed125300e249af070ee",
+      "pivots_sha256": "8cd02ac79c2e147e4e0471ab1d8af9b4972ef85a100667bd6fac8f09ae40e05d",
+      "rss_bytes": 186859520,
+      "load_start": [
+        7.36328125,
+        8.8994140625,
+        14.81689453125
+      ],
+      "load_end": [
+        7.494140625,
+        8.90087890625,
+        14.78271484375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 2.032403582939878,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 4,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 91.40438600000925,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 283295744,
+      "load_start": [
+        7.494140625,
+        8.90087890625,
+        14.78271484375
+      ],
+      "load_end": [
+        6.4296875,
+        8.18359375,
+        13.9130859375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 4,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 3.592447374947369,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 402980864,
+      "load_start": [
+        6.4296875,
+        8.18359375,
+        13.9130859375
+      ],
+      "load_end": [
+        6.23486328125,
+        8.11376953125,
+        13.85498046875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 5.503254124894738,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 105,
+      "rank": 953,
+      "seconds": 239.52799733285792,
+      "residual": 9.868509002706725e-09,
+      "vectors_sha256": "7de1cdfdf193e887a2f7092effc7c4cb78a8258bd19285918221a3e81edf6ceb",
+      "pivots_sha256": "e49dcee8dad97ff33190f48010f2b8faa9c78c8fad641d15f66835397a72c3a5",
+      "rss_bytes": 372015104,
+      "load_start": [
+        6.1357421875,
+        8.06201171875,
+        13.802734375
+      ],
+      "load_end": [
+        5.8876953125,
+        7.0185546875,
+        11.9345703125
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 105,
+      "rank": 967,
+      "seconds": 10.906328041106462,
+      "residual": 9.868819579328757e-09,
+      "vectors_sha256": "19f49a5a76cd91233276e38683c90bd03dfcf770b52aa2da25764268f9d8e6a3",
+      "pivots_sha256": "30d809266bd6955da450007f53e961b515787a1c7d811a04a521919decd3341f",
+      "rss_bytes": 428244992,
+      "load_start": [
+        5.8876953125,
+        7.0185546875,
+        11.9345703125
+      ],
+      "load_end": [
+        7.06396484375,
+        7.2451171875,
+        11.95751953125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 13.267830041004345,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 4,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 158.391507250024,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 500400128,
+      "load_start": [
+        6.71044921875,
+        7.15234375,
+        11.84130859375
+      ],
+      "load_end": [
+        7.52099609375,
+        7.7080078125,
+        11.28662109375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 4,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 7.922185959061608,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 588447744,
+      "load_start": [
+        7.52099609375,
+        7.7080078125,
+        11.28662109375
+      ],
+      "load_end": [
+        7.07861328125,
+        7.61279296875,
+        11.23193359375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 13.590893499786034,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 130,
+      "rank": 1174,
+      "seconds": 424.18763962504454,
+      "residual": 9.971694046551743e-09,
+      "vectors_sha256": "96ff29c15240961df2c844652f0b9ee5c9a9ee1e2fd7409c7557c0f5af17851b",
+      "pivots_sha256": "2bc3034c85b55669e9ecd011ba0e68b585842874530fe4e8f5fe0b0d84a015ac",
+      "rss_bytes": 674349056,
+      "load_start": [
+        7.82080078125,
+        7.74658203125,
+        11.2158203125
+      ],
+      "load_end": [
+        13.98291015625,
+        13.7265625,
+        13.119140625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 130,
+      "rank": 1192,
+      "seconds": 21.103694416815415,
+      "residual": 9.945617935112805e-09,
+      "vectors_sha256": "e3f6a2c6128a09c211b7403387e2f6d38d18862dbb482ca671d8c7e4efba2535",
+      "pivots_sha256": "a270935acda29975aef535639cd1e5719029f7757859cfb57a54fe4fd3cc2f08",
+      "rss_bytes": 763920384,
+      "load_start": [
+        13.98291015625,
+        13.7265625,
+        13.119140625
+      ],
+      "load_end": [
+        12.66748046875,
+        13.47509765625,
+        13.04443359375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 28.1912657499779,
+      "stage": "after"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 12.226381874876097,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 836419584,
+      "load_start": [
+        11.44921875,
+        13.10888671875,
+        12.92626953125
+      ],
+      "load_end": [
+        14.05712890625,
+        13.6083984375,
+        13.10693359375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 12.50879441597499,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 838811648,
+      "load_start": [
+        14.05712890625,
+        13.6083984375,
+        13.10693359375
+      ],
+      "load_end": [
+        15.37060546875,
+        13.9013671875,
+        13.21630859375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 32.77165108313784,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1396998144,
+      "load_start": [
+        15.37060546875,
+        13.9013671875,
+        13.21630859375
+      ],
+      "load_end": [
+        12.09130859375,
+        13.1953125,
+        12.98291015625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 34.59313741582446,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1371930624,
+      "load_start": [
+        12.09130859375,
+        13.1953125,
+        12.98291015625
+      ],
+      "load_end": [
+        16.31982421875,
+        14.1220703125,
+        13.32763671875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 1,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 325.6981458340306,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 91291648,
+      "load_start": [
+        16.31982421875,
+        14.1220703125,
+        13.32763671875
+      ],
+      "load_end": [
+        6.71630859375,
+        10.62255859375,
+        12.021484375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 1,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 3.5107227079570293,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 178470912,
+      "load_start": [
+        6.71630859375,
+        10.62255859375,
+        12.021484375
+      ],
+      "load_end": [
+        7.37939453125,
+        10.69482421875,
+        12.03857421875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 3.682469999883324,
+      "stage": "after"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 65,
+      "rank": 668,
+      "seconds": 747.5326369998511,
+      "residual": 9.95169465596872e-09,
+      "vectors_sha256": "5e18a872e930cb6e9334780e42256af65c613aac88474c2cca06000b23fc66a7",
+      "pivots_sha256": "35b0a3fc45077d93abc5ca1bd7efcbb9c3da8ee59999f7a35fdb0f601989a3bc",
+      "rss_bytes": 116342784,
+      "load_start": [
+        7.37939453125,
+        10.69482421875,
+        12.03857421875
+      ],
+      "load_end": [
+        15.33984375,
+        15.669921875,
+        14.1572265625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 65,
+      "rank": 687,
+      "seconds": 9.325395625084639,
+      "residual": 9.993925116747561e-09,
+      "vectors_sha256": "0d92f3a49f148fb22da549a95f7621ccec9d4a9a6fd6fed125300e249af070ee",
+      "pivots_sha256": "8cd02ac79c2e147e4e0471ab1d8af9b4972ef85a100667bd6fac8f09ae40e05d",
+      "rss_bytes": 168525824,
+      "load_start": [
+        15.33984375,
+        15.669921875,
+        14.1572265625
+      ],
+      "load_end": [
+        13.58984375,
+        15.28515625,
+        14.0380859375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 7.701957541983575,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 1,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 340.3071476670448,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 287457280,
+      "load_start": [
+        13.86279296875,
+        15.3134765625,
+        14.05517578125
+      ],
+      "load_end": [
+        14.88623046875,
+        15.65673828125,
+        14.81787109375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": false,
+      "threads": 1,
+      "nao": 105,
+      "rank": 932,
+      "seconds": 8.558149375021458,
+      "residual": 9.996912650313625e-09,
+      "vectors_sha256": "3e205561dced04d51303b5bd9fb35a92312cf13173ae0c266295fcd0b9b15669",
+      "pivots_sha256": "ea80dedf1c738bd787241a7aff83da4b03a15c28cbb1b204cb30b08e82b324dd",
+      "rss_bytes": 334135296,
+      "load_start": [
+        14.88623046875,
+        15.65673828125,
+        14.81787109375
+      ],
+      "load_end": [
+        16.18115234375,
+        15.9130859375,
+        14.9189453125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 19.38140737498179,
+      "stage": "after"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 105,
+      "rank": 953,
+      "seconds": 908.3709158338606,
+      "residual": 9.868509002706725e-09,
+      "vectors_sha256": "7de1cdfdf193e887a2f7092effc7c4cb78a8258bd19285918221a3e81edf6ceb",
+      "pivots_sha256": "e49dcee8dad97ff33190f48010f2b8faa9c78c8fad641d15f66835397a72c3a5",
+      "rss_bytes": 369197056,
+      "load_start": [
+        17.529296875,
+        16.24072265625,
+        15.05859375
+      ],
+      "load_end": [
+        10.49951171875,
+        12.146484375,
+        13.03515625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "water-aug",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 105,
+      "rank": 967,
+      "seconds": 27.790469916071743,
+      "residual": 9.868819579328757e-09,
+      "vectors_sha256": "19f49a5a76cd91233276e38683c90bd03dfcf770b52aa2da25764268f9d8e6a3",
+      "pivots_sha256": "30d809266bd6955da450007f53e961b515787a1c7d811a04a521919decd3341f",
+      "rss_bytes": 428818432,
+      "load_start": [
+        10.49951171875,
+        12.146484375,
+        13.03515625
+      ],
+      "load_end": [
+        12.02783203125,
+        12.3486328125,
+        13.080078125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 47.70574420806952,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 1,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 576.6683973330073,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 500088832,
+      "load_start": [
+        10.35693359375,
+        11.9287109375,
+        12.88720703125
+      ],
+      "load_end": [
+        12.28564453125,
+        13.3359375,
+        13.4560546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": false,
+      "threads": 1,
+      "nao": 130,
+      "rank": 1158,
+      "seconds": 15.608350458089262,
+      "residual": 9.937919888069498e-09,
+      "vectors_sha256": "a9c41cefbaa8e2e23043ff347d0a70c4c24ba48bc90e5022607d6fd0134852af",
+      "pivots_sha256": "9d429339c5ee9ab65b0d510348a4dc1809dc8259466b175540c5606425aa9967",
+      "rss_bytes": 585728000,
+      "load_start": [
+        12.28564453125,
+        13.3359375,
+        13.4560546875
+      ],
+      "load_end": [
+        14.2578125,
+        13.73828125,
+        13.59814453125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 40.40006708400324,
+      "stage": "after"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 130,
+      "rank": 1174,
+      "seconds": 1911.997982500121,
+      "residual": 9.971694046551743e-09,
+      "vectors_sha256": "96ff29c15240961df2c844652f0b9ee5c9a9ee1e2fd7409c7557c0f5af17851b",
+      "pivots_sha256": "2bc3034c85b55669e9ecd011ba0e68b585842874530fe4e8f5fe0b0d84a015ac",
+      "rss_bytes": 673251328,
+      "load_start": [
+        10.64306640625,
+        12.88720703125,
+        13.29248046875
+      ],
+      "load_end": [
+        15.7177734375,
+        10.76123046875,
+        10.2958984375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "ammonia",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 130,
+      "rank": 1192,
+      "seconds": 75.68865383416414,
+      "residual": 9.945617935112805e-09,
+      "vectors_sha256": "e3f6a2c6128a09c211b7403387e2f6d38d18862dbb482ca671d8c7e4efba2535",
+      "pivots_sha256": "a270935acda29975aef535639cd1e5719029f7757859cfb57a54fe4fd3cc2f08",
+      "rss_bytes": 699793408,
+      "load_start": [
+        15.7177734375,
+        10.76123046875,
+        10.2958984375
+      ],
+      "load_end": [
+        16.15478515625,
+        12.1552734375,
+        10.8701171875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 148.13712929096073,
+      "stage": "after"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 44.36169991712086,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 837451776,
+      "load_start": [
+        7.23046875,
+        10.57470703125,
+        10.48876953125
+      ],
+      "load_end": [
+        6.26220703125,
+        9.841796875,
+        10.22119140625
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 43.5385212500114,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 838680576,
+      "load_start": [
+        6.26220703125,
+        9.841796875,
+        10.22119140625
+      ],
+      "load_end": [
+        9.1259765625,
+        10.0068359375,
+        10.255859375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 105.6960447919555,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1393623040,
+      "load_start": [
+        9.1259765625,
+        10.0068359375,
+        10.255859375
+      ],
+      "load_end": [
+        10.7275390625,
+        10.98291015625,
+        10.65380859375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before"
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 1,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 105.1251100001391,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1393688576,
+      "load_start": [
+        10.7275390625,
+        10.98291015625,
+        10.65380859375
+      ],
+      "load_end": [
+        13.890625,
+        11.5986328125,
+        10.90234375
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "after"
+    }
+  ],
+  "wheel_checks": [
+    {
+      "case": "water",
+      "finite_field": false,
+      "threads": 12,
+      "nao": 65,
+      "rank": 656,
+      "seconds": 0.799905207939446,
+      "residual": 9.885908861562931e-09,
+      "vectors_sha256": "295b837dc6e9a2e34d59ac040ce3637bf833d0a418d9974e016c2c5ff3521a6f",
+      "pivots_sha256": "ae1b3f700c55e0a075047469e9df9b35f7ce786b49ee6eae78a8383e57b16446",
+      "rss_bytes": 175980544,
+      "load_start": [
+        13.890625,
+        11.5986328125,
+        10.90234375
+      ],
+      "load_end": [
+        15.18017578125,
+        11.90380859375,
+        11.01416015625
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 1.591286457842216,
+      "max_error": 9.885908820728151e-09,
+      "stage": "wheel",
+      "trial": null
+    },
+    {
+      "case": "water",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 65,
+      "rank": 687,
+      "seconds": 4.356454208027571,
+      "residual": 9.993925116747561e-09,
+      "vectors_sha256": "0d92f3a49f148fb22da549a95f7621ccec9d4a9a6fd6fed125300e249af070ee",
+      "pivots_sha256": "8cd02ac79c2e147e4e0471ab1d8af9b4972ef85a100667bd6fac8f09ae40e05d",
+      "rss_bytes": 206290944,
+      "load_start": [
+        15.18017578125,
+        11.90380859375,
+        11.01416015625
+      ],
+      "load_end": [
+        15.32568359375,
+        11.98828125,
+        11.048828125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "dense_seconds": 3.3759840421844274,
+      "max_error": 9.993925069451404e-09,
+      "stage": "wheel",
+      "trial": null
+    },
+    {
+      "case": "Ne",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 152,
+      "rank": 1052,
+      "seconds": 16.56100779096596,
+      "residual": 7.481282795580177e-09,
+      "vectors_sha256": "eb74eb520061bda5ba56268ace9a90f3a4068931733aac5bb7773fb2a6139527",
+      "pivots_sha256": "c63ca69401b67b0a23490d3bac7c727086c747b69a39a7d10c4436b58953d853",
+      "rss_bytes": 837730304,
+      "load_start": [
+        21.22509765625,
+        13.2666015625,
+        11.50537109375
+      ],
+      "load_end": [
+        22.62744140625,
+        14.130859375,
+        11.857421875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "wheel",
+      "trial": null
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 12,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 46.329865667037666,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1395523584,
+      "load_start": [
+        22.62744140625,
+        14.130859375,
+        11.857421875
+      ],
+      "load_end": [
+        20.95263671875,
+        15.20556640625,
+        12.39013671875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "wheel",
+      "trial": null
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 61.17907387483865,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1395523584,
+      "load_start": [
+        20.95263671875,
+        15.20556640625,
+        12.39013671875
+      ],
+      "load_end": [
+        14.0546875,
+        14.28125,
+        12.23583984375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before",
+      "trial": 0
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 63.17803791700862,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1394409472,
+      "load_start": [
+        14.0546875,
+        14.28125,
+        12.23583984375
+      ],
+      "load_end": [
+        11.52392578125,
+        13.49951171875,
+        12.091796875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "wheel",
+      "trial": 0
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 61.5601927919779,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1392246784,
+      "load_start": [
+        11.52392578125,
+        13.49951171875,
+        12.091796875
+      ],
+      "load_end": [
+        9.4150390625,
+        12.53076171875,
+        11.8310546875
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "wheel",
+      "trial": 1
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 65.57921445881948,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1391788032,
+      "load_start": [
+        9.4150390625,
+        12.53076171875,
+        11.8310546875
+      ],
+      "load_end": [
+        10.8310546875,
+        12.39794921875,
+        11.83740234375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before",
+      "trial": 1
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 64.35910550015979,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1384873984,
+      "load_start": [
+        10.8310546875,
+        12.39794921875,
+        11.83740234375
+      ],
+      "load_end": [
+        10.98486328125,
+        12.23193359375,
+        11.8193359375
+      ],
+      "profiled": false,
+      "pivot_batch_size": "legacy",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giaoint-blog-check/lib/python3.13/site-packages/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "before",
+      "trial": 2
+    },
+    {
+      "case": "Na",
+      "finite_field": true,
+      "threads": 4,
+      "nao": 208,
+      "rank": 1275,
+      "seconds": 74.96700016595423,
+      "residual": 9.679579129041346e-09,
+      "vectors_sha256": "69c64be4f6b09e31d4c494ad68bd35cb28343dcf6795af36ac906d3672452043",
+      "pivots_sha256": "547713a153fb35e12530978ca3fa05f8a78559499c37253469bd7d26f8cfeec1",
+      "rss_bytes": 1218461696,
+      "load_start": [
+        10.98486328125,
+        12.23193359375,
+        11.8193359375
+      ],
+      "load_end": [
+        12.69091796875,
+        12.68310546875,
+        12.033203125
+      ],
+      "profiled": false,
+      "pivot_batch_size": 32,
+      "build": {
+        "version": "0.11.1",
+        "compiler": "AppleClang 17.0.0.17000013",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/private/tmp/giao-0111-wheel-final/giao_integrals/.dylibs/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "python": "3.13.3",
+      "numpy": "2.5.5",
+      "stage": "wheel",
+      "trial": 2
+    }
+  ],
+  "atom_repeat_summary": {
+    "case": "Na",
+    "threads": 4,
+    "trials": 3,
+    "before_median_seconds": 64.35910550015979,
+    "wheel_median_seconds": 63.17803791700862,
+    "before_range_seconds": [
+      61.17907387483865,
+      65.57921445881948
+    ],
+    "wheel_range_seconds": [
+      61.5601927919779,
+      74.96700016595423
+    ]
+  }
+}

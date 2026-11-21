@@ -2,9 +2,12 @@
 
 ## 0.11.1 molecular Cholesky preparation
 
-Molecular primitive/contraction reuse and a bounded raw-column LRU are under
-validation. The unmodified 0.11.0 water/cc-pVTZ profile and reproducible work
-counts are recorded in [the molecular report](docs/cholesky_molecules_0_11_1.md).
+Molecular primitive/contraction reuse, bounded raw-column caching and controlled
+complex pivot batches are implemented. All 695 tests, full serial/OpenMP and
+sanitizer CI, and all 16 wheels plus the source archive pass installed checks. The complete
+64-stage before/after timing matrix, work counts, memory/load provenance,
+strict-global compatibility option and atom repeat checks are recorded in
+[the molecular report](docs/cholesky_molecules_0_11_1.md).
 Version 0.11.0 is published; 0.11.1 remains source-only and must not be tagged
 or published without explicit approval.
 

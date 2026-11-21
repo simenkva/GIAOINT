@@ -111,3 +111,42 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python benchmarks/cholesky_threa
 The [0.9 report](../docs/release_0_9_report.md) separates profiled/unprofiled
 measurements and records the overlapping validation jobs. Do not treat those
 workstation samples as isolated or portable performance guarantees.
+
+## Molecular Cholesky (0.11.1)
+
+`cholesky_molecules.py` reproduces the supplied asymmetric water geometry and
+field/gauge origin. Cases `water`, `water-aug`, `ammonia`, `Ne`, and `Na` use
+65, 105, 130, 152, and 208 Cartesian AOs, respectively. The larger case is
+nonplanar NH3/aug-cc-pVTZ. Atom uncontracting uses all three BSE flags specified
+in the downstream reproducer. Threads and BLAS are controlled independently.
+
+Use separate, non-editable environments for the frozen PyPI baseline and the
+candidate, with the same NumPy and BSE data in both:
+
+```sh
+python3 -m venv /tmp/giao-before
+/tmp/giao-before/bin/python -m pip install 'giao-integrals[molecule]==0.11.0' 'numpy==2.5.5' 'basis-set-exchange==0.12'
+python3 -m venv /tmp/giao-after
+/tmp/giao-after/bin/python -m pip install '.[molecule]' 'numpy==2.5.5' 'basis-set-exchange==0.12'
+```
+
+From the repository root, run each environment on the same quiet host:
+
+```sh
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 /tmp/giao-before/bin/python benchmarks/cholesky_molecules.py --case water --field --threads 12 --profile --dense --verify
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 /tmp/giao-after/bin/python benchmarks/cholesky_molecules.py --case water --field --threads 12 --profile --dense --verify
+```
+
+Repeat at 1/4/8/12 threads and for each case, with and without `--field` for
+molecules; atoms always use Bz=0.1. Omit `--profile` for ordinary wall timings.
+`--dense` times a separate dense call after Cholesky, and `--verify` additionally
+reconstructs every AO slice outside the timed calculation. Full verification
+can be expensive for large cases. Do not request dense tensors for the large
+atom regression cases. `--pivot-batch-size 1` tests strict global pivoting in
+the candidate; the baseline always uses its existing policy. Every JSON line
+includes hashes, rank, residual, process RSS before the optional dense check,
+and starting/ending 1/5/15-minute load averages. Native work counts in profiles
+are derived from actual requests and the kernel loop structure.
+
+See [the molecular report](../docs/cholesky_molecules_0_11_1.md) for phase
+breakdowns and [Cholesky documentation](../docs/cholesky_eri.md) for timings.
