@@ -35,7 +35,7 @@ Milestone 9 (ERI performance) is complete; see
 
 ## Install
 
-From [PyPI](https://pypi.org/project/giao-integrals/0.9.0/):
+From [PyPI](https://pypi.org/project/giao-integrals/0.11.0/):
 
 ```console
 python -m pip install 'giao-integrals[molecule]'
@@ -89,13 +89,11 @@ to avoid loading a second Homebrew copy. See the
 [conda runtime guidance](docs/installation.md#macos-conda-source-installs-and-error-15). Avoid
 `--no-build-isolation` unless you installed `requirements-dev.txt` first.
 
-Version 0.9.0 is published on PyPI. The independently validated 0.10.0
-candidate adds the derivative APIs; `release/0.10.0` is frozen for publication
-without waiting for later features. The current source tree prepares 0.11.0
-with faster Cholesky generation, atom/density gradient helpers and TD4.0
-operators. Each version requires its own explicit publication approval. See
-[0.10 preparation](docs/release_0_10_report.md),
-[0.11 preparation](docs/release_0_11_report.md) and
+Version 0.11.0 is published on PyPI, including the derivative, gradient-assembly
+and independent-field operator interfaces. The current source tree prepares
+0.11.1 with faster generally contracted molecular Cholesky generation; it is
+not tagged or published. See [the molecular profile and validation](docs/cholesky_molecules_0_11_1.md),
+[0.11 validation](docs/release_0_11_report.md) and
 [installation and threading](docs/installation.md).
 
 ## Quick example

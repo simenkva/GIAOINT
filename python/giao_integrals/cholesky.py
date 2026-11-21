@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 
 import numpy as np
@@ -76,11 +77,15 @@ def cholesky_eri(
     The returned residual reports the achieved tolerance, including this floor.
 
     Diagonals come from (MN|NM); columns use (MN|SL) for pivot (L,S).
-    Up to eight candidate columns from the pivot shell pair are cached together.
-    Storage is O(rank*nao**2) plus bounded selected-column/native workspace.
-    Only needed diagonal elements and up to eight pivot columns are evaluated;
-    complete shell quartets are not constructed. ``threads`` controls the native
-    selected-integral tasks. None selects the configured default; 1 is serial.
+    For generally contracted shells, primitive component integrals are shared
+    across contraction rows. Up to 32 contraction variants of a Cartesian pivot
+    component are generated together; an LRU retains at most min(128,rank+8)
+    raw columns (at least eight slots). Uncontracted shells retain the eight-
+    candidate path. Global residual pivoting and reduction order are unchanged.
+    Storage is O(rank*nao**2) plus bounded selected-column/native workspace;
+    no full AO tensor or pair matrix is formed. ``threads`` controls native
+    shell-pair/selected-integral tasks. None selects the configured default;
+    1 is serial.
     NumPy/BLAS has its own thread settings and runs outside OpenMP regions.
 
     ``screening_threshold`` enables existing Schwarz bounds only to skip initial
@@ -159,6 +164,12 @@ def cholesky_eri(
     limit = n * n if max_bytes is None else min(n * n, max_bytes // row_bytes)
     factors = np.empty((0, n * n), dtype=dtype)
     pivots = []
+    # Prefetch only contraction variants of the same Cartesian component:
+    # they share every primitive integral. Retain those columns across shell
+    # pairs in a bounded LRU, rather than discard them on each global pivot.
+    contracted = any(s.contraction_count > 1 for s in shells)
+    candidate_count = 32 if contracted else 8
+    raw_cache = OrderedDict()
     candidates = np.empty(0, dtype=int)
     columns = np.empty((0, n * n), dtype=dtype)
 
@@ -175,13 +186,32 @@ def cholesky_eri(
             grown = np.empty((capacity, n * n), dtype=dtype)
             grown[:rank] = factors[:rank]
             factors = grown
+        if contracted and pivot in raw_cache:
+            candidates = np.array([pivot])
+            columns = raw_cache.pop(pivot)[None, :]
         match = np.flatnonzero(candidates == pivot)
         if not len(match):
             mu, nu = divmod(pivot, n)
             a, b = int(owners[mu]), int(owners[nu])
-            indices = (np.arange(n * n).reshape(n, n)[spans[a], spans[b]]).ravel()
+            if contracted:
+                ca, cb = shells[a].cartesian_count, shells[b].cartesian_count
+                left = (
+                    offsets[a]
+                    + (mu - offsets[a]) % ca
+                    + ca * np.arange(shells[a].contraction_count)
+                )
+                right = (
+                    offsets[b]
+                    + (nu - offsets[b]) % cb
+                    + cb * np.arange(shells[b].contraction_count)
+                )
+                indices = (left[:, None] * n + right).ravel()
+            else:
+                indices = (np.arange(n * n).reshape(n, n)[spans[a], spans[b]]).ravel()
             indices = indices[residual[indices] > tolerance]
-            candidates = indices[np.argsort(-residual[indices], kind="stable")[:8]]
+            candidates = indices[
+                np.argsort(-residual[indices], kind="stable")[:candidate_count]
+            ]
             # Ensure the globally chosen pivot wins ties even within a shell pair.
             if pivot not in candidates:
                 candidates[-1] = pivot
@@ -192,7 +222,17 @@ def cholesky_eri(
                 field=integral_field,
                 threads=threads,
             )
+            if contracted:
+                for index, candidate in enumerate(candidates):
+                    if candidate != pivot:
+                        raw_cache[int(candidate)] = columns[index].copy()
+                # Independent of n**4; at most 128 rows and O(rank*n**2).
+                capacity = min(128, max(8, rank + 8))
+                while len(raw_cache) > capacity:
+                    raw_cache.popitem(last=False)
             match = np.flatnonzero(candidates == pivot)
+        if contracted:
+            raw_cache.pop(pivot, None)
         column = columns[int(match[0])].copy()
         if rank:
             column -= factors[:rank, pivot].conj() @ factors[:rank]

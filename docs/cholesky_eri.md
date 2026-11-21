@@ -21,15 +21,16 @@ The Hermitian PSD matrix being factored is
 `W[(mu,nu),(lam,sig)] = (nu mu | lam sig)`, with **nao² ordered pairs**.
 Internally the implementation stores conjugated Cholesky columns, so it
 fetches `(MN|SL)` for pivot `(L,S)`. This is equivalent to Cholesky on W.
-Diagonal elements come from `(MN|NM)`. A bounded column cache retains up to
-eight candidates from one shell pair, while each pivot is selected from the
-global residual maximum. Since 0.11, a native backend evaluates only selected
-diagonal and column entries with independent 64-entry tasks and bounded
-per-task workspace. It retains the existing ERI kernel and primitive summation
-order. The projection and residual reductions retain their original order.
-The earlier backend generated full shell quartets in batches targeted at
-8 MiB before extracting the requested entries; it is the comparison baseline
-in the 0.11 report.
+Diagonal elements come from `(MN|NM)`. Each pivot is selected from the
+global residual maximum. The uncontracted backend retains up to eight candidate
+columns from one shell pair. The 0.11.1 molecular preparation shares primitive
+component integrals across general contraction rows, generates up to 32 matching
+contraction variants, and retains at most min(128,rank+8) raw columns in an LRU.
+The ERI kernel, primitive contraction order and projection reductions remain
+unchanged. Native work is parallel across shell pairs or selected-entry tasks.
+See [the molecular profile and benchmarks](cholesky_molecules_0_11_1.md).
+The older full-shell-quartet extraction backend remains the historical
+comparison baseline in the 0.11 report.
 
 There is no full AO tensor or full pair matrix. Factor storage grows
 geometrically and uses O(M*nao²) memory; growth and final complex128 conversion

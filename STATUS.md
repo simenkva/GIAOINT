@@ -1,5 +1,13 @@
 # Status
 
+## 0.11.1 molecular Cholesky preparation
+
+Molecular primitive/contraction reuse and a bounded raw-column LRU are under
+validation. The unmodified 0.11.0 water/cc-pVTZ profile and reproducible work
+counts are recorded in [the molecular report](docs/cholesky_molecules_0_11_1.md).
+Version 0.11.0 is published; 0.11.1 remains source-only and must not be tagged
+or published without explicit approval.
+
 ## 0.9.0 release
 
 AUTO OpenMP discovery, Python default-thread policy and build diagnostics,
