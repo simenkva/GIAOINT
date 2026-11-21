@@ -107,7 +107,8 @@ def run(args):
                 counts["column_shell_quartet_visits"] += 1
                 primitive_product = prim[a] * prim[b] * prim[sb] * prim[sa]
                 contracted = reuse and any(
-                    shells[x].contraction_count > 1 for x in (a, b, sa, sb)
+                    (shells[x].contraction_count > 1 or shells[x].primitive_count > 1)
+                    for x in (a, b, sa, sb)
                 )
                 nominal = size * primitive_product * (2 if real and a == b else 1)
                 counts["ao_primitive_integrals_without_reuse"] += nominal

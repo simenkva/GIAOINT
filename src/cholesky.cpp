@@ -174,6 +174,10 @@ class SelectedQuartet {
     std::array<std::vector<double>,4> normalizations_;
 };
 
+bool needs_contraction(const Shell& shell) noexcept {
+    return shell.contraction_count()>1U || shell.primitive_count()>1U;
+}
+
 struct Task {std::size_t group;std::size_t begin;std::size_t end;};
 struct Group {
     std::size_t a,b;
@@ -220,8 +224,8 @@ void columns(const Basis& basis,std::span<const std::array<std::size_t,2>> pivot
         for (std::size_t b=real?a:0U;b<basis.shells().size();++b) {
             const auto& left=basis.shells()[a];const auto& right=basis.shells()[b];
             groups.push_back({a,b,std::make_unique<SelectedQuartet>(left,right,basis.shells()[sb],basis.shells()[sa],field)});
-            const bool contracted=left.contraction_count()>1U || right.contraction_count()>1U ||
-                basis.shells()[sa].contraction_count()>1U || basis.shells()[sb].contraction_count()>1U;
+            const bool contracted=needs_contraction(left) || needs_contraction(right) ||
+                needs_contraction(basis.shells()[sa]) || needs_contraction(basis.shells()[sb]);
             groups.back().contracted=contracted;
             if (contracted) {tasks.push_back({groups.size()-1U,0U,1U});}
             else {append_tasks(tasks,groups.size()-1U,pivots.size()*left.ao_count()*right.ao_count());}

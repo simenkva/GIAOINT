@@ -179,7 +179,7 @@ def cholesky_eri(
     # Prefetch only contraction variants of the same Cartesian component:
     # they share every primitive integral. Retain those columns across shell
     # pairs in a bounded LRU, rather than discard them on each global pivot.
-    contracted = any(s.contraction_count > 1 for s in shells)
+    contracted = any(s.contraction_count > 1 or s.primitive_count > 1 for s in shells)
     candidate_count = 32 if contracted else 8
     raw_cache = OrderedDict()
     block_candidates = np.empty(0, dtype=int)
