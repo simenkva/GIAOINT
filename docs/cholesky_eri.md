@@ -13,8 +13,9 @@ L = chol.vectors
 
 Since 0.9, `threads=None` selects the configured default; `threads=1` remains
 explicitly serial. See [installation and thread policy](installation.md).
-The measurements below predate that default change and explicitly used one
-thread. The current scheduler uses dynamic shell-block assignment.
+The historical measurements below explicitly used one thread. Current
+1/4/8/12-thread Ne and Be comparisons are in the
+[0.11 validation report](release_0_11_report.md).
 
 The Hermitian PSD matrix being factored is
 `W[(mu,nu),(lam,sig)] = (nu mu | lam sig)`, with **nao² ordered pairs**.
@@ -22,9 +23,13 @@ Internally the implementation stores conjugated Cholesky columns, so it
 fetches `(MN|SL)` for pivot `(L,S)`. This is equivalent to Cholesky on W.
 Diagonal elements come from `(MN|NM)`. A bounded column cache retains up to
 eight candidates from one shell pair, while each pivot is selected from the
-global residual maximum. Quartet evaluation uses the existing batching and
-OpenMP backend, with batches targeted at 8 MiB. Larger individual quartets
-are allowed, as with `eri_batches()`.
+global residual maximum. Since 0.11, a native backend evaluates only selected
+diagonal and column entries with independent 64-entry tasks and bounded
+per-task workspace. It retains the existing ERI kernel and primitive summation
+order. The projection and residual reductions retain their original order.
+The earlier backend generated full shell quartets in batches targeted at
+8 MiB before extracting the requested entries; it is the comparison baseline
+in the 0.11 report.
 
 There is no full AO tensor or full pair matrix. Factor storage grows
 geometrically and uses O(M*nao²) memory; growth and final complex128 conversion
@@ -60,8 +65,10 @@ A separate single-center d/f test checks phase cancellation against finite-field
 shell integrals. No derivative or MO-transform API changes are involved.
 
 The original Cholesky validation passed 438 Python tests, with only existing
-BSE deprecation warnings; the 0.9 suite now passes 458 tests in each serial,
-OpenMP and sanitizer build. See [current validation](release_0_9_report.md).
+BSE deprecation warnings. The historical 0.9 validation is recorded in
+[its release report](release_0_9_report.md); the 0.10 candidate passes 621 tests
+and the 0.11 candidate passes 681. See
+[current validation](release_0_11_report.md).
 The measurements below preserve the earlier serial benchmark results.
 An isolated OpenMP build also checks the Cholesky suite, and finite-field
 H2O 6-31G gives identical factors and pivots with one and two ERI threads.

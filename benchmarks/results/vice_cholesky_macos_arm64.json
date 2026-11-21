@@ -481,5 +481,277 @@
   "notes": [
     "Before serial counts profiled; instrumented_after profiles every count. Final after data profiles serial counts only.",
     "Single runs on shared developer host, no CPU pinning. Baseline overlapped occasional small development checks. RSS is cumulative process high-water, not allocation instrumentation."
+  ],
+  "after": [
+    {
+      "profiled": true,
+      "vectors_bytes": 388886528,
+      "atom": "Ne",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 839368704,
+      "threads": 1,
+      "seconds": 34.33593433396891,
+      "nao": 152,
+      "rank": 1052,
+      "max_residual_diagonal": 7.481282795580177e-09,
+      "vectors_sha256": "fe38022ad8ee053826dcbec527619f803ce535f63fe2d5da04e884c80e935615",
+      "pivots_sha256": "1c380de316155aab34c9116534d4bf4b371932a6eed1ba9d89a012496747d364",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "vector_update_seconds": 3.7719661572482437,
+      "residual_update_seconds": 0.05402518925257027
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 388886528,
+      "atom": "Ne",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 844218368,
+      "threads": 4,
+      "seconds": 12.264511750079691,
+      "nao": 152,
+      "rank": 1052,
+      "max_residual_diagonal": 7.481282795580177e-09,
+      "vectors_sha256": "fe38022ad8ee053826dcbec527619f803ce535f63fe2d5da04e884c80e935615",
+      "pivots_sha256": "1c380de316155aab34c9116534d4bf4b371932a6eed1ba9d89a012496747d364",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 388886528,
+      "atom": "Ne",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 913506304,
+      "threads": 8,
+      "seconds": 8.435851374873891,
+      "nao": 152,
+      "rank": 1052,
+      "max_residual_diagonal": 7.481282795580177e-09,
+      "vectors_sha256": "fe38022ad8ee053826dcbec527619f803ce535f63fe2d5da04e884c80e935615",
+      "pivots_sha256": "1c380de316155aab34c9116534d4bf4b371932a6eed1ba9d89a012496747d364",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 388886528,
+      "atom": "Ne",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 981975040,
+      "threads": 12,
+      "seconds": 7.8309172911103815,
+      "nao": 152,
+      "rank": 1052,
+      "max_residual_diagonal": 7.481282795580177e-09,
+      "vectors_sha256": "fe38022ad8ee053826dcbec527619f803ce535f63fe2d5da04e884c80e935615",
+      "pivots_sha256": "1c380de316155aab34c9116534d4bf4b371932a6eed1ba9d89a012496747d364",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": true,
+      "vectors_bytes": 375578624,
+      "atom": "Be",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 981975040,
+      "threads": 1,
+      "seconds": 31.72166958404705,
+      "nao": 152,
+      "rank": 1016,
+      "max_residual_diagonal": 9.260818244538079e-09,
+      "vectors_sha256": "ebab3a168b27b93e7895b0b9ec0037014c240b84c68340f781c2e55039497486",
+      "pivots_sha256": "970be9e6f477bee8f6b5a72b86d411a1358d80f3ded9f43d3e6abcd18a76b529",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "vector_update_seconds": 3.4614064036868513,
+      "residual_update_seconds": 0.0497719191480428
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 375578624,
+      "atom": "Be",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 981975040,
+      "threads": 4,
+      "seconds": 11.126795124961063,
+      "nao": 152,
+      "rank": 1016,
+      "max_residual_diagonal": 9.260818244538079e-09,
+      "vectors_sha256": "ebab3a168b27b93e7895b0b9ec0037014c240b84c68340f781c2e55039497486",
+      "pivots_sha256": "970be9e6f477bee8f6b5a72b86d411a1358d80f3ded9f43d3e6abcd18a76b529",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 375578624,
+      "atom": "Be",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 981975040,
+      "threads": 8,
+      "seconds": 7.633129916153848,
+      "nao": 152,
+      "rank": 1016,
+      "max_residual_diagonal": 9.260818244538079e-09,
+      "vectors_sha256": "ebab3a168b27b93e7895b0b9ec0037014c240b84c68340f781c2e55039497486",
+      "pivots_sha256": "970be9e6f477bee8f6b5a72b86d411a1358d80f3ded9f43d3e6abcd18a76b529",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 375578624,
+      "atom": "Be",
+      "threshold": 1e-08,
+      "peak_rss_bytes": 981975040,
+      "threads": 12,
+      "seconds": 6.9853146250825375,
+      "nao": 152,
+      "rank": 1016,
+      "max_residual_diagonal": 9.260818244538079e-09,
+      "vectors_sha256": "ebab3a168b27b93e7895b0b9ec0037014c240b84c68340f781c2e55039497486",
+      "pivots_sha256": "970be9e6f477bee8f6b5a72b86d411a1358d80f3ded9f43d3e6abcd18a76b529",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": true,
+      "vectors_bytes": 301276160,
+      "atom": "Be",
+      "threshold": 1e-06,
+      "peak_rss_bytes": 514326528,
+      "threads": 1,
+      "seconds": 25.86123437504284,
+      "nao": 152,
+      "rank": 815,
+      "max_residual_diagonal": 9.007714873870219e-07,
+      "vectors_sha256": "8e4d13e18a5d1f94ca09b822e3e080c2fa43834bcc01dcae84461bf8a911715a",
+      "pivots_sha256": "99ceea4a8b1af2ed45dcfd332235cafb25fa5666a91b6f9557d5f63afbe9b0b4",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      },
+      "vector_update_seconds": 2.1903773287776858,
+      "residual_update_seconds": 0.040842413203790784
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 301276160,
+      "atom": "Be",
+      "threshold": 1e-06,
+      "peak_rss_bytes": 558448640,
+      "threads": 4,
+      "seconds": 8.621236041886732,
+      "nao": 152,
+      "rank": 815,
+      "max_residual_diagonal": 9.007714873870219e-07,
+      "vectors_sha256": "8e4d13e18a5d1f94ca09b822e3e080c2fa43834bcc01dcae84461bf8a911715a",
+      "pivots_sha256": "99ceea4a8b1af2ed45dcfd332235cafb25fa5666a91b6f9557d5f63afbe9b0b4",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 301276160,
+      "atom": "Be",
+      "threshold": 1e-06,
+      "peak_rss_bytes": 605798400,
+      "threads": 8,
+      "seconds": 5.856844916008413,
+      "nao": 152,
+      "rank": 815,
+      "max_residual_diagonal": 9.007714873870219e-07,
+      "vectors_sha256": "8e4d13e18a5d1f94ca09b822e3e080c2fa43834bcc01dcae84461bf8a911715a",
+      "pivots_sha256": "99ceea4a8b1af2ed45dcfd332235cafb25fa5666a91b6f9557d5f63afbe9b0b4",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    },
+    {
+      "profiled": false,
+      "vectors_bytes": 301276160,
+      "atom": "Be",
+      "threshold": 1e-06,
+      "peak_rss_bytes": 663552000,
+      "threads": 12,
+      "seconds": 5.133249375037849,
+      "nao": 152,
+      "rank": 815,
+      "max_residual_diagonal": 9.007714873870219e-07,
+      "vectors_sha256": "8e4d13e18a5d1f94ca09b822e3e080c2fa43834bcc01dcae84461bf8a911715a",
+      "pivots_sha256": "99ceea4a8b1af2ed45dcfd332235cafb25fa5666a91b6f9557d5f63afbe9b0b4",
+      "build": {
+        "version": "0.11.0",
+        "compiler": "AppleClang 21.0.0.21000401",
+        "openmp_enabled": true,
+        "openmp_runtime_path": "/opt/homebrew/Cellar/libomp/23.1.1/lib/libomp.dylib",
+        "default_threads": 12,
+        "physical_cores": 12
+      }
+    }
   ]
 }
