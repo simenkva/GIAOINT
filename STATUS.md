@@ -1,5 +1,16 @@
 # Status
 
+## 0.11.1 molecular Cholesky preparation
+
+Molecular primitive/contraction reuse, bounded raw-column caching and controlled
+complex pivot batches are implemented. All 695 tests, full serial/OpenMP and
+sanitizer CI, and all 16 wheels plus the source archive pass installed checks. The complete
+64-stage before/after timing matrix, work counts, memory/load provenance,
+strict-global compatibility option and atom repeat checks are recorded in
+[the molecular report](docs/cholesky_molecules_0_11_1.md).
+Version 0.11.0 is published; 0.11.1 remains source-only and must not be tagged
+or published without explicit approval.
+
 ## 0.9.0 release
 
 AUTO OpenMP discovery, Python default-thread policy and build diagnostics,

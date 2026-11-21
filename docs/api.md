@@ -597,6 +597,7 @@ def cholesky_eri(
     screening_threshold: float = 0.0,
     threads: int | None = None,
     max_bytes: int | None = None,
+    pivot_batch_size: int = 32,
 ) -> CholeskyERI: ...
 
 class CholeskyERI:
@@ -616,6 +617,18 @@ which comes from the molecule. The exact factor convention is
 The Hermitian matrix being factored is
 `W[(mu,nu),(lam,sig)] = ERI[nu,mu,lam,sig]`, using all ordered AO pairs.
 Neither the full AO tensor nor a full pair matrix is formed.
+
+In 0.11.1, generally contracted complex molecular factors use deterministic
+local pivot blocks: candidates from the most recently generated Cartesian
+component block are eligible while their residual is at least 1% of the
+global maximum. `pivot_batch_size=32` limits the block (internally at most 32);
+`pivot_batch_size=1` restores strict global pivoting and the 0.11.0 factors.
+It must be a positive integer. Zero-field/real factors retain global pivoting;
+uncontracted atoms retain their original path. Local pivoting can change
+rank slightly, but stopping always tests the global residual maximum.
+Primitive component values are shared across contraction rows; an LRU caches
+at most min(1024,rank+8) raw columns. All policies retain bitwise thread
+invariance. Column screening is not introduced.
 
 The largest residual diagonal bounds every ERI error in exact arithmetic.
 Roundoff imposes a stopping floor of `64*eps*max(initial diagonal)`; the result
@@ -639,7 +652,7 @@ def set_num_threads(n: int | None) -> None: ...
 Explicit `threads=n` takes precedence over that override, then defaults use
 GIAO_NUM_THREADS, OMP_NUM_THREADS, and physical cores. Explicit unsupported
 parallel requests raise; unsupported parallel defaults warn once and use one
-thread. One-electron and derivative APIs remain serial. See
+thread. See
 [installation and runtime policy](installation.md) for complete behavior.
 
 ## 7. Analytic derivative API

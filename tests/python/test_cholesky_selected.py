@@ -86,3 +86,15 @@ def test_selected_native_input_validation():
         with pytest.raises((ValueError, IndexError)):
             _cholesky_columns(basis, pivots, threads=1)
     assert _cholesky_columns(basis, [], threads=1).shape == (0, 16)
+
+
+@pytest.mark.parametrize("field", [None, gi.MagneticField((0.03, -0.02, 0.05))])
+def test_selected_long_contraction_pair_cache_fallback(field):
+    # 65**2 primitive pairs exceeds the bounded 4096-pair cache.
+    exponents = np.linspace(0.5, 2.0, 65).tolist()
+    a = gi.Shell((0.1, -0.2, 0.3), 0, exponents, [[0.1] * 65, [0.2] * 65])
+    b = gi.Shell((-0.3, 0.2, 0.5), 0, [0.7], [1.0])
+    basis = gi.Basis([a, b])
+    block = gi.eri_shell(a, a, b, b, field=field)[:, :, 0, 0]
+    actual = _cholesky_columns(basis, [(2, 2)], field=field, threads=1)
+    np.testing.assert_array_equal(actual.reshape(3, 3)[:2, :2], block)
