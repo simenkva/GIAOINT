@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 — release candidate (not yet published)
+
+### VICE item 2 — 0.10.0 release preparation
+
+Bumped the source/distribution version to 0.10.0 for the derivative priorities
+1–4. The existing CPython 3.11–3.14 Linux/macOS wheel matrix and sdist remain;
+each installed artifact smoke test now exercises one derivative call per
+priority, including finite-field cross response and streamed ERI derivatives.
+Publication requires a separate explicit maintainer approval of v0.10.0.
 
 ### VICE item 1 — derivative docstrings
 
@@ -49,8 +57,8 @@ Cartesian powers. The basis API supports `out=(shell_out, origin_out)`, releases
 the GIL, and uses the configured thread policy with bitwise-equal shell-pair
 parallelism. Derivatives are literal coordinate derivatives, with no force or
 electronic-charge sign. See docs/derivative_validation.md for finite-difference,
-reference-engine, libcint and 105-AO timing results. These additions require a
-source build; PyPI 0.9.0 is unchanged.
+reference-engine, libcint and 105-AO timing results. These additions are included in the 0.10.0 release candidate;
+PyPI 0.9.0 is unchanged until approval and publication.
 
 ## 0.9.0 — 20 November 2026
 

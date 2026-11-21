@@ -12,7 +12,8 @@ pair loops, and complex-center machinery remain private.
 This overview describes the published 0.9.0 API and subsequent derivative additions,
 including streamed Cholesky and configured Python thread defaults. Signatures below are condensed;
 installed headers and Python docstrings give individual overload details.
-Version 0.9.0 is published; derivative additions below require a source checkout.
+Version 0.9.0 is published; derivative additions are prepared for 0.10.0 and
+require a source checkout until that release is approved and published.
 See [release validation](release_0_9_report.md).
 
 All positions, Gaussian exponents, moment origins, magnetic fields, energies,
