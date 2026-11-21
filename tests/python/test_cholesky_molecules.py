@@ -78,3 +78,31 @@ def test_invalid_pivot_batch_size(size):
     basis = gi.Basis([])
     with pytest.raises(ValueError, match="pivot_batch_size"):
         gi.cholesky_eri(basis, pivot_batch_size=size, threads=1)
+
+
+@pytest.mark.parametrize("field", FIELDS)
+def test_uncontracted_molecules_avoid_speculative_columns(field, monkeypatch):
+    basis = gi.Basis(
+        [
+            gi.Shell((0.1, -0.2, 0.3), 0, [0.8], [1.0]),
+            gi.Shell((-0.3, 0.4, 0.2), 1, [0.7], [1.0]),
+            gi.Shell((0.2, 0.1, -0.3), 2, [0.6], [1.0]),
+        ]
+    )
+    module = importlib.import_module("giao_integrals.cholesky")
+    original = module._cholesky_columns
+    requests = []
+
+    def record(basis, pivots, **kwargs):
+        requests.append(len(pivots))
+        return original(basis, pivots, **kwargs)
+
+    monkeypatch.setattr(module, "_cholesky_columns", record)
+    result = gi.cholesky_eri(basis, field=field, threshold=1e-8, threads=1)
+    # Work-count regression: do not generate many unused columns per pivot.
+    assert sum(requests) <= 2 * len(result.vectors)
+    exact = gi.eri(basis, field=field, max_bytes=1024**2, threads=1)
+    assert np.max(np.abs(result.reconstruct() - exact)) <= (
+        result.max_residual_diagonal + 5e-13
+    )
+    assert result.max_residual_diagonal <= 1e-8

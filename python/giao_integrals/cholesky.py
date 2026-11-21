@@ -179,8 +179,10 @@ def cholesky_eri(
     # Prefetch only contraction variants of the same Cartesian component:
     # they share every primitive integral. Retain those columns across shell
     # pairs in a bounded LRU, rather than discard them on each global pivot.
-    contracted = any(s.contraction_count > 1 or s.primitive_count > 1 for s in shells)
-    candidate_count = 32 if contracted else 8
+    reuse_columns = not single_center or any(
+        s.contraction_count > 1 or s.primitive_count > 1 for s in shells
+    )
+    candidate_count = 32 if reuse_columns else 8
     raw_cache = OrderedDict()
     block_candidates = np.empty(0, dtype=int)
     candidates = np.empty(0, dtype=int)
@@ -188,7 +190,12 @@ def cholesky_eri(
 
     while float(np.max(residual, initial=0.0)) > tolerance:
         pivot = int(np.argmax(residual))
-        if contracted and not real and pivot_batch_size > 1 and len(block_candidates):
+        if (
+            reuse_columns
+            and not real
+            and pivot_batch_size > 1
+            and len(block_candidates)
+        ):
             local = int(block_candidates[np.argmax(residual[block_candidates])])
             if (
                 residual[local] > tolerance
@@ -206,14 +213,14 @@ def cholesky_eri(
             grown = np.empty((capacity, n * n), dtype=dtype)
             grown[:rank] = factors[:rank]
             factors = grown
-        if contracted and pivot in raw_cache:
+        if reuse_columns and pivot in raw_cache:
             candidates = np.array([pivot])
             columns = raw_cache.pop(pivot)[None, :]
         match = np.flatnonzero(candidates == pivot)
         if not len(match):
             mu, nu = divmod(pivot, n)
             a, b = int(owners[mu]), int(owners[nu])
-            if contracted:
+            if reuse_columns:
                 ca, cb = shells[a].cartesian_count, shells[b].cartesian_count
                 left = (
                     offsets[a]
@@ -243,7 +250,7 @@ def cholesky_eri(
                 field=integral_field,
                 threads=threads,
             )
-            if contracted:
+            if reuse_columns:
                 for index, candidate in enumerate(candidates):
                     if candidate != pivot:
                         raw_cache[int(candidate)] = columns[index].copy()
@@ -252,7 +259,7 @@ def cholesky_eri(
                 while len(raw_cache) > capacity:
                     raw_cache.popitem(last=False)
             match = np.flatnonzero(candidates == pivot)
-        if contracted:
+        if reuse_columns:
             raw_cache.pop(pivot, None)
         column = columns[int(match[0])].copy()
         if rank:

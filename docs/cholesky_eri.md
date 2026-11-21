@@ -22,7 +22,7 @@ The Hermitian PSD matrix being factored is
 Internally the implementation stores conjugated Cholesky columns, so it
 fetches `(MN|SL)` for pivot `(L,S)`. This is equivalent to Cholesky on W.
 Diagonal elements come from `(MN|NM)`. Each pivot is selected from the
-global residual maximum. The uncontracted backend retains up to eight candidate
+global residual maximum. The uncontracted single-center backend retains up to eight candidate
 columns from one shell pair. The 0.11.1 molecular preparation shares primitive
 component integrals across general contraction rows, generates up to 32 matching
 contraction variants, and retains at most min(1024,rank+8) raw columns in an LRU.
