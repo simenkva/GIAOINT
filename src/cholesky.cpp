@@ -87,17 +87,24 @@ class SelectedQuartet {
                 }
             }
         }
+        // Bound pair caches even for unusually long general contractions.
+        // Beyond this cap, compute each pair in the same primitive loop order.
+        constexpr std::size_t maximum_cached_pairs=4096U;
         std::vector<GaussianPairData> pairs_ab,pairs_cd;
-        for (std::size_t pa=0;pa<a.primitive_count();++pa) {
-            for (std::size_t pb=0;pb<b.primitive_count();++pb) {
-                pairs_ab.push_back(gaussian_product(primitives[0][pa*a.cartesian_count()],
-                    primitives[1][pb*b.cartesian_count()],field_));
+        if (a.primitive_count()<=maximum_cached_pairs/b.primitive_count()) {
+            for (std::size_t pa=0;pa<a.primitive_count();++pa) {
+                for (std::size_t pb=0;pb<b.primitive_count();++pb) {
+                    pairs_ab.push_back(gaussian_product(primitives[0][pa*a.cartesian_count()],
+                        primitives[1][pb*b.cartesian_count()],field_));
+                }
             }
         }
-        for (std::size_t pc=0;pc<c.primitive_count();++pc) {
-            for (std::size_t pd=0;pd<d.primitive_count();++pd) {
-                pairs_cd.push_back(gaussian_product(primitives[2][pc*c.cartesian_count()],
-                    primitives[3][pd*d.cartesian_count()],field_));
+        if (c.primitive_count()<=maximum_cached_pairs/d.primitive_count()) {
+            for (std::size_t pc=0;pc<c.primitive_count();++pc) {
+                for (std::size_t pd=0;pd<d.primitive_count();++pd) {
+                    pairs_cd.push_back(gaussian_product(primitives[2][pc*c.cartesian_count()],
+                        primitives[3][pd*d.cartesian_count()],field_));
+                }
             }
         }
         std::vector<std::array<std::size_t,2>> components;
@@ -111,10 +118,18 @@ class SelectedQuartet {
         }
         for (std::size_t pa=0;pa<a.primitive_count();++pa) {
             for (std::size_t pb=0;pb<b.primitive_count();++pb) {
-                const auto& ab=pairs_ab[pa*b.primitive_count()+pb];
+                GaussianPairData temporary_ab{};
+                const auto& ab=pairs_ab.empty()
+                    ? (temporary_ab=gaussian_product(primitives[0][pa*a.cartesian_count()],
+                        primitives[1][pb*b.cartesian_count()],field_))
+                    : pairs_ab[pa*b.primitive_count()+pb];
                 for (std::size_t pc=0;pc<c.primitive_count();++pc) {
                     for (std::size_t pd=0;pd<d.primitive_count();++pd) {
-                        const auto& cd=pairs_cd[pc*d.primitive_count()+pd];
+                        GaussianPairData temporary_cd{};
+                        const auto& cd=pairs_cd.empty()
+                            ? (temporary_cd=gaussian_product(primitives[2][pc*c.cartesian_count()],
+                                primitives[3][pd*d.cartesian_count()],field_))
+                            : pairs_cd[pc*d.primitive_count()+pd];
                         const std::array<std::size_t,4> ps{pa,pb,pc,pd};
                         for (std::size_t ca=0;ca<a.cartesian_count();++ca) {
                             for (std::size_t cb=0;cb<b.cartesian_count();++cb) {
