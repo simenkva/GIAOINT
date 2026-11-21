@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### VICE item 1 — derivative docstrings
+
+Replaced shared property-derivative text with function-specific arguments,
+return shapes, fixed origins and included response terms. Audited primitive,
+shell and mixed derivative docstrings, including potential-centre layouts.
+Added documentation regression checks; numerical kernels are unchanged.
+
 ### Priority 4 — streamed ERI centre derivatives and safe screening
 
 Added `eri_derivative_batches` and `Molecule.eri_derivative_batches`, yielding

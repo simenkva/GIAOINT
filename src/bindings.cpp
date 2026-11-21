@@ -1573,7 +1573,19 @@ threads=None uses the configured library policy. Native work releases the GIL.
               values = giao::primitive_gradient_center_derivatives(a, b, property, f); }
             return derivative_values(values, {2, 3});
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
-        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+        py::arg("field") = py::none(), R"doc(Literal basis-centre derivatives of the gradient integral.
+
+a, b: Cartesian primitive Gaussians.
+component: x, y or z selects the ket spatial gradient.
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (2, 3); derivative axes are xyz.
+B and the magnetic gauge origin are held fixed.
+Includes ordinary Gaussian and complete London-phase centre response,
+including its action under the ket spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+Native computation releases the GIL.
+)doc");
 
     module.def("gradient_center_derivatives_shell",
         [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
@@ -1585,7 +1597,21 @@ threads=None uses the configured library policy. Native work releases the GIL.
                 [&](auto values) { giao::compute_gradient_center_derivatives(a, b, property, f, values); });
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
         py::arg("field") = py::none(), py::arg("out") = py::none(),
-        "Literal property derivative, with leading centre/field and xyz axes.");
+        R"doc(Literal basis-centre derivatives of the gradient integral.
+
+a, b: Cartesian shells, with na and nb AOs.
+component: x, y or z selects the ket spatial gradient.
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (2, 3, na, nb); derivative axes are xyz.
+B and the magnetic gauge origin are held fixed.
+Includes ordinary Gaussian and complete London-phase centre response,
+including its action under the ket spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+Native computation releases the GIL.
+)doc");
 
     module.def("gradient_nuclear_derivatives",
         [](const giao::Basis& basis, const std::string& component, const py::object& field,
@@ -1598,15 +1624,21 @@ threads=None uses the configured library policy. Native work releases the GIL.
                 [&](auto values) { giao::compute_gradient_nuclear_derivative_matrices(basis, property, f, values, thread_count); });
         }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
         py::arg("out") = py::none(), py::arg("threads") = py::none(),
-        R"doc(Literal nuclear derivatives of the gradient AO matrix.
+        R"doc(Literal basis-centre derivatives of the gradient integral.
 
-Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
-Component selects the property x/y/z; derivative axes are always x,y,z.
-Includes the full London-phase response, also under the spatial derivative
-in gradient and canonical momentum. The operators have no explicit B term.
-Moment origin and magnetic gauge origin are fixed. No force/charge sign is
-applied. out is a strict complex128 C-contiguous buffer. Native work releases
-the GIL; threads=None follows the configured library policy.
+basis: Cartesian AO basis, with nshell independent shell centres.
+component: x, y or z selects the ket spatial gradient.
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (nshell, 3, nao, nao); derivative axes are xyz.
+B and the magnetic gauge origin are held fixed.
+Includes ordinary Gaussian and complete London-phase centre response,
+including its action under the ket spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+threads: None uses the configured library policy; 1 is serial.
+Native computation releases the GIL.
 )doc");
 
     module.def("primitive_gradient_magnetic_derivatives",
@@ -1619,7 +1651,19 @@ the GIL; threads=None follows the configured library policy.
               values = giao::primitive_gradient_magnetic_derivatives(a, b, property, f); }
             return derivative_values(values, {3});
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
-        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+        py::arg("field") = py::none(), R"doc(Literal magnetic-field derivatives of the gradient integral.
+
+a, b: Cartesian primitive Gaussians.
+component: x, y or z selects the ket spatial gradient.
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (3,); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed.
+Includes the complete London-phase field response,
+including the derivative of the ket wave vector under the spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+Native computation releases the GIL.
+)doc");
 
     module.def("gradient_magnetic_derivatives_shell",
         [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
@@ -1631,7 +1675,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_gradient_magnetic_derivatives(a, b, property, f, values); });
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
         py::arg("field") = py::none(), py::arg("out") = py::none(),
-        "Literal property derivative, with leading centre/field and xyz axes.");
+        R"doc(Literal magnetic-field derivatives of the gradient integral.
+
+a, b: Cartesian shells, with na and nb AOs.
+component: x, y or z selects the ket spatial gradient.
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (3, na, nb); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed.
+Includes the complete London-phase field response,
+including the derivative of the ket wave vector under the spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+Native computation releases the GIL.
+)doc");
 
     module.def("gradient_magnetic_derivatives",
         [](const giao::Basis& basis, const std::string& component, const py::object& field,
@@ -1644,15 +1702,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_gradient_magnetic_derivative_matrices(basis, property, f, values, thread_count); });
         }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
         py::arg("out") = py::none(), py::arg("threads") = py::none(),
-        R"doc(Literal magnetic derivatives of the gradient AO matrix.
+        R"doc(Literal magnetic-field derivatives of the gradient integral.
 
-Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
-Component selects the property x/y/z; derivative axes are always x,y,z.
-Includes the full London-phase response, also under the spatial derivative
-in gradient and canonical momentum. The operators have no explicit B term.
-Moment origin and magnetic gauge origin are fixed. No force/charge sign is
-applied. out is a strict complex128 C-contiguous buffer. Native work releases
-the GIL; threads=None follows the configured library policy.
+basis: Cartesian AO basis, with nshell independent shell centres.
+component: x, y or z selects the ket spatial gradient.
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (3, nao, nao); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed.
+Includes the complete London-phase field response,
+including the derivative of the ket wave vector under the spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+threads: None uses the configured library policy; 1 is serial.
+Native computation releases the GIL.
 )doc");
 
     module.def("primitive_momentum_center_derivatives",
@@ -1665,7 +1729,19 @@ the GIL; threads=None follows the configured library policy.
               values = giao::primitive_momentum_center_derivatives(a, b, property, f); }
             return derivative_values(values, {2, 3});
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
-        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+        py::arg("field") = py::none(), R"doc(Literal basis-centre derivatives of the momentum integral.
+
+a, b: Cartesian primitive Gaussians.
+component: x, y or z selects the ket spatial canonical momentum -i*gradient (without vector potential).
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (2, 3); derivative axes are xyz.
+B and the magnetic gauge origin are held fixed.
+Includes ordinary Gaussian and complete London-phase centre response,
+including its action under the ket spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+Native computation releases the GIL.
+)doc");
 
     module.def("momentum_center_derivatives_shell",
         [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
@@ -1677,7 +1753,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_momentum_center_derivatives(a, b, property, f, values); });
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
         py::arg("field") = py::none(), py::arg("out") = py::none(),
-        "Literal property derivative, with leading centre/field and xyz axes.");
+        R"doc(Literal basis-centre derivatives of the momentum integral.
+
+a, b: Cartesian shells, with na and nb AOs.
+component: x, y or z selects the ket spatial canonical momentum -i*gradient (without vector potential).
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (2, 3, na, nb); derivative axes are xyz.
+B and the magnetic gauge origin are held fixed.
+Includes ordinary Gaussian and complete London-phase centre response,
+including its action under the ket spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+Native computation releases the GIL.
+)doc");
 
     module.def("momentum_nuclear_derivatives",
         [](const giao::Basis& basis, const std::string& component, const py::object& field,
@@ -1690,15 +1780,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_momentum_nuclear_derivative_matrices(basis, property, f, values, thread_count); });
         }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
         py::arg("out") = py::none(), py::arg("threads") = py::none(),
-        R"doc(Literal nuclear derivatives of the momentum AO matrix.
+        R"doc(Literal basis-centre derivatives of the momentum integral.
 
-Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
-Component selects the property x/y/z; derivative axes are always x,y,z.
-Includes the full London-phase response, also under the spatial derivative
-in gradient and canonical momentum. The operators have no explicit B term.
-Moment origin and magnetic gauge origin are fixed. No force/charge sign is
-applied. out is a strict complex128 C-contiguous buffer. Native work releases
-the GIL; threads=None follows the configured library policy.
+basis: Cartesian AO basis, with nshell independent shell centres.
+component: x, y or z selects the ket spatial canonical momentum -i*gradient (without vector potential).
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (nshell, 3, nao, nao); derivative axes are xyz.
+B and the magnetic gauge origin are held fixed.
+Includes ordinary Gaussian and complete London-phase centre response,
+including its action under the ket spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+threads: None uses the configured library policy; 1 is serial.
+Native computation releases the GIL.
 )doc");
 
     module.def("primitive_momentum_magnetic_derivatives",
@@ -1711,7 +1807,19 @@ the GIL; threads=None follows the configured library policy.
               values = giao::primitive_momentum_magnetic_derivatives(a, b, property, f); }
             return derivative_values(values, {3});
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
-        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+        py::arg("field") = py::none(), R"doc(Literal magnetic-field derivatives of the momentum integral.
+
+a, b: Cartesian primitive Gaussians.
+component: x, y or z selects the ket spatial canonical momentum -i*gradient (without vector potential).
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (3,); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed.
+Includes the complete London-phase field response,
+including the derivative of the ket wave vector under the spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+Native computation releases the GIL.
+)doc");
 
     module.def("momentum_magnetic_derivatives_shell",
         [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
@@ -1723,7 +1831,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_momentum_magnetic_derivatives(a, b, property, f, values); });
         }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
         py::arg("field") = py::none(), py::arg("out") = py::none(),
-        "Literal property derivative, with leading centre/field and xyz axes.");
+        R"doc(Literal magnetic-field derivatives of the momentum integral.
+
+a, b: Cartesian shells, with na and nb AOs.
+component: x, y or z selects the ket spatial canonical momentum -i*gradient (without vector potential).
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (3, na, nb); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed.
+Includes the complete London-phase field response,
+including the derivative of the ket wave vector under the spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+Native computation releases the GIL.
+)doc");
 
     module.def("momentum_magnetic_derivatives",
         [](const giao::Basis& basis, const std::string& component, const py::object& field,
@@ -1736,15 +1858,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_momentum_magnetic_derivative_matrices(basis, property, f, values, thread_count); });
         }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
         py::arg("out") = py::none(), py::arg("threads") = py::none(),
-        R"doc(Literal magnetic derivatives of the momentum AO matrix.
+        R"doc(Literal magnetic-field derivatives of the momentum integral.
 
-Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
-Component selects the property x/y/z; derivative axes are always x,y,z.
-Includes the full London-phase response, also under the spatial derivative
-in gradient and canonical momentum. The operators have no explicit B term.
-Moment origin and magnetic gauge origin are fixed. No force/charge sign is
-applied. out is a strict complex128 C-contiguous buffer. Native work releases
-the GIL; threads=None follows the configured library policy.
+basis: Cartesian AO basis, with nshell independent shell centres.
+component: x, y or z selects the ket spatial canonical momentum -i*gradient (without vector potential).
+field: phase field B and its gauge origin; None means zero field.
+
+Returns complex128 shape (3, nao, nao); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed.
+Includes the complete London-phase field response,
+including the derivative of the ket wave vector under the spatial derivative.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+threads: None uses the configured library policy; 1 is serial.
+Native computation releases the GIL.
 )doc");
 
     module.def("primitive_moment_magnetic_derivatives",
@@ -1757,7 +1885,19 @@ the GIL; threads=None follows the configured library policy.
               values = giao::primitive_moment_magnetic_derivatives(a, b, property, f); }
             return derivative_values(values, {3});
         }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(), py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0),
-        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+        py::arg("field") = py::none(), R"doc(Literal magnetic-field derivatives of the moment integral.
+
+a, b: Cartesian primitive Gaussians.
+powers: three non-negative Cartesian powers of (r-origin).
+field: phase field B and its gauge origin; None means zero field.
+origin: moment origin in bohr, default (0,0,0).
+
+Returns complex128 shape (3,); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed. The moment origin is also held fixed.
+Includes the complete London-phase field response.
+The operator has no explicit B dependence. No force or charge sign is applied.
+Native computation releases the GIL.
+)doc");
 
     module.def("moment_magnetic_derivatives_shell",
         [](const giao::Shell& a, const giao::Shell& b, const py::object& powers, const py::object& origin,
@@ -1769,7 +1909,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_moment_magnetic_derivatives(a, b, property, f, values); });
         }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(), py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0),
         py::arg("field") = py::none(), py::arg("out") = py::none(),
-        "Literal property derivative, with leading centre/field and xyz axes.");
+        R"doc(Literal magnetic-field derivatives of the moment integral.
+
+a, b: Cartesian shells, with na and nb AOs.
+powers: three non-negative Cartesian powers of (r-origin).
+field: phase field B and its gauge origin; None means zero field.
+origin: moment origin in bohr, default (0,0,0).
+
+Returns complex128 shape (3, na, nb); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed. The moment origin is also held fixed.
+Includes the complete London-phase field response.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+Native computation releases the GIL.
+)doc");
 
     module.def("moment_magnetic_derivatives",
         [](const giao::Basis& basis, const py::object& powers, const py::object& origin, const py::object& field,
@@ -1782,15 +1936,21 @@ the GIL; threads=None follows the configured library policy.
                 [&](auto values) { giao::compute_moment_magnetic_derivative_matrices(basis, property, f, values, thread_count); });
         }, py::arg("basis"), py::arg("powers"), py::kw_only(), py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
         py::arg("out") = py::none(), py::arg("threads") = py::none(),
-        R"doc(Literal magnetic derivatives of the moment AO matrix.
+        R"doc(Literal magnetic-field derivatives of the moment integral.
 
-Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
-Component selects the property x/y/z; derivative axes are always x,y,z.
-Includes the full London-phase response, also under the spatial derivative
-in gradient and canonical momentum. The operators have no explicit B term.
-Moment origin and magnetic gauge origin are fixed. No force/charge sign is
-applied. out is a strict complex128 C-contiguous buffer. Native work releases
-the GIL; threads=None follows the configured library policy.
+basis: Cartesian AO basis, with nshell independent shell centres.
+powers: three non-negative Cartesian powers of (r-origin).
+field: phase field B and its gauge origin; None means zero field.
+origin: moment origin in bohr, default (0,0,0).
+
+Returns complex128 shape (3, nao, nao); derivative axes are xyz.
+Basis centres and the magnetic gauge origin are held fixed. The moment origin is also held fixed.
+Includes the complete London-phase field response.
+The operator has no explicit B dependence. No force or charge sign is applied.
+out: optional writable C-contiguous complex128 buffer of the exact shape;
+the exact buffer is filled and returned.
+threads: None uses the configured library policy; 1 is serial.
+Native computation releases the GIL.
 )doc");
 
     module.def("primitive_overlap_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,const py::object& field) {
@@ -1800,14 +1960,29 @@ the GIL; threads=None follows the configured library policy.
           values=giao::primitive_overlap_mixed_derivatives(a,b,f); }
         return derivative_values(values,{2,3,3});
     }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),
-    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+    R"doc(Literal mixed d2I/dR dB for overlap.
+
+Returns complex128 shape (2, 3, 3); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+)doc");
 
     module.def("overlap_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b,const py::object& field,py::object output) {
         const auto f=field_or_zero(field);
         return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
             [&](auto values) { giao::compute_overlap_mixed_derivatives(a,b,f,values); });
     }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+    R"doc(Literal mixed d2I/dR dB for overlap.
+
+Returns complex128 shape (2, 3, 3, na, nb); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
 
     module.def("overlap_mixed_derivatives", [](const giao::Basis& basis,const py::object& field,py::object output,const py::object& threads) {
         const auto f=field_or_zero(field);
@@ -1816,12 +1991,16 @@ the GIL; threads=None follows the configured library policy.
         return derivative_array(std::move(output),{static_cast<py::ssize_t>(basis.shells().size()),3,3,n,n},
             [&](auto values) { giao::compute_overlap_mixed_derivative_matrices(basis,f,values,thread_count); });
     },py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),
-    R"doc(Literal mixed d2I/dR dB, shape (nshell,3,3,nao,nao).
+    R"doc(Literal mixed d2I/dR dB for overlap.
 
-Axes: shell centre, nuclear xyz, field xyz, bra AO, ket AO. Includes ordinary
-Gaussian and London centre/field/cross response; magnetic_kinetic also includes
-explicit operator field dependence. Gauge origin is fixed. No force sign.
-Strict out= buffers, GIL release, threads=None configured policy.
+Returns complex128 shape (nshell, 3, 3, nao, nao); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+basis: Cartesian AO basis. field: phase field (None means zero).
+threads=None uses configured shell-pair threading.
 )doc");
 
     module.def("primitive_kinetic_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,const py::object& field) {
@@ -1831,14 +2010,29 @@ Strict out= buffers, GIL release, threads=None configured policy.
           values=giao::primitive_kinetic_mixed_derivatives(a,b,f); }
         return derivative_values(values,{2,3,3});
     }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),
-    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+    R"doc(Literal mixed d2I/dR dB for kinetic.
+
+Returns complex128 shape (2, 3, 3); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+)doc");
 
     module.def("kinetic_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b,const py::object& field,py::object output) {
         const auto f=field_or_zero(field);
         return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
             [&](auto values) { giao::compute_kinetic_mixed_derivatives(a,b,f,values); });
     }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+    R"doc(Literal mixed d2I/dR dB for kinetic.
+
+Returns complex128 shape (2, 3, 3, na, nb); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
 
     module.def("kinetic_mixed_derivatives", [](const giao::Basis& basis,const py::object& field,py::object output,const py::object& threads) {
         const auto f=field_or_zero(field);
@@ -1847,12 +2041,16 @@ Strict out= buffers, GIL release, threads=None configured policy.
         return derivative_array(std::move(output),{static_cast<py::ssize_t>(basis.shells().size()),3,3,n,n},
             [&](auto values) { giao::compute_kinetic_mixed_derivative_matrices(basis,f,values,thread_count); });
     },py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),
-    R"doc(Literal mixed d2I/dR dB, shape (nshell,3,3,nao,nao).
+    R"doc(Literal mixed d2I/dR dB for kinetic.
 
-Axes: shell centre, nuclear xyz, field xyz, bra AO, ket AO. Includes ordinary
-Gaussian and London centre/field/cross response; magnetic_kinetic also includes
-explicit operator field dependence. Gauge origin is fixed. No force sign.
-Strict out= buffers, GIL release, threads=None configured policy.
+Returns complex128 shape (nshell, 3, 3, nao, nao); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+basis: Cartesian AO basis. field: phase field (None means zero).
+threads=None uses configured shell-pair threading.
 )doc");
 
     module.def("primitive_magnetic_kinetic_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,const py::object& field) {
@@ -1862,14 +2060,29 @@ Strict out= buffers, GIL release, threads=None configured policy.
           values=giao::primitive_magnetic_kinetic_mixed_derivatives(a,b,f); }
         return derivative_values(values,{2,3,3});
     }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),
-    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+    R"doc(Literal mixed d2I/dR dB for magnetic_kinetic.
+
+Returns complex128 shape (2, 3, 3); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response. Includes the
+explicit B dependence of the physical operator 1/2*(p+A)^2.
+No force sign. Native computation releases the GIL.
+)doc");
 
     module.def("magnetic_kinetic_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b,const py::object& field,py::object output) {
         const auto f=field_or_zero(field);
         return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
             [&](auto values) { giao::compute_magnetic_kinetic_mixed_derivatives(a,b,f,values); });
     }, py::arg("a"), py::arg("b"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+    R"doc(Literal mixed d2I/dR dB for magnetic_kinetic.
+
+Returns complex128 shape (2, 3, 3, na, nb); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response. Includes the
+explicit B dependence of the physical operator 1/2*(p+A)^2.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
 
     module.def("magnetic_kinetic_mixed_derivatives", [](const giao::Basis& basis,const py::object& field,py::object output,const py::object& threads) {
         const auto f=field_or_zero(field);
@@ -1878,12 +2091,16 @@ Strict out= buffers, GIL release, threads=None configured policy.
         return derivative_array(std::move(output),{static_cast<py::ssize_t>(basis.shells().size()),3,3,n,n},
             [&](auto values) { giao::compute_magnetic_kinetic_mixed_derivative_matrices(basis,f,values,thread_count); });
     },py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),py::arg("threads")=py::none(),
-    R"doc(Literal mixed d2I/dR dB, shape (nshell,3,3,nao,nao).
+    R"doc(Literal mixed d2I/dR dB for magnetic_kinetic.
 
-Axes: shell centre, nuclear xyz, field xyz, bra AO, ket AO. Includes ordinary
-Gaussian and London centre/field/cross response; magnetic_kinetic also includes
-explicit operator field dependence. Gauge origin is fixed. No force sign.
-Strict out= buffers, GIL release, threads=None configured policy.
+Returns complex128 shape (nshell, 3, 3, nao, nao); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response. Includes the
+explicit B dependence of the physical operator 1/2*(p+A)^2.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+basis: Cartesian AO basis. field: phase field (None means zero).
+threads=None uses configured shell-pair threading.
 )doc");
 
     module.def("primitive_nuclear_attraction_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b, const std::vector<giao::Nucleus>& nuclei,const py::object& field) {
@@ -1893,14 +2110,29 @@ Strict out= buffers, GIL release, threads=None configured policy.
           values=giao::primitive_nuclear_attraction_mixed_derivatives(a,b,nuclei,f); }
         return derivative_values(values,{2,3,3});
     }, py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),py::arg("field")=py::none(),
-    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+    R"doc(Literal mixed d2I/dR dB for nuclear_attraction.
+
+Returns complex128 shape (2, 3, 3); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+)doc");
 
     module.def("nuclear_attraction_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b, const std::vector<giao::Nucleus>& nuclei,const py::object& field,py::object output) {
         const auto f=field_or_zero(field);
         return derivative_array(std::move(output),{2,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
             [&](auto values) { giao::compute_nuclear_attraction_mixed_derivatives(a,b,nuclei,f,values); });
     }, py::arg("a"), py::arg("b"), py::arg("nuclei"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+    R"doc(Literal mixed d2I/dR dB for nuclear_attraction.
+
+Returns complex128 shape (2, 3, 3, na, nb); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
 
     module.def("primitive_eri_mixed_derivatives", [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b, const giao::PrimitiveGaussian& c, const giao::PrimitiveGaussian& d,const py::object& field) {
         const auto f=field_or_zero(field);
@@ -1909,14 +2141,29 @@ Strict out= buffers, GIL release, threads=None configured policy.
           values=giao::primitive_eri_mixed_derivatives(a,b,c,d,f); }
         return derivative_values(values,{4,3,3});
     }, py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),py::arg("field")=py::none(),
-    "Literal d2I/dR dB, axes (centre,nuclear axis,field axis), fixed gauge.");
+    R"doc(Literal mixed d2I/dR dB for eri.
+
+Returns complex128 shape (4, 3, 3); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+)doc");
 
     module.def("eri_mixed_derivatives_shell", [](const giao::Shell& a, const giao::Shell& b, const giao::Shell& c, const giao::Shell& d,const py::object& field,py::object output) {
         const auto f=field_or_zero(field);
         return derivative_array(std::move(output),{4,3,3,static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count()), static_cast<py::ssize_t>(c.ao_count()), static_cast<py::ssize_t>(d.ao_count())},
             [&](auto values) { giao::compute_eri_mixed_derivatives(a,b,c,d,f,values); });
     }, py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Literal mixed derivative block: (centre,nuclear axis,field axis,AO axes).");
+    R"doc(Literal mixed d2I/dR dB for eri.
+
+Returns complex128 shape (4, 3, 3, na, nb, nc, nd); axes are centre slot, nuclear xyz,
+field xyz, then AO axes where present. The magnetic gauge origin is fixed.
+Includes Gaussian and full London centre/field/cross response.
+The operator has no explicit B dependence.
+No force sign. Native computation releases the GIL.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+)doc");
 
     module.def("primitive_nuclear_attraction_nucleus_mixed_derivatives",[](const giao::PrimitiveGaussian& a,const giao::PrimitiveGaussian& b,
         const std::vector<giao::Nucleus>& nuclei,const py::object& field,py::object output) {
@@ -1924,7 +2171,14 @@ Strict out= buffers, GIL release, threads=None configured policy.
         return derivative_array(std::move(output),{static_cast<py::ssize_t>(nuclei.size()),3,3},
             [&](auto values) { giao::primitive_nuclear_attraction_nucleus_mixed_derivatives(a,b,nuclei,f,values); });
     },py::arg("a"),py::arg("b"),py::arg("nuclei"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Potential-centre mixed derivatives, axes (nucleus,nuclear axis,field axis,AO axes).");
+    R"doc(Potential-centre mixed attraction derivatives, complex128 shape (nnucleus, 3, 3).
+
+Axes: nucleus, nuclear xyz, field xyz. nuclei lists independent potential
+centres. Includes full London response at fixed basis centres and gauge origin.
+The Coulomb operator has no explicit B dependence. No force sign.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+Native computation releases the GIL.
+)doc");
 
     module.def("nuclear_attraction_nucleus_mixed_derivatives_shell",[](const giao::Shell& a,const giao::Shell& b,
         const std::vector<giao::Nucleus>& nuclei,const py::object& field,py::object output) {
@@ -1932,7 +2186,15 @@ Strict out= buffers, GIL release, threads=None configured policy.
         return derivative_array(std::move(output),{static_cast<py::ssize_t>(nuclei.size()),3,3,static_cast<py::ssize_t>(a.ao_count()),static_cast<py::ssize_t>(b.ao_count())},
             [&](auto values) { giao::compute_nuclear_attraction_nucleus_mixed_derivatives(a,b,nuclei,f,values); });
     },py::arg("a"),py::arg("b"),py::arg("nuclei"),py::kw_only(),py::arg("field")=py::none(),py::arg("out")=py::none(),
-    "Potential-centre mixed derivatives, axes (nucleus,nuclear axis,field axis,AO axes).");
+    R"doc(Potential-centre mixed attraction derivatives, complex128 shape (nnucleus, 3, 3, na, nb).
+
+Axes: nucleus, nuclear xyz, field xyz, bra AO, ket AO. nuclei lists independent potential
+centres. Includes full London response at fixed basis centres and gauge origin.
+The Coulomb operator has no explicit B dependence. No force sign.
+out: optional strict writable C-contiguous complex128 buffer, returned exactly.
+Native computation releases the GIL.
+)doc");
+
     module.def("nuclear_attraction_mixed_derivatives",
         [](const giao::Basis& basis, const std::vector<giao::Nucleus>& nuclei,
            const py::object& field, const py::object& output, const py::object& threads) {
