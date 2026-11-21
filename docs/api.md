@@ -12,7 +12,8 @@ pair loops, and complex-center machinery remain private.
 This overview describes the published 0.9.0 API and subsequent derivative additions,
 including streamed Cholesky and configured Python thread defaults. Signatures below are condensed;
 installed headers and Python docstrings give individual overload details.
-Version 0.9.0 is published; derivative additions below require a source checkout.
+Version 0.9.0 is published; derivative additions are prepared for 0.10.0 and
+require a source checkout until that release is approved and published.
 See [release validation](release_0_9_report.md).
 
 All positions, Gaussian exponents, moment origins, magnetic fields, energies,
@@ -756,6 +757,20 @@ dB_moment = gi.moment_magnetic_derivatives(
     basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=field, threads=None,
 )
 ```
+
+| Function | Property argument | Returned shape | Held fixed |
+|---|---|---|---|
+| `moment_magnetic_derivatives` | `powers`, optional `origin` | `(3,nao,nao)` | basis centres, moment origin, gauge origin |
+| `gradient_nuclear_derivatives` | `component` (`x`, `y`, `z`) | `(nshell,3,nao,nao)` | B and gauge origin |
+| `momentum_nuclear_derivatives` | `component` (`x`, `y`, `z`) | `(nshell,3,nao,nao)` | B and gauge origin |
+| `gradient_magnetic_derivatives` | `component` (`x`, `y`, `z`) | `(3,nao,nao)` | basis centres and gauge origin |
+| `momentum_magnetic_derivatives` | `component` (`x`, `y`, `z`) | `(3,nao,nao)` | basis centres and gauge origin |
+
+Nuclear responses include Gaussian and London centre terms; magnetic responses
+include the London phase and, for gradient/momentum, its ket wave-vector response
+under the spatial derivative. None of these operators has explicit B dependence.
+Gradient and canonical momentum have no moment-origin argument. A moment takes
+`powers`, not a `component` argument.
 
 Each function also accepts a strict `out=` buffer and returns that exact buffer.
 The property component is `"x"`, `"y"` or `"z"`; it is independent of the
