@@ -39,9 +39,36 @@ to one thread. Basis construction and equality checks are excluded.
 
 These are single local measurements, not portable speedup guarantees.
 
+## Priority 2: remaining one-electron property derivatives
+
+`tests/python/test_property_derivatives.py` passes 47 checks. All gradient
+and momentum components are compared to two-step Richardson differences
+(h=4e-4) at zero/finite field, with an off-centre gauge and primitive angular
+momentum through g. General moment field derivatives, general contractions,
+shell/basis consistency, strict buffers, canonical `momentum=-i*gradient`,
+anti-/Hermiticity and translation covariance also pass. The independent Python
+reference engine supplies value differences. Maximum absolute deviation across
+these validation comparisons: 3.712e-12.
+
+`tests/external/property_derivatives_pyscf.py` compares H2O/cc-pVDZ (25 Cartesian
+AOs) to PySCF 2.8.0/libcint at B=0. Centre responses use `int1e_ipovlpip_cart`;
+field responses use `int1e_irp_cart`, `int1e_rr_cart` and overlap, with the
+pair-phase and ket spatial-phase terms constructed separately. All components
+agree, maximum error 1.776e-15.
+
+Same 105-AO basis/field/gauge/BLAS settings as Priority 1, x component and x
+moment. Each four-thread output is bitwise identical to its serial reference:
+
+| Derivative | 1 thread seconds | 4 threads seconds | Output MiB |
+|---|---:|---:|---:|
+| Gradient nuclear | 0.172335 | 0.044362 | 5.047 |
+| Momentum nuclear | 0.172674 | 0.047202 | 5.047 |
+| Moment magnetic | 0.099818 | 0.026322 | 0.505 |
+| Gradient magnetic | 0.115853 | 0.030501 | 0.505 |
+| Momentum magnetic | 0.116818 | 0.030771 | 0.505 |
+
 ## Remaining priorities
 
-Priority 2 adds gradient/momentum centre and property magnetic derivatives.
 Priority 3 adds mixed nuclear/magnetic derivatives. Priority 4 adds streamed
 ERI derivative batches and derivative-specific screening/performance work.
 NMR shielding and spin–spin coupling require new nuclear magnetic operators;

@@ -1561,4 +1561,234 @@ returns those exact arrays (either may be None); buffers must not overlap.
 threads=None uses the configured library policy. Native work releases the GIL.
 )doc");
 
+    module.def("primitive_gradient_center_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const std::string& component, const py::object& field) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 6> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_gradient_center_derivatives(a, b, property, f); }
+            return derivative_values(values, {2, 3});
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+
+    module.def("gradient_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
+           const py::object& field, py::object output) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {2, 3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_gradient_center_derivatives(a, b, property, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none(),
+        "Literal property derivative, with leading centre/field and xyz axes.");
+
+    module.def("gradient_nuclear_derivatives",
+        [](const giao::Basis& basis, const std::string& component, const py::object& field,
+           py::object output, const py::object& threads) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(std::move(output), {static_cast<py::ssize_t>(basis.shells().size()), 3, n, n},
+                [&](auto values) { giao::compute_gradient_nuclear_derivative_matrices(basis, property, f, values, thread_count); });
+        }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Literal nuclear derivatives of the gradient AO matrix.
+
+Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
+Component selects the property x/y/z; derivative axes are always x,y,z.
+Includes the full London-phase response, also under the spatial derivative
+in gradient and canonical momentum. The operators have no explicit B term.
+Moment origin and magnetic gauge origin are fixed. No force/charge sign is
+applied. out is a strict complex128 C-contiguous buffer. Native work releases
+the GIL; threads=None follows the configured library policy.
+)doc");
+
+    module.def("primitive_gradient_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const std::string& component, const py::object& field) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 3> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_gradient_magnetic_derivatives(a, b, property, f); }
+            return derivative_values(values, {3});
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+
+    module.def("gradient_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
+           const py::object& field, py::object output) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_gradient_magnetic_derivatives(a, b, property, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none(),
+        "Literal property derivative, with leading centre/field and xyz axes.");
+
+    module.def("gradient_magnetic_derivatives",
+        [](const giao::Basis& basis, const std::string& component, const py::object& field,
+           py::object output, const py::object& threads) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(std::move(output), {3, n, n},
+                [&](auto values) { giao::compute_gradient_magnetic_derivative_matrices(basis, property, f, values, thread_count); });
+        }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Literal magnetic derivatives of the gradient AO matrix.
+
+Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
+Component selects the property x/y/z; derivative axes are always x,y,z.
+Includes the full London-phase response, also under the spatial derivative
+in gradient and canonical momentum. The operators have no explicit B term.
+Moment origin and magnetic gauge origin are fixed. No force/charge sign is
+applied. out is a strict complex128 C-contiguous buffer. Native work releases
+the GIL; threads=None follows the configured library policy.
+)doc");
+
+    module.def("primitive_momentum_center_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const std::string& component, const py::object& field) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 6> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_momentum_center_derivatives(a, b, property, f); }
+            return derivative_values(values, {2, 3});
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+
+    module.def("momentum_center_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
+           const py::object& field, py::object output) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {2, 3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_momentum_center_derivatives(a, b, property, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none(),
+        "Literal property derivative, with leading centre/field and xyz axes.");
+
+    module.def("momentum_nuclear_derivatives",
+        [](const giao::Basis& basis, const std::string& component, const py::object& field,
+           py::object output, const py::object& threads) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(std::move(output), {static_cast<py::ssize_t>(basis.shells().size()), 3, n, n},
+                [&](auto values) { giao::compute_momentum_nuclear_derivative_matrices(basis, property, f, values, thread_count); });
+        }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Literal nuclear derivatives of the momentum AO matrix.
+
+Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
+Component selects the property x/y/z; derivative axes are always x,y,z.
+Includes the full London-phase response, also under the spatial derivative
+in gradient and canonical momentum. The operators have no explicit B term.
+Moment origin and magnetic gauge origin are fixed. No force/charge sign is
+applied. out is a strict complex128 C-contiguous buffer. Native work releases
+the GIL; threads=None follows the configured library policy.
+)doc");
+
+    module.def("primitive_momentum_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const std::string& component, const py::object& field) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 3> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_momentum_magnetic_derivatives(a, b, property, f); }
+            return derivative_values(values, {3});
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+
+    module.def("momentum_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const std::string& component,
+           const py::object& field, py::object output) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_momentum_magnetic_derivatives(a, b, property, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("component"), py::kw_only(),
+        py::arg("field") = py::none(), py::arg("out") = py::none(),
+        "Literal property derivative, with leading centre/field and xyz axes.");
+
+    module.def("momentum_magnetic_derivatives",
+        [](const giao::Basis& basis, const std::string& component, const py::object& field,
+           py::object output, const py::object& threads) {
+            const auto property = axis_from_python(component);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(std::move(output), {3, n, n},
+                [&](auto values) { giao::compute_momentum_magnetic_derivative_matrices(basis, property, f, values, thread_count); });
+        }, py::arg("basis"), py::arg("component"), py::kw_only(), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Literal magnetic derivatives of the momentum AO matrix.
+
+Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
+Component selects the property x/y/z; derivative axes are always x,y,z.
+Includes the full London-phase response, also under the spatial derivative
+in gradient and canonical momentum. The operators have no explicit B term.
+Moment origin and magnetic gauge origin are fixed. No force/charge sign is
+applied. out is a strict complex128 C-contiguous buffer. Native work releases
+the GIL; threads=None follows the configured library policy.
+)doc");
+
+    module.def("primitive_moment_magnetic_derivatives",
+        [](const giao::PrimitiveGaussian& a, const giao::PrimitiveGaussian& b,
+           const py::object& powers, const py::object& origin, const py::object& field) {
+            const auto property = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            std::array<giao::Complex, 3> values{};
+            { py::gil_scoped_release release;
+              values = giao::primitive_moment_magnetic_derivatives(a, b, property, f); }
+            return derivative_values(values, {3});
+        }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(), py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0),
+        py::arg("field") = py::none(), "Literal property derivative, including London response.");
+
+    module.def("moment_magnetic_derivatives_shell",
+        [](const giao::Shell& a, const giao::Shell& b, const py::object& powers, const py::object& origin,
+           const py::object& field, py::object output) {
+            const auto property = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            return derivative_array(std::move(output),
+                {3, static_cast<py::ssize_t>(a.ao_count()), static_cast<py::ssize_t>(b.ao_count())},
+                [&](auto values) { giao::compute_moment_magnetic_derivatives(a, b, property, f, values); });
+        }, py::arg("a"), py::arg("b"), py::arg("powers"), py::kw_only(), py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0),
+        py::arg("field") = py::none(), py::arg("out") = py::none(),
+        "Literal property derivative, with leading centre/field and xyz axes.");
+
+    module.def("moment_magnetic_derivatives",
+        [](const giao::Basis& basis, const py::object& powers, const py::object& origin, const py::object& field,
+           py::object output, const py::object& threads) {
+            const auto property = moment_from_python(powers, origin);
+            const auto f = field_or_zero(field);
+            const auto thread_count = threads_from_python(threads);
+            const auto n = static_cast<py::ssize_t>(basis.ao_count());
+            return derivative_array(std::move(output), {3, n, n},
+                [&](auto values) { giao::compute_moment_magnetic_derivative_matrices(basis, property, f, values, thread_count); });
+        }, py::arg("basis"), py::arg("powers"), py::kw_only(), py::arg("origin") = py::make_tuple(0.0, 0.0, 0.0), py::arg("field") = py::none(),
+        py::arg("out") = py::none(), py::arg("threads") = py::none(),
+        R"doc(Literal magnetic derivatives of the moment AO matrix.
+
+Centre shape is (nshell,3,nao,nao); field shape is (3,nao,nao).
+Component selects the property x/y/z; derivative axes are always x,y,z.
+Includes the full London-phase response, also under the spatial derivative
+in gradient and canonical momentum. The operators have no explicit B term.
+Moment origin and magnetic gauge origin are fixed. No force/charge sign is
+applied. out is a strict complex128 C-contiguous buffer. Native work releases
+the GIL; threads=None follows the configured library policy.
+)doc");
+
 }

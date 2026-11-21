@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Priority 2 — gradient/momentum and property field derivatives
+
+Added literal nuclear derivatives for all components of gradient and canonical
+momentum, plus magnetic derivatives of general moments, gradient and momentum.
+Primitive/shell/basis APIs include all London-phase terms, release the GIL,
+accept strict outputs and use configured shell-pair threading at basis level.
+Field derivatives hold the origins fixed and include the ket wave-vector
+response under the spatial operator; no vector-potential term is added to
+canonical momentum. Validation includes Richardson differences through g,
+anti-/Hermiticity and independent reference/libcint comparisons.
+
 ### Priority 1 — moment nuclear derivatives
 
 Added analytic primitive, shell and basis-centre moment derivatives, including

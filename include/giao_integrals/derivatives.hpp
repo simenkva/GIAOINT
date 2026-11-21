@@ -13,6 +13,47 @@ namespace giao {
 // pair-center [2,3,na,nb], magnetic [3,na,nb], nuclear potential
 // [nnucleus,3,na,nb], and quartet-center [4,3,na,nb,nc,nd].
 
+[[nodiscard]] std::array<Complex, 6> primitive_gradient_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_gradient_center_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_gradient_nuclear_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 3> primitive_gradient_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_gradient_magnetic_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_gradient_magnetic_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 6> primitive_momentum_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_momentum_center_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_momentum_nuclear_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 3> primitive_momentum_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field = {});
+void compute_momentum_magnetic_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output);
+void compute_momentum_magnetic_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+[[nodiscard]] std::array<Complex, 3> primitive_moment_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field = {});
+void compute_moment_magnetic_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output);
+void compute_moment_magnetic_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads = 1U);
+
 // Literal derivatives of <a|(r-origin)^powers|b>, including London response.
 [[nodiscard]] std::array<Complex, 6> primitive_moment_center_derivatives(
     const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,

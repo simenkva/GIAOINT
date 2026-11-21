@@ -204,8 +204,9 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
   attraction-potential-center contributions separately for callers to assemble.
 - Moment nuclear derivatives (post-0.9.0 Priority 1) are implemented, including
   a separate moment-origin response, strict output buffers and shell-pair
-  threading. See `docs/derivative_validation.md`. Mixed nuclear/magnetic
-  derivatives and gradient/momentum property derivatives remain to be added.
+  threading. Priority 2 adds gradient/momentum nuclear derivatives and magnetic
+  derivatives of moments, gradients and momentum. See `docs/derivative_validation.md`.
+  Mixed nuclear/magnetic derivatives remain to be added.
 - Production functions are Cartesian only. Spherical transformation is a
   documented future design, not an implemented API.
 

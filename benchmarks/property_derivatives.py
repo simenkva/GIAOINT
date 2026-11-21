@@ -30,27 +30,78 @@ def main():
         f"{len(mol.basis.shells)} shells",
         flush=True,
     )
-    reference = None
-    for threads in args.threads:
-        start = perf_counter()
-        result = gi.moment_nuclear_derivatives(
-            mol.basis,
-            (1, 0, 0),
-            origin=(0.2, 0.3, -0.1),
-            field=mol.field,
-            threads=threads,
-        )
-        seconds = perf_counter() - start
-        if reference is not None:
-            for actual, expected in zip(result, reference, strict=True):
-                np.testing.assert_array_equal(actual, expected)
-        else:
-            reference = result
-        print(
-            f"moment nuclear: threads={threads}, seconds={seconds:.6f}, "
-            f"output MiB={sum(x.nbytes for x in result)/1024**2:.3f}",
-            flush=True,
-        )
+    calls = [
+        (
+            "moment nuclear",
+            lambda t: gi.moment_nuclear_derivatives(
+                mol.basis,
+                (1, 0, 0),
+                origin=(0.2, 0.3, -0.1),
+                field=mol.field,
+                threads=t,
+            ),
+        ),
+        (
+            "gradient nuclear",
+            lambda t: (
+                gi.gradient_nuclear_derivatives(
+                    mol.basis, "x", field=mol.field, threads=t
+                ),
+            ),
+        ),
+        (
+            "momentum nuclear",
+            lambda t: (
+                gi.momentum_nuclear_derivatives(
+                    mol.basis, "x", field=mol.field, threads=t
+                ),
+            ),
+        ),
+        (
+            "moment magnetic",
+            lambda t: (
+                gi.moment_magnetic_derivatives(
+                    mol.basis,
+                    (1, 0, 0),
+                    origin=(0.2, 0.3, -0.1),
+                    field=mol.field,
+                    threads=t,
+                ),
+            ),
+        ),
+        (
+            "gradient magnetic",
+            lambda t: (
+                gi.gradient_magnetic_derivatives(
+                    mol.basis, "x", field=mol.field, threads=t
+                ),
+            ),
+        ),
+        (
+            "momentum magnetic",
+            lambda t: (
+                gi.momentum_magnetic_derivatives(
+                    mol.basis, "x", field=mol.field, threads=t
+                ),
+            ),
+        ),
+    ]
+    for name, function in calls:
+        reference = None
+        for threads in args.threads:
+            start = perf_counter()
+            result = function(threads)
+            seconds = perf_counter() - start
+            if reference is not None:
+                for actual, expected in zip(result, reference, strict=True):
+                    np.testing.assert_array_equal(actual, expected)
+            else:
+                reference = result
+            print(
+                f"{name}: threads={threads}, seconds={seconds:.6f}, "
+                f"output MiB={sum(x.nbytes for x in result)/1024**2:.3f}",
+                flush=True,
+            )
 
 
 if __name__ == "__main__":

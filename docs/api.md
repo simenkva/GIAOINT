@@ -745,3 +745,34 @@ The gauge-origin derivative of this multiplicative moment matrix is zero.
 At zero field the sum is zero; at finite field it is the covariant identity
 above. A literal zero sum for raw finite-field matrices would contradict the
 existing value and derivative conventions.
+
+## Other property derivatives (Priority 2, after 0.9.0)
+
+```python
+dR_gradient = gi.gradient_nuclear_derivatives(basis, "x", field=field, threads=None)
+dR_momentum = gi.momentum_nuclear_derivatives(basis, "x", field=field, threads=None)
+dB_gradient = gi.gradient_magnetic_derivatives(basis, "x", field=field, threads=None)
+dB_momentum = gi.momentum_magnetic_derivatives(basis, "x", field=field, threads=None)
+dB_moment = gi.moment_magnetic_derivatives(
+    basis, (1, 0, 0), origin=(0.0, 0.0, 0.0), field=field, threads=None,
+)
+```
+
+Each function also accepts a strict `out=` buffer and returns that exact buffer.
+The property component is `"x"`, `"y"` or `"z"`; it is independent of the
+leading derivative axis. Nuclear outputs are `(nshell,3,nao,nao)`, magnetic
+outputs `(3,nao,nao)`. No electronic-charge or force sign is applied.
+Gradient is the ket spatial derivative; momentum is canonical `-i*gradient`.
+They do not include a vector-potential term. Field derivatives hold the gauge
+origin (and moment origin) fixed, include the complete London response, and
+have no additional explicit operator B dependence. In particular, differentiating
+the ket gradient includes the derivative of its London wave vector; retaining
+only the pair-phase derivative would be incomplete.
+
+Primitive variants are `primitive_{gradient,momentum}_center_derivatives`,
+`primitive_{gradient,momentum}_magnetic_derivatives`, and
+`primitive_moment_magnetic_derivatives`, with the same property argument.
+Shell variants replace `primitive_` by an empty prefix and append `_shell`;
+they support `out=` and have the same leading derivative dimensions as the
+existing shell APIs. All native computation releases the GIL. Basis matrix
+assembly uses the same configured shell-pair threading policy as Priority 1.

@@ -287,6 +287,24 @@ General powers, strict `out=(shell_buffer, origin_buffer)`, and `threads=None`
 are supported. See [the API conventions](api.md#moment-nuclear-derivatives-priority-1-after-090)
 and [validation and timings](derivative_validation.md).
 
+### Gradient, momentum and property field derivatives
+
+With the post-0.9.0 source build, choose the property component separately
+from the derivative axis:
+
+```python
+dR_px = gi.momentum_nuclear_derivatives(mol.basis, "x", field=mol.field)
+dB_px = gi.momentum_magnetic_derivatives(mol.basis, "x", field=mol.field)
+dB_x = gi.moment_magnetic_derivatives(mol.basis, (1, 0, 0), field=mol.field)
+```
+
+Replace `momentum` with `gradient` for ket spatial derivatives; canonical
+momentum is `-i*gradient`. Nuclear shapes are `(nshell,3,nao,nao)` and field
+shapes `(3,nao,nao)`. Field derivatives hold both origins fixed and include
+London response under the spatial operator. These APIs accept `out=` and
+`threads=None`; [validation](derivative_validation.md) includes independent
+reference/libcint checks and a 105-AO timing table.
+
 ## 4. Where to go next
 
 - [Runnable examples](../examples/): scripts covering direct-basis

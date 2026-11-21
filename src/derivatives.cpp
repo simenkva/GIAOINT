@@ -397,6 +397,33 @@ void property_derivative_matrices(const Basis& basis, std::size_t other_count,
     });
 }
 
+template <typename Evaluator>
+void property_magnetic_matrices(const Basis& basis, std::span<Complex> output,
+    std::size_t threads, Evaluator&& evaluate) {
+    const auto nshell = basis.shells().size();
+    const auto nao = basis.ao_count();
+    if (output.size() != 3U * nao * nao) {
+        throw std::length_error("property magnetic matrix output has an incorrect size");
+    }
+    detail::parallel_for(nshell * nshell, threads, [&](std::size_t pair) {
+        const auto sa = pair / nshell;
+        const auto sb = pair % nshell;
+        const auto& a = basis.shells()[sa];
+        const auto& b = basis.shells()[sb];
+        const auto size = shell_pair_size(a, b);
+        std::vector<Complex> block(3U * size);
+        evaluate(a, b, block);
+        for (std::size_t axis = 0; axis < 3U; ++axis) {
+            for (std::size_t i = 0; i < a.ao_count(); ++i) {
+                for (std::size_t j = 0; j < b.ao_count(); ++j) {
+                    output[(axis * nao + basis.ao_offsets()[sa] + i) * nao +
+                           basis.ao_offsets()[sb] + j] = block[axis * size + i * b.ao_count() + j];
+                }
+            }
+        }
+    });
+}
+
 } // namespace
 
 std::array<Complex, 6> primitive_moment_center_derivatives(
@@ -994,6 +1021,131 @@ void compute_nuclear_attraction_magnetic_derivative_matrices(
     compute_basis_magnetic_derivatives(
         basis, output, [&](const auto& a, const auto& b, auto& block) {
             compute_nuclear_attraction_magnetic_derivatives(a, b, nuclei, field, block);
+        });
+}
+
+std::array<Complex, 6> primitive_gradient_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_center_derivatives(bra, ket, field, [&](const auto& a, const auto& b) {
+        return primitive_gradient(a, b, axis, field, workspace);
+    });
+}
+
+void compute_gradient_center_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<6U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_gradient_center_derivatives(bra, ket, axis, field);
+    });
+}
+
+void compute_gradient_nuclear_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads) {
+    property_derivative_matrices(basis, 0U, output, {}, threads,
+        [&](const Shell& a, const Shell& b, std::span<Complex> block) {
+            compute_gradient_center_derivatives(a, b, axis, field, block);
+        });
+}
+
+std::array<Complex, 3> primitive_gradient_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_magnetic_derivatives(bra, ket, field, [&](const auto& a, const auto& b) {
+        return primitive_gradient(a, b, axis, field, workspace);
+    });
+}
+
+void compute_gradient_magnetic_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<3U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_gradient_magnetic_derivatives(bra, ket, axis, field);
+    });
+}
+
+void compute_gradient_magnetic_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads) {
+    property_magnetic_matrices(basis, output, threads,
+        [&](const Shell& a, const Shell& b, std::span<Complex> block) {
+            compute_gradient_magnetic_derivatives(a, b, axis, field, block);
+        });
+}
+
+std::array<Complex, 6> primitive_momentum_center_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_center_derivatives(bra, ket, field, [&](const auto& a, const auto& b) {
+        return primitive_momentum(a, b, axis, field, workspace);
+    });
+}
+
+void compute_momentum_center_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<6U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_momentum_center_derivatives(bra, ket, axis, field);
+    });
+}
+
+void compute_momentum_nuclear_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads) {
+    property_derivative_matrices(basis, 0U, output, {}, threads,
+        [&](const Shell& a, const Shell& b, std::span<Complex> block) {
+            compute_momentum_center_derivatives(a, b, axis, field, block);
+        });
+}
+
+std::array<Complex, 3> primitive_momentum_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    Axis axis, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_magnetic_derivatives(bra, ket, field, [&](const auto& a, const auto& b) {
+        return primitive_momentum(a, b, axis, field, workspace);
+    });
+}
+
+void compute_momentum_magnetic_derivatives(const Shell& a, const Shell& b,
+    Axis axis, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<3U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_momentum_magnetic_derivatives(bra, ket, axis, field);
+    });
+}
+
+void compute_momentum_magnetic_derivative_matrices(const Basis& basis,
+    Axis axis, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads) {
+    property_magnetic_matrices(basis, output, threads,
+        [&](const Shell& a, const Shell& b, std::span<Complex> block) {
+            compute_momentum_magnetic_derivatives(a, b, axis, field, block);
+        });
+}
+
+std::array<Complex, 3> primitive_moment_magnetic_derivatives(
+    const PrimitiveGaussian& bra, const PrimitiveGaussian& ket,
+    const CartesianMoment& moment, const MagneticField& field) {
+    IntegralWorkspace workspace;
+    return pair_magnetic_derivatives(bra, ket, field, [&](const auto& a, const auto& b) {
+        return primitive_moment(a, b, moment, field, workspace);
+    });
+}
+
+void compute_moment_magnetic_derivatives(const Shell& a, const Shell& b,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output) {
+    compute_pair_block<3U>(a, b, output, [&](const auto& bra, const auto& ket) {
+        return primitive_moment_magnetic_derivatives(bra, ket, moment, field);
+    });
+}
+
+void compute_moment_magnetic_derivative_matrices(const Basis& basis,
+    const CartesianMoment& moment, const MagneticField& field, std::span<Complex> output,
+    std::size_t threads) {
+    property_magnetic_matrices(basis, output, threads,
+        [&](const Shell& a, const Shell& b, std::span<Complex> block) {
+            compute_moment_magnetic_derivatives(a, b, moment, field, block);
         });
 }
 
