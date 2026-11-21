@@ -19,6 +19,16 @@ and headers before Homebrew. The conda/OpenMP OpenBLAS regression, full CI,
 and repaired-wheel matrix pass for that correction; local conda validation
 passes 459 Python tests and the atom timing example at 1/2/4 threads.
 
+## Post-0.9.0 derivative additions
+
+All four requested derivative priorities are implemented in separate commits:
+new moment basis/origin response, remaining property nuclear/field response,
+mixed nuclear/magnetic response and streamed/safely screened ERI derivatives.
+The final 612-test suite, full cross-platform CI (including sanitizers), four
+optional libcint oracle scripts and repaired wheel/source builds pass. See
+[derivative validation and timings](docs/derivative_validation.md). These are
+source additions; no new release tag or PyPI upload has been created.
+
 ## Completed
 
 - Milestone 0 repository assessment.

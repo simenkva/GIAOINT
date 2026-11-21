@@ -104,8 +104,8 @@ kernel is still substantially more expensive than overlap.
 
 ## Priority 4: streamed ERI derivatives and derivative screening
 
-22 streaming tests pass. With the full 611-test suite already passing, the
-additional native bound-identity guard test also passes (612 tests in total).
+22 streaming tests pass. The final isolated conda installation passes the
+complete 612-test suite; its NumPy/OpenBLAS stack shares conda's OpenMP runtime.
 The streaming tests cover canonical and explicit quartet order, repeated slots,
 zero/finite-field finite differences, buffer views/lifetimes, batch size targets,
 empty requests, native worker exceptions and bitwise serial/parallel equality.
@@ -160,3 +160,26 @@ optimisation and mixed-derivative screening remain future work.
 NMR shielding and spin–spin coupling require new nuclear magnetic operators;
 they remain possible later milestones, alongside the separately planned TD4.0
 work. Cholesky-vector derivatives remain out of scope.
+
+
+## Commits and remote release checks
+
+Each priority is independently committed and passed the full CI matrix:
+
+| Priority | Commit | CI run |
+|---|---|---|
+| 1: moment nuclear/origin | `1d43746` | [44879101650](https://github.com/simenkva/GIAOINT/actions/runs/44879101650) |
+| 2: remaining property responses | `8dbdcaf` | [44879277800](https://github.com/simenkva/GIAOINT/actions/runs/44879277800) |
+| 3: mixed derivatives | `c787a22` | [44880195010](https://github.com/simenkva/GIAOINT/actions/runs/44880195010) |
+| 4: streamed/screened ERI derivatives | `16d6a76` | [44881045621](https://github.com/simenkva/GIAOINT/actions/runs/44881045621) |
+
+Final CI includes Python 3.11–3.14 on Linux/macOS with OpenMP ON/OFF, native
+C++ tests, conda/OpenMP integration, isolated source installs, static analysis
+and Linux ASan/UBSan checks. The independent final conda suite passes all 612
+tests (seven existing BSE/jsonschema deprecation warnings), and all four
+optional libcint scripts pass against the final native extension.
+
+[Wheel/source archive run 44881126005](https://github.com/simenkva/GIAOINT/actions/runs/44881126005)
+also passes for CPython 3.11–3.14, Linux x86_64/aarch64 and macOS arm64/x86_64,
+including runtime repair and installed artifact smoke tests. It is a branch
+validation run: publication is skipped, and PyPI 0.9.0 is unchanged.
