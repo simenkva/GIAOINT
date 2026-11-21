@@ -101,7 +101,7 @@ def test_uncontracted_molecules_avoid_speculative_columns(field, monkeypatch):
     result = gi.cholesky_eri(basis, field=field, threshold=1e-8, threads=1)
     # Work-count regression: do not generate many unused columns per pivot.
     assert sum(requests) <= 2 * len(result.vectors)
-    exact = gi.eri(basis, field=field, max_bytes=1024**2, threads=1)
+    exact = gi.eri(basis, field=field, storage="full", max_bytes=1024**2, threads=1)
     assert np.max(np.abs(result.reconstruct() - exact)) <= (
         result.max_residual_diagonal + 5e-13
     )
