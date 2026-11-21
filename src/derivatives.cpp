@@ -1,10 +1,12 @@
 #include "giao_integrals/derivatives.hpp"
 #include "parallel.hpp"
+#include "eri_kernel.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
 #include <limits>
 #include <map>
 #include <stdexcept>
@@ -209,6 +211,81 @@ std::array<Complex, 18> pair_mixed_derivatives(const PrimitiveGaussian& bra,
     }
     return result;
 }
+// One geometry setup/workspace per primitive quartet. Angular shifts leave
+// Gaussian-pair geometry unchanged. Cached values also share Boys/Hermite work.
+class EriResponses {
+  public:
+    EriResponses(const PrimitiveGaussian& a,const PrimitiveGaussian& b,
+        const PrimitiveGaussian& c,const PrimitiveGaussian& d,const MagneticField& field)
+        : raw_{raw_primitive(a),raw_primitive(b),raw_primitive(c),raw_primitive(d)},
+          field_(field), ab_(gaussian_product(a,b,field)), cd_(gaussian_product(c,d,field)) {}
+
+    Complex value(const std::array<PrimitiveGaussian,4>& p) {
+        const auto key=angular_key(p);
+        auto [it,inserted]=values_.try_emplace(key);
+        if (inserted) {
+            it->second=detail::EriKernel::compute(p[0],p[1],p[2],p[3],ab_,cd_,
+                detail::EriKernel::use_real_path(field_),workspace_);
+        }
+        return it->second;
+    }
+    std::array<Complex,12> centers() {
+        std::array<Complex,12> result{};
+        for (std::size_t center=0;center<4U;++center) {
+            for (std::size_t axis=0;axis<3U;++axis) {
+                result[center*3U+axis]=center_response(raw_[center],center%2U==0U,axis,field_,
+                    [&](const auto& changed) { auto p=raw_;p[center]=changed;return value(p); });
+            }
+        }
+        return result;
+    }
+    std::array<Complex,3> magnetic() { return magnetic(raw_); }
+    std::array<Complex,36> mixed() {
+        std::array<Complex,36> result{};
+        for (std::size_t center=0;center<4U;++center) {
+            for (std::size_t r=0;r<3U;++r) {
+                for (std::size_t b=0;b<3U;++b) {
+                    auto evaluate=[&](const auto& changed) {auto p=raw_;p[center]=changed;return value(p);};
+                    auto eval_b=[&](const auto& changed) {auto p=raw_;p[center]=changed;return magnetic(p)[b];};
+                    result[(center*3U+r)*3U+b]=center_response(raw_[center],center%2U==0U,r,field_,eval_b)+
+                        center_phase_field_response(raw_[center],center%2U==0U,r,b,evaluate);
+                }
+            }
+        }
+        return result;
+    }
+  private:
+    using Key=std::array<std::uint16_t,12>;
+    static Key angular_key(const std::array<PrimitiveGaussian,4>& p) {
+        Key key{};
+        for (std::size_t center=0;center<4U;++center) {
+            for (std::size_t axis=0;axis<3U;++axis) {
+                key[center*3U+axis]=p[center].angular[axis];
+            }
+        }
+        return key;
+    }
+    const std::array<Complex,3>& magnetic(const std::array<PrimitiveGaussian,4>& p) {
+        auto [it,inserted]=magnetic_.try_emplace(angular_key(p));
+        if (inserted) {
+            for (std::size_t axis=0;axis<3U;++axis) {
+                for (std::size_t center=0;center<4U;++center) {
+                    it->second[axis]+=magnetic_response(p[center],center%2U==0U,axis,field_,
+                        [&](const auto& changed) {auto q=p;q[center]=changed;return value(q);});
+                }
+            }
+        }
+        return it->second;
+    }
+    std::array<PrimitiveGaussian,4> raw_;
+    MagneticField field_;
+    GaussianPairData ab_;
+    GaussianPairData cd_;
+    EriWorkspace workspace_;
+    std::map<Key,Complex> values_;
+    std::map<Key,std::array<Complex,3>> magnetic_;
+};
+
 Complex coordinate_momentum(const PrimitiveGaussian& raw_bra,
                             const PrimitiveGaussian& raw_ket,
                             std::size_t coordinate_axis, std::size_t momentum_axis,
@@ -761,23 +838,7 @@ std::array<Complex, 12> primitive_eri_center_derivatives(const PrimitiveGaussian
                                                          const PrimitiveGaussian& c,
                                                          const PrimitiveGaussian& d,
                                                          const MagneticField& field) {
-    const std::array<PrimitiveGaussian, 4> raw{raw_primitive(a), raw_primitive(b),
-                                               raw_primitive(c), raw_primitive(d)};
-    EriWorkspace workspace;
-    std::array<Complex, 12> result{};
-    for (std::size_t center = 0; center < 4U; ++center) {
-        for (std::size_t axis = 0; axis < axis_count; ++axis) {
-            result[center * axis_count + axis] = center_response(
-                raw[center], center == 0U || center == 2U, axis, field,
-                [&](const auto& changed) {
-                    auto values = raw;
-                    values[center] = changed;
-                    return primitive_eri(values[0], values[1], values[2], values[3],
-                                         field, workspace);
-                });
-        }
-    }
-    return result;
+    return EriResponses(a,b,c,d,field).centers();
 }
 
 std::array<Complex, 3> primitive_eri_magnetic_derivatives(const PrimitiveGaussian& a,
@@ -785,23 +846,7 @@ std::array<Complex, 3> primitive_eri_magnetic_derivatives(const PrimitiveGaussia
                                                           const PrimitiveGaussian& c,
                                                           const PrimitiveGaussian& d,
                                                           const MagneticField& field) {
-    const std::array<PrimitiveGaussian, 4> raw{raw_primitive(a), raw_primitive(b),
-                                               raw_primitive(c), raw_primitive(d)};
-    EriWorkspace workspace;
-    std::array<Complex, 3> result{};
-    for (std::size_t axis = 0; axis < axis_count; ++axis) {
-        for (std::size_t center = 0; center < 4U; ++center) {
-            result[axis] += magnetic_response(raw[center], center == 0U || center == 2U,
-                                              axis, field, [&](const auto& changed) {
-                                                  auto values = raw;
-                                                  values[center] = changed;
-                                                  return primitive_eri(
-                                                      values[0], values[1], values[2],
-                                                      values[3], field, workspace);
-                                              });
-        }
-    }
-    return result;
+    return EriResponses(a,b,c,d,field).magnetic();
 }
 
 #define GIAO_DEFINE_PAIR_BLOCKS(NAME, PRIMITIVE_CENTER, PRIMITIVE_MAGNETIC)            \
@@ -1207,26 +1252,7 @@ void compute_nuclear_attraction_mixed_derivatives(const Shell& a, const Shell& b
 std::array<Complex,36> primitive_eri_mixed_derivatives(
     const PrimitiveGaussian& a, const PrimitiveGaussian& b, const PrimitiveGaussian& c,
     const PrimitiveGaussian& d, const MagneticField& field) {
-    const std::array<PrimitiveGaussian,4> raw{raw_primitive(a),raw_primitive(b),raw_primitive(c),raw_primitive(d)};
-    EriWorkspace workspace;
-    std::array<Complex,36> result{};
-    for (std::size_t center=0; center<4U; ++center) {
-        for (std::size_t r=0; r<3U; ++r) {
-            for (std::size_t axis=0; axis<3U; ++axis) {
-                auto value = [&](const auto& changed) {
-                    auto p=raw; p[center]=changed;
-                    return primitive_eri(p[0],p[1],p[2],p[3],field,workspace);
-                };
-                auto magnetic = [&](const auto& changed) {
-                    auto p=raw; p[center]=changed;
-                    return primitive_eri_magnetic_derivatives(p[0],p[1],p[2],p[3],field)[axis];
-                };
-                result[(center*3U+r)*3U+axis] = center_response(raw[center],center%2U==0U,r,field,magnetic) +
-                    center_phase_field_response(raw[center],center%2U==0U,r,axis,value);
-            }
-        }
-    }
-    return result;
+    return EriResponses(a,b,c,d,field).mixed();
 }
 
 void primitive_nuclear_attraction_nucleus_mixed_derivatives(const PrimitiveGaussian& bra,
@@ -1276,6 +1302,113 @@ void compute_nuclear_attraction_mixed_derivative_matrices(const Basis& basis,
             compute_nuclear_attraction_mixed_derivatives(a,b,nuclei,field,block.first(18U*size));
             compute_nuclear_attraction_nucleus_mixed_derivatives(a,b,nuclei,field,block.subspan(18U*size));
         },9U);
+}
+
+EriDerivativeSchwarzBounds::EriDerivativeSchwarzBounds(const Basis& basis,
+    const MagneticField& field,std::size_t threads) : ordinary_(basis,field) {
+    const auto n=basis.shells().size();
+    values_.resize(n*n);
+    detail::parallel_for(n*n,threads,[&](std::size_t pair) {
+        const auto& a=basis.shells()[pair/n];
+        const auto& b=basis.shells()[pair%n];
+        double maximum=0.0;
+        EriWorkspace workspace;
+        for (std::size_t ca=0;ca<a.cartesian_count();++ca) {
+            for (std::size_t cb=0;cb<b.cartesian_count();++cb) {
+                std::vector<double> contracted(6U*a.contraction_count()*b.contraction_count());
+                for (std::size_t pa=0;pa<a.primitive_count();++pa) {
+                    for (std::size_t pb=0;pb<b.primitive_count();++pb) {
+                        const PrimitiveGaussian ga(a.exponents()[pa],a.center(),a.components()[ca],
+                            primitive_normalization(a.exponents()[pa],a.components()[ca]),false);
+                        const PrimitiveGaussian gb(b.exponents()[pb],b.center(),b.components()[cb],
+                            primitive_normalization(b.exponents()[pb],b.components()[cb]),false);
+                        std::map<std::array<std::uint16_t,6>,double> norms;
+                        auto norm=[&](const PrimitiveGaussian& left,const PrimitiveGaussian& right) {
+                            const std::array<std::uint16_t,6> key{left.angular.x,left.angular.y,left.angular.z,
+                                right.angular.x,right.angular.y,right.angular.z};
+                            auto [it,inserted]=norms.try_emplace(key);
+                            if (inserted) {
+                                it->second=std::sqrt(std::abs(primitive_eri(right,left,left,right,field,workspace)));
+                            }
+                            return it->second;
+                        };
+                        std::array<double,6> primitive_bounds{};
+                        for (std::size_t slot=0;slot<2U;++slot) {
+                            const auto& raw=slot==0U?ga:gb;
+                            auto changed_norm=[&](const auto& changed) {return slot==0U?norm(changed,gb):norm(ga,changed);};
+                            for (std::size_t axis=0;axis<3U;++axis) {
+                                double bound=2.0*raw.exponent*changed_norm(with_angular(raw,shifted(raw.angular,axis,1)));
+                                if (raw.angular[axis]!=0U) {
+                                    bound+=static_cast<double>(raw.angular[axis])*changed_norm(with_angular(raw,shifted(raw.angular,axis,-1)));
+                                }
+                                const auto phase=cross(field.B,unit_vector(axis));
+                                for (std::size_t coordinate=0;coordinate<3U;++coordinate) {
+                                    const double weight=0.5*std::abs(phase[coordinate]);
+                                    if (weight!=0.0) {
+                                        bound+=weight*(changed_norm(with_angular(raw,shifted(raw.angular,coordinate,1)))+
+                                            std::abs(raw.center[coordinate])*changed_norm(raw));
+                                    }
+                                }
+                                primitive_bounds[slot*3U+axis]=bound;
+                            }
+                        }
+                        for (std::size_t xa=0;xa<a.contraction_count();++xa) {
+                            for (std::size_t xb=0;xb<b.contraction_count();++xb) {
+                                const double weight=std::abs(a.coefficient(xa,pa)*b.coefficient(xb,pb));
+                                for (std::size_t axis=0;axis<6U;++axis) {
+                                    contracted[(xa*b.contraction_count()+xb)*6U+axis]+=weight*primitive_bounds[axis];
+                                }
+                            }
+                        }
+                    }
+                }
+                for (const auto value:contracted) {maximum=std::max(maximum,value);}
+            }
+        }
+        // Roundoff padding; the underlying triangle/Schwarz bound is exact.
+        values_[pair]=std::nextafter(maximum*(1.0+128.0*std::numeric_limits<double>::epsilon()),
+            std::numeric_limits<double>::infinity());
+    });
+}
+
+double EriDerivativeSchwarzBounds::quartet_bound(ShellQuartetIndex quartet) const {
+    const auto n=shell_count();
+    for (const auto index:quartet.as_array()) {
+        if (index>=n) {throw std::out_of_range("derivative shell quartet index is out of range");}
+    }
+    const double bound=std::max(values_[quartet.a*n+quartet.b]*ordinary_(quartet.c,quartet.d),
+        ordinary_(quartet.a,quartet.b)*values_[quartet.c*n+quartet.d]);
+    return std::nextafter(bound*(1.0+128.0*std::numeric_limits<double>::epsilon()),
+        std::numeric_limits<double>::infinity());
+}
+
+bool EriDerivativeSchwarzBounds::matches(const Basis& basis,const MagneticField& field) const noexcept {
+    return ordinary_.matches(basis,field);
+}
+
+void compute_eri_derivative_blocks(const Basis& basis,
+    std::span<const ShellQuartetIndex> quartets,std::span<const std::size_t> offsets,
+    const MagneticField& field,std::span<Complex> output,std::size_t threads) {
+    if (offsets.size()!=quartets.size()+1U || offsets[0]!=0U) {
+        throw std::length_error("derivative batch offsets have an incorrect size or start");
+    }
+    for (std::size_t index=0;index<quartets.size();++index) {
+        const auto q=quartets[index];
+        for (const auto shell:q.as_array()) {
+            if (shell>=basis.shells().size()) {throw std::out_of_range("derivative shell quartet index is out of range");}
+        }
+        const auto size=shell_quartet_size(basis.shells()[q.a],basis.shells()[q.b],basis.shells()[q.c],basis.shells()[q.d]);
+        if (size>std::numeric_limits<std::size_t>::max()/12U || offsets[index]>output.size() ||
+            offsets[index+1U]<offsets[index] || offsets[index+1U]-offsets[index]!=12U*size) {
+            throw std::length_error("derivative batch offsets do not match block sizes");
+        }
+    }
+    if (offsets.back()!=output.size()) {throw std::length_error("derivative batch output has an incorrect size");}
+    detail::parallel_for(quartets.size(),threads,[&](std::size_t index) {
+        const auto q=quartets[index];
+        compute_eri_center_derivatives(basis.shells()[q.a],basis.shells()[q.b],basis.shells()[q.c],basis.shells()[q.d],
+            field,output.subspan(offsets[index],offsets[index+1U]-offsets[index]));
+    });
 }
 
 } // namespace giao

@@ -5,7 +5,9 @@
 #include "giao_integrals/property.hpp"
 
 #include <array>
+#include <cstddef>
 #include <span>
+#include <vector>
 
 namespace giao {
 
@@ -222,5 +224,26 @@ void compute_nuclear_attraction_nuclear_derivative_matrices(
 void compute_nuclear_attraction_magnetic_derivative_matrices(
     const Basis& basis, std::span<const Nucleus> nuclei, const MagneticField& field,
     std::span<Complex> output);
+
+// Triangle/Coulomb Schwarz bounds for all 12 local quartet-centre components.
+// Includes Gaussian and London-phase terms; ordinary ERI bounds alone are unsafe.
+class EriDerivativeSchwarzBounds {
+  public:
+    explicit EriDerivativeSchwarzBounds(const Basis& basis,
+        const MagneticField& field = {}, std::size_t threads = 1U);
+    [[nodiscard]] double quartet_bound(ShellQuartetIndex quartet) const;
+    [[nodiscard]] bool matches(const Basis& basis,const MagneticField& field) const noexcept;
+    [[nodiscard]] std::span<const double> values() const noexcept { return values_; }
+    [[nodiscard]] std::size_t shell_count() const noexcept { return ordinary_.shell_count(); }
+  private:
+    EriSchwarzBounds ordinary_;
+    std::vector<double> values_;
+};
+
+// Fill concatenated [4,3,na,nb,nc,nd] blocks, using explicit cumulative offsets.
+// No full AO tensor or hidden copy is allocated. Quartet summation order is fixed.
+void compute_eri_derivative_blocks(const Basis& basis,
+    std::span<const ShellQuartetIndex> quartets, std::span<const std::size_t> offsets,
+    const MagneticField& field, std::span<Complex> output, std::size_t threads = 1U);
 
 } // namespace giao

@@ -196,9 +196,12 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
   limit. The optimized general kernel still accounts for 93% of finite-field
   dddd top-of-stack samples; see `benchmarks/results/m9_macos_arm64.md`.
   Basis-scale zero-field ERIs remain slower than libcint.
-- Derivative shell drivers are correctness-first compositions of shifted
-  production kernels. They are serial, do not yet use derivative screening,
-  and may repeat primitive setup.
+- Individual derivative shell blocks remain serial compositions of shifted
+  production kernels. New property/mixed matrix assembly and ERI centre-derivative
+  batches are threaded. ERI derivatives reuse pair geometry, workspace and
+  shifted-integral caches; centre-derivative batches support conservative
+  derivative-density Schwarz screening. Mixed-derivative screening and further
+  recurrence-level derivative optimisation remain future work.
 - The low-level `Basis` has no atom-to-shell ownership map. `Molecule` tracks
   ownership in `shell_atoms`; derivative APIs still return basis-center and
   attraction-potential-center contributions separately for callers to assemble.
@@ -208,6 +211,9 @@ passes 459 Python tests and the atom timing example at 1/2/4 threads.
   derivatives of moments, gradients and momentum. See `docs/derivative_validation.md`.
   Priority 3 adds mixed nuclear/magnetic derivatives for overlap, both kinetic
   operators, separate attraction basis/potential centres and ERI quartets.
+- NMR shielding and spin–spin coupling need nuclear-magnetic-moment vector
+  potentials and Fermi-contact/spin-dipole operators; these remain possible
+  later milestones. Cholesky-vector derivatives and TD4.0 work are separate.
 - Production functions are Cartesian only. Spherical transformation is a
   documented future design, not an implemented API.
 

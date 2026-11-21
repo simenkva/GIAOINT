@@ -108,7 +108,14 @@ from ._giao_integrals import (
 )
 from ._threads import build_info, set_num_threads
 from .cholesky import CholeskyERI, cholesky_eri
-from .eri import EriBatch, eri, eri_batches, eri_schwarz_bounds
+from .eri import (
+    EriBatch,
+    EriDerivativeBatch,
+    eri,
+    eri_batches,
+    eri_derivative_batches,
+    eri_schwarz_bounds,
+)
 from .molecule import MolecularIntegrals, Molecule
 
 __all__ = [
@@ -118,6 +125,8 @@ __all__ = [
     "CartesianExponent",
     "CholeskyERI",
     "EriBatch",
+    "EriDerivativeBatch",
+    "eri_derivative_batches",
     "MagneticField",
     "MolecularIntegrals",
     "Molecule",

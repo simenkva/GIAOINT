@@ -218,3 +218,14 @@ dS = gi.overlap_magnetic_derivatives(mol.basis, field=mol.field)
 
 The wrapper retains shell ownership for callers, but the low-level derivative
 functions keep their existing shell-center and potential-center axes.
+
+
+## Streamed ERI centre derivatives (after 0.9.0)
+
+`mol.eri_derivative_batches(*, quartets=None, target_bytes=64*1024**2,
+screening_threshold=0.0, threads=None)` yields `EriDerivativeBatch` objects
+with the molecule's field. A block has shape `(4,3,na,nb,nc,nd)`: quartet
+centre slots, nuclear xyz, then AO axes. Use `mol.shell_atoms` to assemble
+atom contributions, adding repeated slots. No full derivative AO tensor is
+allocated. See [the API](api.md#streamed-eri-centre-derivatives-priority-4-after-090)
+for canonical symmetry, memory targets and derivative-specific screening.

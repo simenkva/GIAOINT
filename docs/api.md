@@ -829,3 +829,66 @@ in the moment section adds both `i*d(k_mu-k_nu)/dB*I` and
 `i*(k_mu-k_nu)*dI/dB`; even at B=0, raw mixed AO matrices need not have a zero
 translation sum. Tests check this covariant identity, including potential
 and gauge-centre contributions where applicable.
+
+## Streamed ERI centre derivatives (Priority 4, after 0.9.0)
+
+```python
+for batch in gi.eri_derivative_batches(
+    basis, field=field, quartets=None, target_bytes=64 * 1024**2,
+    screening_threshold=0.0, threads=None,
+):
+    for index, quartet in enumerate(batch.quartets):
+        derivative = batch.block(index)
+```
+
+`Molecule.eri_derivative_batches` forwards the same options with its basis and
+field. `EriDerivativeBatch` has the same `quartets`, `shapes`, `offsets`, `values`,
+`requested_count`, `screened_count` interface as `EriBatch`. Shapes have six
+columns, and `block(index)` is a view shaped `(4,3,na,nb,nc,nd)`.
+The first axis is the quartet's four *slots*, not unique atoms or shells.
+Repeated shell slots must be added when assembling a shell or atom derivative;
+use `mol.shell_atoms` to map the quartet's shell indices to atoms.
+
+Without explicit quartets, emit canonical representatives under exactly the
+finite-field ERI symmetries. Pair exchange and simultaneous conjugate reversal
+also permute the leading centre-slot axis: permutations `(2,3,0,1)` and
+`(1,0,3,2)`, respectively, together with the same AO-axis permutations.
+Explicit quartets are evaluated in input order, including duplicates.
+
+`target_bytes` bounds packed complex derivative values in a batch. A single
+oversized quartet is emitted alone. Small metadata arrays, per-thread native
+workspaces and optional `O(nshell²)` screening bounds are additional. Batches
+are evaluated directly into their NumPy packed buffers without a second full
+output copy. Release batches after contraction to keep consumer memory bounded;
+collecting all batches in a list retains all their data. There is no automatic
+full `nao⁴` derivative allocation.
+
+Unscreened outputs preserve existing primitive summation order and are bitwise
+identical at different thread counts. Quartets are native parallel tasks; GIL
+release and the configured `threads=None` policy match the other new APIs.
+
+### Safe derivative screening
+
+Screening is disabled by default. Ordinary ERI Schwarz factors alone do not
+bound derivatives. For a pair density `rho_ab`, define the Coulomb norm
+`||rho||² = (rho*|rho)`. A differentiated density is a finite linear combination
+`d rho_ab = sum_t c_t rho_t` of shifted primitive pairs: Gaussian lowering and
+raising terms, plus London terms proportional to `r_k = (r_k-R_k)+R_k`.
+The implementation computes
+`D_ab >= max_(AO pair,slot,axis) sum_t |c_t| ||rho_t||`, including absolute
+contracted coefficients, and ordinary pair bounds `Q_ab`. The triangle and
+Coulomb Cauchy–Schwarz inequalities give the quartet-component bound
+`max(D_ab*Q_cd, Q_ab*D_cd)` for all twelve local derivatives. Self-norms use
+`(ba|ab)`, preserving complex ordered-pair conventions. Floating-point padding
+is added to the non-negative bounds.
+
+A quartet is omitted only if this derivative-specific bound is below
+`screening_threshold`. The guarantee applies to each omitted local component,
+not a subsequent sum over slots, atoms or quartets. Bound preparation can be
+expensive and is conservative for strongly contracted or oscillatory densities.
+Screening has the same shifted-integral admission limits as the derivative
+kernels. Mixed-derivative screening is not provided by this API.
+
+The installed C++ `EriDerivativeSchwarzBounds` exposes `quartet_bound()` and
+basis/field matching. `compute_eri_derivative_blocks` fills caller-owned packed
+buffers with explicit cumulative element offsets and native quartet threading.

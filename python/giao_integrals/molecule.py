@@ -16,9 +16,10 @@ import numpy.typing as npt
 from . import _giao_integrals as core
 from .cholesky import CholeskyERI
 from .cholesky import cholesky_eri as compute_cholesky_eri
-from .eri import EriBatch
+from .eri import EriBatch, EriDerivativeBatch
 from .eri import eri as compute_eri
 from .eri import eri_batches as compute_eri_batches
+from .eri import eri_derivative_batches as compute_eri_derivative_batches
 
 # CODATA 2022, https://physics.nist.gov/cuu/pdf/wall_2022.pdf
 BOHR_IN_ANGSTROM = 0.529177210544
@@ -440,6 +441,29 @@ class Molecule:
         return compute_eri_batches(
             self.basis,
             field=self.field,
+            target_bytes=target_bytes,
+            screening_threshold=screening_threshold,
+            threads=threads,
+        )
+
+    def eri_derivative_batches(
+        self,
+        *,
+        quartets=None,
+        target_bytes: int = 64 * 1024**2,
+        screening_threshold: float = 0.0,
+        threads: int | None = None,
+    ) -> Iterable[EriDerivativeBatch]:
+        """Stream ERI centre derivatives with this molecule's field.
+
+        Blocks are (4,3,na,nb,nc,nd), centre slots in quartet order. Use
+        shell_atoms to map shell indices to atoms; repeated slots add.
+        See eri_derivative_batches for memory and safe screening conventions.
+        """
+        return compute_eri_derivative_batches(
+            self.basis,
+            field=self.field,
+            quartets=quartets,
             target_bytes=target_bytes,
             screening_threshold=screening_threshold,
             threads=threads,

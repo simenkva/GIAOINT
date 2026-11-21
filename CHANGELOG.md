@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Priority 4 — streamed ERI centre derivatives and safe screening
+
+Added `eri_derivative_batches` and `Molecule.eri_derivative_batches`, yielding
+packed `(4,3,na,nb,nc,nd)` blocks with native quartet threading and a configurable
+memory target. Optional derivative-density triangle/Coulomb Schwarz screening
+includes Gaussian and London centre terms; ordinary ERI bounds alone are not
+used to screen derivative blocks. Shared primitive pair geometry, workspaces
+and angular-shift caches remove repeated setup and evaluations in ERI centre,
+magnetic and mixed derivatives. Saved unscreened outputs remain bitwise unchanged.
+The optional density-contraction convenience helper is not included.
+
 ### Priority 3 — mixed nuclear/magnetic derivatives
 
 Added literal mixed derivatives of overlap, canonical and physical magnetic

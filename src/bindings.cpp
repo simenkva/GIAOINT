@@ -13,6 +13,8 @@
 #include <pybind11/stl.h>
 
 #include <cstdint>
+#include <cmath>
+#include <memory>
 #ifdef GIAO_HAS_OPENMP
 #include <omp.h>
 #if defined(__unix__) || defined(__APPLE__)
@@ -1972,5 +1974,69 @@ Coulomb operator has no explicit B term. out=(shell_out,nucleus_out) uses
 strict nonoverlapping buffers; either may be None. threads=None follows
 the configured policy; native work releases the GIL.
 )doc");
+
+    py::class_<giao::EriDerivativeSchwarzBounds>(module,"_EriDerivativeSchwarzBounds")
+        .def(py::init([](const giao::Basis& basis,const py::object& field,const py::object& threads) {
+            const auto f=field_or_zero(field);
+            const auto count=threads_from_python(threads);
+            std::unique_ptr<giao::EriDerivativeSchwarzBounds> result;
+            { py::gil_scoped_release release;
+              result=std::make_unique<giao::EriDerivativeSchwarzBounds>(basis,f,count); }
+            return result;
+        }),py::arg("basis"),py::kw_only(),py::arg("field")=py::none(),py::arg("threads")=py::none(),py::keep_alive<1,2>())
+        .def("quartet_bound",[](const giao::EriDerivativeSchwarzBounds& bounds,const std::array<std::uint32_t,4>& q) {
+            return bounds.quartet_bound({q[0],q[1],q[2],q[3]});
+        });
+
+    module.def("_eri_derivative_batch",[](const giao::Basis& basis,
+        const std::vector<std::array<std::uint32_t,4>>& requested,const py::object& field,
+        double threshold,const py::object& threads,const giao::EriDerivativeSchwarzBounds* bounds) {
+        const auto f=field_or_zero(field);
+        const auto count=threads_from_python(threads);
+        if (!std::isfinite(threshold) || threshold<0.0) {
+            throw py::value_error("screening_threshold must be finite and non-negative");
+        }
+        if (threshold>0.0 && bounds==nullptr) {throw py::value_error("derivative screening requires derivative bounds");}
+        if (bounds!=nullptr && !bounds->matches(basis,f)) {throw py::value_error("derivative bounds do not match basis and field");}
+        std::vector<giao::ShellQuartetIndex> quartets;
+        std::vector<std::size_t> offsets{0U};
+        std::vector<std::array<std::size_t,6>> shapes;
+        {
+            py::gil_scoped_release release;
+            for (const auto& indices:requested) {
+                const giao::ShellQuartetIndex q{indices[0],indices[1],indices[2],indices[3]};
+                for (const auto index:indices) {
+                    if (index>=basis.shells().size()) {throw std::out_of_range("derivative shell quartet index is out of range");}
+                }
+                if (threshold>0.0 && bounds->quartet_bound(q)<threshold) {continue;}
+                const auto& a=basis.shells()[q.a];const auto& b=basis.shells()[q.b];
+                const auto& c=basis.shells()[q.c];const auto& d=basis.shells()[q.d];
+                const auto size=giao::shell_quartet_size(a,b,c,d);
+                const auto maximum=static_cast<std::size_t>(std::numeric_limits<py::ssize_t>::max());
+                if (size>(maximum-offsets.back())/12U) {throw std::length_error("derivative batch size overflow");}
+                offsets.push_back(offsets.back()+12U*size);
+                quartets.push_back(q);
+                shapes.push_back({4U,3U,a.ao_count(),b.ao_count(),c.ao_count(),d.ao_count()});
+            }
+        }
+        py::array_t<std::uint32_t> quartet_result({static_cast<py::ssize_t>(quartets.size()),py::ssize_t{4}});
+        py::array_t<std::int64_t> shape_result({static_cast<py::ssize_t>(quartets.size()),py::ssize_t{6}});
+        py::array_t<std::int64_t> offset_result(offsets.size());
+        py::array_t<giao::Complex> values(offsets.back());
+        auto qview=quartet_result.mutable_unchecked<2>();
+        auto shape=shape_result.mutable_unchecked<2>();
+        for (std::size_t i=0;i<quartets.size();++i) {
+            for (std::size_t k=0;k<4U;++k) {qview(static_cast<py::ssize_t>(i),static_cast<py::ssize_t>(k))=quartets[i].as_array()[k];}
+            for (std::size_t k=0;k<6U;++k) {shape(static_cast<py::ssize_t>(i),static_cast<py::ssize_t>(k))=static_cast<std::int64_t>(shapes[i][k]);}
+        }
+        for (std::size_t i=0;i<offsets.size();++i) {offset_result.mutable_data()[i]=static_cast<std::int64_t>(offsets[i]);}
+        {
+            py::gil_scoped_release release;
+            giao::compute_eri_derivative_blocks(basis,quartets,offsets,f,
+                {values.mutable_data(),static_cast<std::size_t>(values.size())},count);
+        }
+        return py::make_tuple(quartet_result,shape_result,offset_result,values,requested.size(),requested.size()-quartets.size());
+    },py::arg("basis"),py::arg("quartets"),py::kw_only(),py::arg("field")=py::none(),
+    py::arg("screening_threshold")=0.0,py::arg("threads")=py::none(),py::arg("bounds")=py::none());
 
 }

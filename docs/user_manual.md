@@ -325,6 +325,27 @@ shape `(4,3,3,na,nb,nc,nd)`. See [API details](api.md) for output buffers,
 threading, translation covariance and extra angular-order requirements.
 These APIs require a source build after 0.9.0.
 
+### Streaming ERI gradient blocks
+
+```python
+for batch in mol.eri_derivative_batches(target_bytes=8 * 1024**2, threads=None):
+    for index, quartet in enumerate(batch.quartets):
+        dERI = batch.block(index)  # (4,3,na,nb,nc,nd), a view
+        atoms = [mol.shell_atoms[int(shell)] for shell in quartet]
+        # Contract each centre slot into the owning atom's gradient here.
+```
+
+This post-0.9.0 interface replaces Python quartet-evaluation loops. It yields
+canonical finite-field quartets; expand symmetry with matching centre-slot
+permutations when your contraction requires all ordered quartets. Repeated
+shell/atom slots contribute separately and must be added. Explicit `quartets=`
+is also supported. The memory target counts derivative values, with at least
+one complete quartet per batch, plus metadata and native thread workspaces.
+`screening_threshold=0.0` preserves exact unscreened results. Positive thresholds
+use derivative-specific Coulomb bounds including London terms; see
+[the screening proof and conventions](api.md#safe-derivative-screening).
+The optional density-to-J/K gradient contraction helper is not part of this API.
+
 ## 4. Where to go next
 
 - [Runnable examples](../examples/): scripts covering direct-basis
