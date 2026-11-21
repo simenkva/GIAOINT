@@ -91,7 +91,7 @@ to avoid loading a second Homebrew copy. See the
 
 Version 0.11.0 is published on PyPI, including the derivative, gradient-assembly
 and independent-field operator interfaces. The current source tree prepares
-0.11.1 with faster generally contracted molecular Cholesky generation; it is
+0.11.1 with faster molecular Cholesky generation; it is
 not tagged or published. See [the molecular profile and validation](docs/cholesky_molecules_0_11_1.md),
 [0.11 validation](docs/release_0_11_report.md) and
 [installation and threading](docs/installation.md).

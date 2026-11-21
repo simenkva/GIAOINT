@@ -85,9 +85,11 @@ def cholesky_eri(
     (default 32, bounded internally at 32) candidates from the last generated
     component block while their residual is at least 1% of the global maximum.
     Global maximum residual still controls stopping and the error bound. This
-    changes pivot order and vectors relative to 0.11.0. ``pivot_batch_size=1``
-    restores strict global pivoting and its old factors. Real factors retain
-    global pivoting; uncontracted shells retain their eight-candidate path.
+    can change general-contraction pivot order and vectors relative to 0.11.0.
+    ``pivot_batch_size=1`` restores strict global pivoting and its old factors.
+    Zero-field and single-center factors retain global pivoting. Uncontracted
+    single-center bases retain the eight-candidate path; multi-center bases
+    generate only the requested Cartesian component's contraction variants.
     Each policy is bitwise deterministic across thread counts. Storage is
     O(rank*nao**2) plus bounded selected-column/native workspace; no full AO
     tensor or pair matrix is formed. ``threads`` controls native shell-pair/

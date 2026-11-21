@@ -11,7 +11,9 @@ blocks with residuals at least 1% of the global maximum; strict global pivoting 
 available with pivot_batch_size=1. Stopping always uses the global maximum,
 preserving the residual error bound. AO conventions, primitive contraction
 order, and per-pivot NumPy reductions are retained. Uncontracted
-atom evaluation retains its existing path. Added multi-center reconstruction,
+atom evaluation retains its existing path. Segmented contractions also use
+primitive-first evaluation, while uncontracted molecules avoid speculative
+columns. Added multi-center reconstruction,
 rank and thread-determinism tests and reproducible workload profiling.
 No column screening, release tags or PyPI publication are introduced.
 
